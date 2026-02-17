@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // ===== FRONTEND URL =====
-const FRONTEND_URL = "https://gorev-sistemii.onrender.com";
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // ===== AUTH MIDDLEWARE =====
 function auth(req, res, next) {
@@ -238,53 +238,80 @@ app.get("/check-invite", async (req, res) => {
 });
 
 app.post("/invite", auth, async (req, res) => {
-    if (req.user.role !== "parent") return res.status(403).json({ message: "Yetkiniz yok" });
+    if (req.user.role !== "parent")
+        return res.status(403).json({ message: "Yetkiniz yok" });
 
     const { email } = req.body;
-    if (!email) return res.status(400).json({ message: "Email boş" });
+    if (!email)
+        return res.status(400).json({ message: "Email boş" });
 
     try {
-        // Öğrenci zaten kayıtlı mı kontrol
+        if (!process.env.FRONTEND_URL) {
+            console.error("FRONTEND_URL TANIMSIZ!");
+            return res.status(500).json({ message: "FRONTEND_URL tanımlı değil!" });
+        }
+
+        // Öğrenci kontrol
         const userCheck = await db.query(
             "SELECT id FROM users WHERE email=$1 AND role='student'",
             [email]
         );
-        if (userCheck.rows.length) return res.status(400).json({ message: "Bu öğrenci zaten kayıtlı!" });
+        if (userCheck.rows.length)
+            return res.status(400).json({ message: "Bu öğrenci zaten kayıtlı!" });
 
-        // Önceden davet edilmiş mi kontrol
         const inviteCheck = await db.query(
             "SELECT id FROM invite WHERE email=$1 AND used=false",
             [email]
         );
-        if (inviteCheck.rows.length) return res.status(400).json({ message: "Bu öğrenci zaten davet edilmiş!" });
+        if (inviteCheck.rows.length)
+            return res.status(400).json({ message: "Bu öğrenci zaten davet edilmiş!" });
 
         // Token oluştur
         const token = crypto.randomBytes(32).toString("hex");
+
         await db.query(
             "INSERT INTO invite (email, token) VALUES ($1, $2)",
             [email, token]
         );
 
-        // Davet linki
-        const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
+        const inviteLink = `${process.env.FRONTEND_URL}/kayit.html?invite=${token}`;
 
-        // Mail gönder
+        console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+        console.log("Invite Link:", inviteLink);
+
         await transporter.sendMail({
             from: `"Görev Sistemi" <${process.env.MAIL_USER}>`,
             to: email,
             subject: "Görev Sistemine Davet Edildiniz",
-            text: `Merhaba! Sizi görev sistemimize davet ettik. Kayıt olmak için tıklayın: ${inviteLink}`,
-            html: `<p>Merhaba!</p><p>Sizi görev sistemimize davet ettik.</p><p>Kayıt olmak için <a href="${inviteLink}">buraya tıklayın</a>.</p>`
+            html: `
+                <div style="font-family:Arial">
+                    <h2>Görev Sistemine Davet</h2>
+                    <p>Sizi görev sistemimize davet ettik.</p>
+                    <a href="${inviteLink}" 
+                       style="display:inline-block;
+                              padding:10px 20px;
+                              background:#4CAF50;
+                              color:white;
+                              text-decoration:none;
+                              border-radius:5px;">
+                        Kayıt Ol
+                    </a>
+                    <p style="margin-top:15px;font-size:12px;color:gray;">
+                        Eğer buton çalışmazsa bu linki kopyalayın:<br>
+                        ${inviteLink}
+                    </p>
+                </div>
+            `
         });
 
-        console.log("Invite oluşturuldu ve mail gönderildi:", email, token);
-        res.json({ message: "Davet gönderildi!", link: inviteLink });
+        res.json({ message: "Davet gönderildi!" });
 
     } catch (err) {
         console.error("INVITE ERROR:", err);
         res.status(500).json({ message: "Davet gönderilemedi", error: err.message });
     }
 });
+
 
 // ===== VELİ ÖĞRENCİ ID GETİR =====
 app.get("/get-user-id", auth, async (req, res) => {
