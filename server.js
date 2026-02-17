@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // ===== FRONTEND URL =====
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // ===== AUTH MIDDLEWARE =====
 function auth(req, res, next) {
