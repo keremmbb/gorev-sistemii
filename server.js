@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // ===== FRONTEND URL =====
-const FRONTEND_URL = process.env.FRONTEND_URL;
+const FRONTEND_URL = "https://gorev-sistemii.onrender.com";
 
 // ===== AUTH MIDDLEWARE =====
 function auth(req, res, next) {
