@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Ana Sayfa</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="center">
+  <h1>Hoş Geldin 👋</h1>
+
+  <!-- Öğrenci Girişi -->
+  <button onclick="location.href='giris.html?role=student'">
+    Görevlerim (Çocuk)
+  </button>
+
+  <!-- Veli Girişi -->
+  <button onclick="location.href='giris.html?role=parent'">
+    Veli Girişi
+  </button>
+</div>
+
+<script>
+  // Backend URL'i tüm cihazlarda kullanabilmek için localStorage'e koy
+  if (!localStorage.getItem("API_URL")) {
+      localStorage.setItem("API_URL", "http://localhost:3000"); // production'da FRONTEND_URL kullan
+  }
+
+  // Eğer kullanıcı zaten giriş yapmışsa, role'üne göre otomatik yönlendirme
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+
+  if (token && role) {
+    if (role === 'student') {
+      window.location.href = 'dashboard.html'; // öğrenci dashboard
+    } else if (role === 'parent') {
+      window.location.href = 'veli-dashboard.html'; // veli dashboard
+    }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Giriş Yap</title>
+<link rel="stylesheet" href="style.css">
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const role = params.get("role");
+
+if (!role) {
+    alert("Rol seçilemedi! Lütfen ana sayfadan giriş yapın.");
+    window.location.href = "index.html";
+}
+
+localStorage.setItem("loginRole", role);
+</script>
+
+<script src="script.js" defer></script>
+</head>
+<body>
+
+<div class="center">
+  <div class="card">
+    <h2>Giriş Yap</h2>
+
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Şifre">
+
+    <button onclick="login()">Giriş Yap</button>
+
+    <hr>
+
+    <p>Hesabın yok mu?</p>
+    <button onclick="goRegister()">Kayıt Ol</button>
+  </div>
+</div>
+
+<script>
+function goRegister() {
+    const role = localStorage.getItem("loginRole");
+    window.location.href = `kayit.html?role=${role}`;
+}
+</script>
+
+</body>
+</html>

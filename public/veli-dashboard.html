@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Veli Dashboard</title>
+<link rel="stylesheet" href="style.css">
+<script src="script.js" defer></script>
+</head>
+<body onload="loadMyAssignedTasks()">
+
+<script>
+const role = localStorage.getItem("role");
+const userId = localStorage.getItem("userId");
+if (!userId || role !== "parent") {
+  window.location.href = "index.html";
+}
+</script>
+
+<h2>Veli Dashboard</h2>
+
+<h3>📝 Öğrenciye Görev Ata</h3>
+<input type="text" id="taskTitle" placeholder="Görev başlığı">
+<input type="email" id="assignedToEmail" placeholder="Öğrenci maili">
+<button onclick="addTask()">Görev Ekle</button>
+
+<hr>
+
+<h3>👥 Öğrenci Davet Et</h3>
+<input type="email" id="inviteEmail" placeholder="Öğrenci emaili">
+<button onclick="inviteStudent()">Davet Et</button>
+<p id="inviteMessage"></p>
+
+<hr>
+
+<h3>📝 Atadığınız Görevler</h3>
+<ul id="assignedTaskList"></ul>
+
+<button onclick="logout()">Çıkış Yap</button>
+
+</body>
+</html>
