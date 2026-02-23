@@ -1,5 +1,8 @@
 // Backend URL'i tüm cihazlarda kullanabilmek için localStorage'den al
-const API_URL = localStorage.getItem("API_URL") || "http://localhost:3000";
+const API_URL =
+  window.location.hostname.includes("onrender.com")
+    ? window.location.origin
+    : "http://localhost:3000";
 
 // -------------------- SEND CODE --------------------
 function sendCode() {
