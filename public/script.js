@@ -249,7 +249,7 @@ function deleteTask(taskId) {
         console.error("Görev silinemedi:", err);
         alert("Görev silinemedi");
     });
-}
+} 
 
 // -------------------- VELİ ÖĞRENCİ DAVET ET --------------------
 // -------------------- VELİ ÖĞRENCİ DAVET ET --------------------
@@ -288,3 +288,34 @@ async function inviteStudent() {
         messageEl.textContent = "Davet gönderilemedi!";
     }
 } 
+// -------------------- KAYIT SAYFASI INIT --------------------
+document.addEventListener("DOMContentLoaded", () => {
+
+    const emailInput = document.getElementById("email");
+    if (!emailInput) return; // sadece kayit sayfasında çalışsın
+
+    const params = new URLSearchParams(window.location.search);
+    const inviteToken = params.get("invite");
+
+    if (inviteToken) {
+        fetch(`${API_URL}/check-invite?token=${inviteToken}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.valid) {
+                    alert("Davet linki geçersiz veya süresi dolmuş!");
+                    window.location.href = "index.html";
+                } else {
+                    emailInput.value = data.email;
+                    emailInput.readOnly = true;
+                    localStorage.setItem("registerRole", "student");
+                }
+            })
+            .catch(() => {
+                alert("Sunucu hatası.");
+                window.location.href = "index.html";
+            });
+    } else {
+        emailInput.readOnly = false;
+        localStorage.setItem("registerRole", "student");
+    }
+});

@@ -93,7 +93,7 @@ app.post("/set-password", async (req, res) => {
             `UPDATE users SET password = $1, role = $2 WHERE email = $3 AND verified = true`,
             [password, role, email]
         );
-        await db.query("UPDATE invites SET used=true WHERE email=$1", [email]); // Daveti kullanıldı yap
+        await db.query("UPDATE invite SET used=true WHERE email=$1", [email]);
         res.json({ message: "Şifre kaydedildi" });
     } catch {
         res.status(500).json({ message: "Sunucu hatası" });

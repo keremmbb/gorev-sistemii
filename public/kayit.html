@@ -2,49 +2,30 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kayıt Ol</title>
+
+<link rel="stylesheet" href="style.css">
 <script src="script.js" defer></script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    const inviteToken = params.get("invite");
 
-    // Backend URL'i .env veya server.js'den al
-    const API_URL = localStorage.getItem("API_URL") || "http://localhost:3000";
-
-    if (inviteToken) {
-        fetch(`${API_URL}/check-invite?token=${inviteToken}`)
-            .then(res => res.json())
-            .then(data => {
-                if (!data.valid) {
-                    alert("Davet linki geçersiz veya süresi dolmuş!");
-                    window.location.href = "index.html";
-                } else {
-                    document.getElementById("email").value = data.email;
-                    localStorage.setItem("registerRole", "student");
-                }
-            })
-            .catch(() => {
-                alert("Sunucu hatası. Lütfen daha sonra deneyin.");
-                window.location.href = "index.html";
-            });
-    } else {
-        localStorage.setItem("registerRole", "student");
-    }
-});
-</script>
 </head>
-<body>
+
+<body class="center">
+    <h1>TEST 123</h1>
+
+<div class="card">
 <h2>Kayıt Ol</h2>
 <p>Kayıt Türü: <b id="roleText">Öğrenci</b></p>
 
-<input type="email" id="email" placeholder="Email" readonly><br><br>
-<input type="password" id="password" placeholder="Şifre"><br><br>
+<input type="text" value="test">
+<input type="email" id="email" placeholder="Email">
+<input type="password" id="password" placeholder="Şifre">
 
-<button onclick="sendCode()">Doğrulama Kodunu Gönder</button><br><br>
+<button onclick="sendCode()">Doğrulama Kodunu Gönder</button>
 
-<input type="text" id="code" placeholder="Mail kodu"><br><br>
+<input type="text" id="code" placeholder="Mail kodu">
 <button onclick="verify()">Kodu Doğrula ve Kaydı Tamamla</button>
+</div>
 
 </body>
 </html>
