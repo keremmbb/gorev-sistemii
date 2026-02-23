@@ -1,5 +1,5 @@
 // Backend URL'i tüm cihazlarda kullanabilmek için localStorage'den al
-const API_URL = "https://gorev-sistemii.onrender.com";
+const API_URL = window.location.origin;
 
 // -------------------- SEND CODE --------------------
 function sendCode() {
