@@ -68,16 +68,25 @@ function login() {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.message === "Giriş başarılı") {
-            localStorage.setItem("userId", data.userId);
-            localStorage.setItem("role", data.role);
-            localStorage.setItem("token", data.token);
-            localStorage.removeItem("loginRole");
 
-            if (data.role === "parent") window.location.href = "veli-dashboard.html";
-            else window.location.href = "dashboard.html";
-        } else alert(data.message);
-    });
+    alert("Sunucudan gelen cevap: " + JSON.stringify(data));
+
+    if (data.token) {
+
+        localStorage.setItem("userId", data.userId);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("token", data.token);
+
+        if (data.role === "parent") {
+            window.location.href = "veli-dashboard.html";
+        } else {
+            window.location.href = "dashboard.html";
+        }
+
+    } else {
+        alert("Login başarısız");
+    }
+});
 }
 
 // -------------------- LOGOUT --------------------
