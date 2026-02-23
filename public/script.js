@@ -1,5 +1,8 @@
 // Backend URL'i tüm cihazlarda kullanabilmek için localStorage'den al
-const API_URL = localStorage.getItem("API_URL") || "http://localhost:3000";
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://gorev-sistemii.onrender.com";
 
 // -------------------- SEND CODE --------------------
 function sendCode() {
@@ -68,25 +71,16 @@ function login() {
     })
     .then(res => res.json())
     .then(data => {
+        if (data.message === "Giriş başarılı") {
+            localStorage.setItem("userId", data.userId);
+            localStorage.setItem("role", data.role);
+            localStorage.setItem("token", data.token);
+            localStorage.removeItem("loginRole");
 
-    alert("Sunucudan gelen cevap: " + JSON.stringify(data));
-
-    if (data.token) {
-
-        localStorage.setItem("userId", data.userId);
-        localStorage.setItem("role", data.role);
-        localStorage.setItem("token", data.token);
-
-        if (data.role === "parent") {
-            window.location.href = "veli-dashboard.html";
-        } else {
-            window.location.href = "dashboard.html";
-        }
-
-    } else {
-        alert("Login başarısız");
-    }
-});
+            if (data.role === "parent") window.location.href = "veli-dashboard.html";
+            else window.location.href = "dashboard.html";
+        } else alert(data.message);
+    });
 }
 
 // -------------------- LOGOUT --------------------
