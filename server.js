@@ -270,9 +270,10 @@ app.post("/invite", auth, async (req, res) => {
         const token = crypto.randomBytes(32).toString("hex");
 
         await db.query(
-                "INSERT INTO invite (email, token, used) VALUES ($1, $2, false)",
-                 [email, token]
-);
+            "INSERT INTO invite (email, token) VALUES ($1, $2)",
+            [email, token]
+        );
+
         const inviteLink = `${process.env.FRONTEND_URL}/kayit.html?invite=${token}`;
 
         console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
