@@ -1,8 +1,8 @@
-// Backend URL'i tüm cihazlarda kullanabilmek için localStorage'den al
-if (!localStorage.getItem("API_URL") && window.location.hostname !== "localhost") {
-    localStorage.setItem("API_URL", window.location.origin);
-}
-const API_URL = localStorage.getItem("API_URL") || "http://localhost:3000";
+// Backend URL'i otomatik belirle (Render + Local uyumlu)
+const API_URL =
+    window.location.hostname === "localhost"
+        ? "http://localhost:3000"
+        : window.location.origin;
 
 
 // -------------------- SEND CODE --------------------
@@ -253,13 +253,12 @@ function deleteTask(taskId) {
         console.error("Görev silinemedi:", err);
         alert("Görev silinemedi");
     });
-} 
+}
 
-// -------------------- VELİ ÖĞRENCİ DAVET ET --------------------
 // -------------------- VELİ ÖĞRENCİ DAVET ET --------------------
 async function inviteStudent() {
     const email = document.getElementById("inviteEmail").value.trim();
-    const token = localStorage.getItem("token"); // veli login olduktan sonra token burada olmalı
+    const token = localStorage.getItem("token");
     const messageEl = document.getElementById("inviteMessage");
 
     if (!email) {
@@ -280,23 +279,21 @@ async function inviteStudent() {
         const data = await res.json();
 
         if (res.ok) {
-            messageEl.textContent = `Davet başarıyla gönderildi! Link: ${data.link}`;
-            console.log("Davet linki:", data.link);
+            messageEl.textContent = `Davet başarıyla gönderildi!`;
         } else {
             messageEl.textContent = data.message || "Davet gönderilemedi!";
-            console.error("INVITE ERROR:", data);
         }
 
     } catch (err) {
-        console.error("Fetch hatası:", err);
         messageEl.textContent = "Davet gönderilemedi!";
     }
-} 
+}
+
 // -------------------- KAYIT SAYFASI INIT --------------------
 document.addEventListener("DOMContentLoaded", () => {
 
     const emailInput = document.getElementById("email");
-    if (!emailInput) return; // sadece kayit sayfasında çalışsın
+    if (!emailInput) return;
 
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
