@@ -1,8 +1,8 @@
 // Backend URL'i tüm cihazlarda kullanabilmek için localStorage'den al
-const API_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:3000"
-    : window.location.origin;
+if (!localStorage.getItem("API_URL") && window.location.hostname !== "localhost") {
+    localStorage.setItem("API_URL", window.location.origin);
+}
+const API_URL = localStorage.getItem("API_URL") || "http://localhost:3000";
 
 
 // -------------------- SEND CODE --------------------
