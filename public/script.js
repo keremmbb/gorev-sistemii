@@ -1,30 +1,7 @@
 // Backend URL'i tüm cihazlarda kullanabilmek için localStorage'den al
 const API_URL = localStorage.getItem("API_URL") || "http://localhost:3000";
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const params = new URLSearchParams(window.location.search);
-  const inviteToken = params.get("invite");
 
-  if (inviteToken) {
-    try {
-      const response = await fetch(`/check-invite?token=${inviteToken}`);
-      const data = await response.json();
-
-      if (!data.valid) {
-        alert("Geçersiz veya kullanılmış davet linki");
-        window.location.href = "/login.html";
-        return;
-      }
-
-      // Email'i otomatik doldur
-      document.getElementById("email").value = data.email;
-
-    } catch (err) {
-      alert("Sunucu hatası");
-      window.location.href = "/login.html";
-    }
-  }
-});
 // -------------------- SEND CODE --------------------
 function sendCode() {
     const email = document.getElementById("email").value.trim();
