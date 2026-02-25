@@ -215,7 +215,11 @@ app.post("/update-task-status", auth, async (req, res) => {
 // ===== VELİ ÖĞRENCİ DAVET =====
 app.get("/check-invite", async (req, res) => {
     try {
-        const { token } = req.query;
+        const token = req.query.invite;
+
+        if (!token) {
+            return res.json({ valid: false });
+        }
 
         const result = await db.query(
             "SELECT * FROM invite WHERE token=$1 AND used=false",
