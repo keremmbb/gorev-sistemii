@@ -7,7 +7,13 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: [
+        "https://gorev-sistemii.onrender.com",
+        "http://localhost:3000"
+    ],
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.static("public"));
 
