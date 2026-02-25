@@ -12,8 +12,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // ===== FRONTEND URL =====
-const FRONTEND_URL =
-  process.env.FRONTEND_URL || "https://gorev-sistemii.onrender.com";
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // ===== AUTH MIDDLEWARE =====
 function auth(req, res, next) {
@@ -247,10 +246,9 @@ app.post("/invite", auth, async (req, res) => {
         return res.status(400).json({ message: "Email boş" });
 
     try {
-        if (!process.env.FRONTEND_URL) {
-            console.error("FRONTEND_URL TANIMSIZ!");
-            return res.status(500).json({ message: "FRONTEND_URL tanımlı değil!" });
-        }
+
+        // BURAYA KENDİ FRONTEND ADRESİNİ YAZ
+        const FRONTEND_URL = "https://gorev-sistemii.onrender.com";
 
         // Öğrenci kontrol
         const userCheck = await db.query(
@@ -277,31 +275,16 @@ app.post("/invite", auth, async (req, res) => {
 
         const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
 
-        console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-        console.log("Invite Link:", inviteLink);
-
         await transporter.sendMail({
             from: `"Görev Sistemi" <${process.env.MAIL_USER}>`,
             to: email,
             subject: "Görev Sistemine Davet Edildiniz",
             html: `
-                <div style="font-family:Arial">
-                    <h2>Görev Sistemine Davet</h2>
-                    <p>Sizi görev sistemimize davet ettik.</p>
-                    <a href="${inviteLink}" 
-                       style="display:inline-block;
-                              padding:10px 20px;
-                              background:#4CAF50;
-                              color:white;
-                              text-decoration:none;
-                              border-radius:5px;">
-                        Kayıt Ol
-                    </a>
-                    <p style="margin-top:15px;font-size:12px;color:gray;">
-                        Eğer buton çalışmazsa bu linki kopyalayın:<br>
-                        ${inviteLink}
-                    </p>
-                </div>
+                <h2>Görev Sistemine Davet</h2>
+                <p>Sizi görev sistemimize davet ettik.</p>
+                <a href="${inviteLink}">Kayıt Ol</a>
+                <p>Link çalışmazsa kopyalayın:</p>
+                <p>${inviteLink}</p>
             `
         });
 
