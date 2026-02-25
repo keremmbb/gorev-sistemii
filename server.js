@@ -7,18 +7,13 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
 const app = express();
-app.use(cors({
-    origin: [
-        "https://gorev-sistemii.onrender.com",
-        "http://localhost:3000"
-    ],
-    credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
 // ===== FRONTEND URL =====
-const FRONTEND_URL = process.env.FRONTEND_URL;
+const FRONTEND_URL =
+  process.env.FRONTEND_URL || "https://gorev-sistemii.onrender.com";
 
 // ===== AUTH MIDDLEWARE =====
 function auth(req, res, next) {
@@ -223,10 +218,6 @@ app.get("/check-invite", async (req, res) => {
     try {
         const token = req.query.invite;
 
-        if (!token) {
-            return res.json({ valid: false });
-        }
-
         const result = await db.query(
             "SELECT * FROM invite WHERE token=$1 AND used=false",
             [token]
@@ -284,7 +275,7 @@ app.post("/invite", auth, async (req, res) => {
             [email, token]
         );
 
-        const inviteLink = `${process.env.FRONTEND_URL}/kayit.html?invite=${token}`;
+        const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
 
         console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
         console.log("Invite Link:", inviteLink);
