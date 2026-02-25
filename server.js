@@ -291,9 +291,16 @@ app.post("/invite", auth, async (req, res) => {
         res.json({ message: "Davet gönderildi!" });
 
     } catch (err) {
-        console.error("INVITE ERROR:", err);
-        res.status(500).json({ message: "Davet gönderilemedi", error: err.message });
-    }
+    console.error("INVITE ERROR FULL:", err);
+    console.error("ERROR MESSAGE:", err?.message);
+    console.error("ERROR STACK:", err?.stack);
+
+    res.status(500).json({ 
+        message: "Davet gönderilemedi",
+        error: err?.message || "Bilinmeyen hata",
+        fullError: err
+    });
+}
 });
 
 
