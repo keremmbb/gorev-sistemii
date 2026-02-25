@@ -299,23 +299,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const inviteToken = params.get("invite");
 
     if (inviteToken) {
-        fetch(`${API_URL}/check-invite?token=${inviteToken}`)
-            .then(res => res.json())
-            .then(data => {
-                if (!data.valid) {
-                    alert("Davet linki geçersiz veya süresi dolmuş!");
-                    window.location.href = "index.html";
-                } else {
-                    emailInput.value = data.email;
-                    emailInput.readOnly = true;
-                    localStorage.setItem("registerRole", "student");
-                }
-            })
-            .catch(() => {
-                alert("Sunucu hatası.");
+    fetch(`${API_URL}/check-invite?invite=${inviteToken}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.valid) {
+                alert("Davet linki geçersiz veya süresi dolmuş!");
                 window.location.href = "index.html";
-            });
-    } else {
+            } else {
+                emailInput.value = data.email;
+                emailInput.readOnly = true;
+                localStorage.setItem("registerRole", "student");
+            }
+        })
+        .catch(() => {
+            alert("Sunucu hatası.");
+            window.location.href = "index.html";
+        });
+} else {
         emailInput.readOnly = false;
         localStorage.setItem("registerRole", "student");
     }
