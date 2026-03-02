@@ -275,19 +275,18 @@ app.post("/invite", auth, async (req, res) => {
 
         const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
 
-       // await transporter.sendMail({
-//     from: `"Görev Sistemi" <${process.env.MAIL_USER}>`,
-//     to: email,
-//     subject: "Görev Sistemine Davet Edildiniz",
-//     html: `
-//         <h2>Görev Sistemine Davet</h2>
-//         <p>Sizi görev sistemimize davet ettik.</p>
-//         <a href="${inviteLink}">Kayıt Ol</a>
-//         <p>Link çalışmazsa kopyalayın:</p>
-//         <p>${inviteLink}</p>
-//     `
-// });
-console.log("MAIL GÖNDERME KAPALI - TEST MOD");
+       await transporter.sendMail({
+            from: `"Görev Sistemi" <${process.env.MAIL_USER}>`,
+            to: email,
+            subject: "Görev Sistemine Davet Edildiniz",
+            html: `
+                <h2>Görev Sistemine Davet</h2>
+                <p>Sizi görev sistemimize davet ettik.</p>
+                <a href="${inviteLink}">Kayıt Ol</a>
+                <p>Link çalışmazsa kopyalayın:</p>
+                <p>${inviteLink}</p>
+            `
+        });
 
         res.json({ message: "Davet gönderildi!" });
 
