@@ -248,7 +248,6 @@ app.post("/invite", auth, async (req, res) => {
     try {
 
         // BURAYA KENDİ FRONTEND ADRESİNİ YAZ
-        const FRONTEND_URL = "https://gorev-sistemii.onrender.com";
 
         // Öğrenci kontrol
         const userCheck = await db.query(
