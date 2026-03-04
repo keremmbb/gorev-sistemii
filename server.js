@@ -114,10 +114,9 @@ app.post("/login", async (req, res) => {
 
         const token = jwt.sign({ id: user.id, email, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
         res.json({ message: "Giriş başarılı", token, userId: user.id, role: user.role });
-    } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    res.status(500).json({ message: err.message });
-}
+    } catch {
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
 });
 
 // ===== VELİ GÖREV EKLE =====
@@ -252,8 +251,6 @@ app.post("/invite", auth, async (req, res) => {
 
     try {
 
-        // BURAYA KENDİ FRONTEND ADRESİNİ YAZ
-        const FRONTEND_URL = "https://gorev-sistemii.onrender.com";
 
         // Öğrenci kontrol"""
         const userCheck = await db.query(
