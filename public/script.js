@@ -274,3 +274,61 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("registerRole", "student");
     }
 });
+// -------------------- DEBUG INVITE TOKEN WORKFLOW --------------------
+async function debugInviteWorkflow(testEmail) {
+    console.log("===== INVITE DEBUG START =====");
+    if (!testEmail) {
+        console.log("Test email girilmedi. Örn: debugInviteWorkflow('test@student.com')");
+        return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+        console.log("Parent login token bulunamadı. Önce login ol!");
+        return;
+    }
+
+    try {
+        // 1️⃣ Invite gönder
+        console.log("1️⃣ Invite gönderiliyor...");
+        const inviteRes = await fetch("/invite", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ email: testEmail })
+        });
+        const inviteData = await inviteRes.json();
+        console.log("Invite gönderme cevabı:", inviteData);
+
+        if (!inviteRes.ok) return console.log("Invite gönderilemedi, debug durduruldu.");
+
+        // 2️⃣ DB'den token doğrulama
+        console.log("2️⃣ Token DB'den kontrol ediliyor...");
+        // Normalde mailde gönderilen link kullanılır ama biz direkt DB tokeni alıyoruz
+        const params = new URLSearchParams(window.location.search);
+        const tokenFromDB = inviteData?.token || null;
+
+        // Eğer inviteData içinde token dönmüyorsa, direkt DB’den token çekmek gerekir
+        // Bu kısmı backend log ile test edebilirsin
+
+        // 3️⃣ /check-invite endpoint test
+        const checkRes = await fetch(`/check-invite?invite=${tokenFromDB || ''}`);
+        const checkData = await checkRes.json();
+        console.log("/check-invite cevabı:", checkData);
+
+        if (!checkData.valid) {
+            console.log("Token geçersiz veya DB’de yok!");
+        } else {
+            console.log("Token geçerli, email:", checkData.email);
+        }
+
+        console.log("===== INVITE DEBUG END =====");
+
+    } catch (err) {
+        console.error("DEBUG HATASI:", err);
+    }
+}
+
+// Örn kullanım: debugInviteWorkflow("ogrenci@test.com");
