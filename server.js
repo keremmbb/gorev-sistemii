@@ -114,9 +114,10 @@ app.post("/login", async (req, res) => {
 
         const token = jwt.sign({ id: user.id, email, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
         res.json({ message: "Giriş başarılı", token, userId: user.id, role: user.role });
-    } catch {
-        res.status(500).json({ message: "Sunucu hatası" });
-    }
+    } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    res.status(500).json({ message: err.message });
+}
 });
 
 // ===== VELİ GÖREV EKLE =====
@@ -217,6 +218,10 @@ app.get("/check-invite", async (req, res) => {
     try {
         const token = req.query.invite;
 
+        if (!token) {
+            return res.json({ valid: false });
+        }
+
         const result = await db.query(
             "SELECT * FROM invite WHERE token=$1 AND used=false",
             [token]
@@ -232,7 +237,7 @@ app.get("/check-invite", async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("CHECK INVITE ERROR:", err);
         res.status(500).json({ valid: false });
     }
 });
@@ -250,7 +255,7 @@ app.post("/invite", auth, async (req, res) => {
         // BURAYA KENDİ FRONTEND ADRESİNİ YAZ
         const FRONTEND_URL = "https://gorev-sistemii.onrender.com";
 
-        // Öğrenci kontrol
+        // Öğrenci kontrol"""
         const userCheck = await db.query(
             "SELECT id FROM users WHERE email=$1 AND role='student'",
             [email]
