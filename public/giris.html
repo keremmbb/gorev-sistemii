@@ -1,34 +1,37 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>Giriş Yap</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Giriş Yap</title>
+    <link rel="stylesheet" href="style.css">
 
-<script>
-const params = new URLSearchParams(window.location.search);
-const role = params.get("role");
+    <script>
+        // Sayfa yüklenir yüklenmez rolü kontrol et ve kaydet
+        const params = new URLSearchParams(window.location.search);
+        const role = params.get("role");
 
-if (!role) {
-    alert("Rol seçilemedi! Lütfen ana sayfadan giriş yapın.");
-    window.location.href = "index.html";
-}
+        if (role) {
+            // Eğer URL'de role varsa (veli, ogrenci vb.) bunu kaydet
+            localStorage.setItem("loginRole", role);
+        } else if (!localStorage.getItem("loginRole")) {
+            // Eğer URL'de yoksa ve daha önce de kaydedilmemişse ana sayfaya at
+            alert("Rol seçilemedi! Lütfen ana sayfadan giriş yapın.");
+            window.location.href = "index.html";
+        }
+    </script>
 
-localStorage.setItem("loginRole", role);
-</script>
-
-<script src="script.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
 
 <div class="center">
   <div class="card">
-    <h2>Giriş Yap</h2>
+    <h2 id="loginTitle">Giriş Yap</h2>
 
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Şifre">
 
-    <button onclick="login()">Giriş Yap</button>
+    <button onclick="ensureRoleAndLogin()">Giriş Yap</button>
 
     <hr>
 
@@ -38,9 +41,36 @@ localStorage.setItem("loginRole", role);
 </div>
 
 <script>
+// Bu fonksiyon, giriş yapmadan önce her şeyin yerinde olduğundan emin olur
+function ensureRoleAndLogin() {
+    const currentRole = localStorage.getItem("loginRole");
+    
+    if (!currentRole) {
+        alert("Giriş yetkisi belirlenemedi!");
+        window.location.href = "index.html";
+        return;
+    }
+
+    // script.js içindeki asıl login fonksiyonunu çağırır
+    if (typeof login === "function") {
+        login(); 
+    } else {
+        console.error("script.js yüklenemedi veya login fonksiyonu bulunamadı!");
+    }
+}
+
 function goRegister() {
     const role = localStorage.getItem("loginRole");
     window.location.href = `kayit.html?role=${role}`;
+}
+
+// Görsel bir dokunuş: Başlığı role göre güncelle (Veli Girişi vb.)
+window.onload = function() {
+    const role = localStorage.getItem("loginRole");
+    if(role) {
+        const title = document.getElementById("loginTitle");
+        title.innerText = role.charAt(0).toUpperCase() + role.slice(1) + " Girişi";
+    }
 }
 </script>
 
