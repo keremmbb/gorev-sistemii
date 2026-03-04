@@ -245,33 +245,41 @@ async function inviteStudent() {
 
 // -------------------- KAYIT SAYFASI INIT --------------------
 document.addEventListener("DOMContentLoaded", () => {
-
     const emailInput = document.getElementById("email");
+    const roleText = document.getElementById("roleText");
     if (!emailInput) return;
 
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
+    const urlRole = params.get("role"); // giris.html'den gelen rol
 
     if (inviteToken) {
+        // Davetle gelmişse kesin öğrencidir
         fetch(`/check-invite?invite=${inviteToken}`)
             .then(res => res.json())
             .then(data => {
                 if (!data.valid) {
-                    alert("Davet linki geçersiz veya süresi dolmuş!");
+                    alert("Davet linki geçersiz!");
                     window.location.href = "index.html";
                 } else {
                     emailInput.value = data.email;
                     emailInput.readOnly = true;
                     localStorage.setItem("registerRole", "student");
+                    if(roleText) roleText.innerText = "Öğrenci (Davetli)";
                 }
-            })
-            .catch(() => {
-                alert("Sunucu hatası.");
-                window.location.href = "index.html";
             });
+    } else if (urlRole) {
+        // giris.html'den "Kayıt Ol" diyerek gelmişse (Veli veya Öğrenci)
+        localStorage.setItem("registerRole", urlRole);
+        if(roleText) roleText.innerText = urlRole === "parent" ? "Veli" : "Öğrenci";
     } else {
+        // Hiçbir parametre yoksa varsayılan öğrenci
         emailInput.readOnly = false;
-        localStorage.setItem("registerRole", "student");
+        if(!localStorage.getItem("registerRole")) {
+            localStorage.setItem("registerRole", "student");
+        }
+        const currentRole = localStorage.getItem("registerRole");
+        if(roleText) roleText.innerText = currentRole === "parent" ? "Veli" : "Öğrenci";
     }
 });
 // -------------------- DEBUG INVITE TOKEN WORKFLOW --------------------
@@ -330,5 +338,9 @@ async function debugInviteWorkflow(testEmail) {
         console.error("DEBUG HATASI:", err);
     }
 }
-
+function registerStart() {
+    const role = localStorage.getItem("registerRole") || "student";
+    localStorage.setItem("registerRole", role); // Son kez sağlama al
+    sendCode(); // Mevcut sendCode fonksiyonunu çağırır
+}
 // Örn kullanım: debugInviteWorkflow("ogrenci@test.com");
