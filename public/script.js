@@ -1,13 +1,9 @@
-// Backend URL'i tüm cihazlarda kullanabilmek için localStorage'den al
-const API_URL = localStorage.getItem("API_URL") || "http://localhost:3000";
-
-
 // -------------------- SEND CODE --------------------
 function sendCode() {
     const email = document.getElementById("email").value.trim();
     if (!email) return alert("Email boş olamaz!");
 
-    fetch(`${API_URL}/send-code`, {
+    fetch("/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })
@@ -23,7 +19,7 @@ function verify() {
     const code = document.getElementById("code").value.trim();
     if (!code) return alert("Kod boş olamaz!");
 
-    fetch(`${API_URL}/verify-code`, {
+    fetch("/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code })
@@ -43,7 +39,7 @@ function setPassword() {
     const role = localStorage.getItem("registerRole");
     if (!password) return alert("Şifre boş olamaz!");
 
-    fetch(`${API_URL}/set-password`, {
+    fetch("/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, role })
@@ -62,7 +58,7 @@ function login() {
     const password = document.getElementById("password").value.trim();
     const role = localStorage.getItem("loginRole");
 
-    fetch(`${API_URL}/login`, {
+    fetch("/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, role })
@@ -92,7 +88,7 @@ function loadMyTasks() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
-    fetch(`${API_URL}/my-tasks/${userId}`, {
+    fetch(`/my-tasks/${userId}`, {
         headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
     })
     .then(res => res.json())
@@ -124,8 +120,7 @@ function loadMyTasks() {
             list.appendChild(li);
         });
     })
-    .catch(err => {
-        console.error("Görevler yüklenemedi:", err);
+    .catch(() => {
         const list = document.getElementById("taskList");
         list.innerHTML = "<li>Görevler yüklenemedi. Sayfayı yenileyin.</li>";
     });
@@ -135,7 +130,7 @@ function loadMyTasks() {
 function updateStatus(taskId) {
     const status = document.getElementById(`status-${taskId}`).value;
 
-    fetch(`${API_URL}/update-task-status`, {
+    fetch("/update-task-status", {
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
@@ -144,8 +139,7 @@ function updateStatus(taskId) {
         body: JSON.stringify({ taskId, status })
     })
     .then(res => res.json())
-    .then(data => console.log(data.message))
-    .catch(err => console.error("Görev durumu güncellenemedi:", err));
+    .then(data => console.log(data.message));
 }
 
 // -------------------- VELİ GÖREVLERİ --------------------
@@ -153,7 +147,7 @@ function loadMyAssignedTasks() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
-    fetch(`${API_URL}/my-assigned-tasks/${userId}`, {
+    fetch(`/my-assigned-tasks/${userId}`, {
         headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
     })
     .then(res => res.json())
@@ -178,11 +172,6 @@ function loadMyAssignedTasks() {
             `;
             list.appendChild(li);
         });
-    })
-    .catch(err => {
-        console.error("Görevler yüklenemedi:", err);
-        const list = document.getElementById("assignedTaskList");
-        list.innerHTML = "<li>Görevler yüklenemedi. Lütfen sayfayı yenileyin.</li>";
     });
 }
 
@@ -197,14 +186,14 @@ function addTask() {
         return;
     }
 
-    fetch(`${API_URL}/get-user-id?email=${assignedToEmail}`, {
+    fetch(`/get-user-id?email=${assignedToEmail}`, {
         headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
     })
     .then(res => res.json())
     .then(data => {
         if (!data.userId) return alert("Öğrenci bulunamadı!");
 
-        fetch(`${API_URL}/add-task`, {
+        fetch("/add-task", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -216,47 +205,14 @@ function addTask() {
         .then(data => {
             alert(data.message);
             loadMyAssignedTasks();
-        })
-        .catch(err => {
-            console.error("Görev ekleme hatası:", err);
-            alert("Görev eklenemedi!");
         });
-    })
-    .catch(err => {
-        console.error("Kullanıcı ID alma hatası:", err);
-        alert("Öğrenci bulunamadı!");
     });
 }
 
-// -------------------- VELİ GÖREV SİL --------------------
-function deleteTask(taskId) {
-    const userId = localStorage.getItem("userId");
-    if (!confirm("Bu görevi silmek istediğine emin misin?")) return;
-
-    fetch(`${API_URL}/delete-task/${taskId}`, {
-        method: "DELETE",
-        headers: { 
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + localStorage.getItem("token")
-        },
-        body: JSON.stringify({ userId })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message);
-        loadMyAssignedTasks();
-    })
-    .catch(err => {
-        console.error("Görev silinemedi:", err);
-        alert("Görev silinemedi");
-    });
-} 
-
-// -------------------- VELİ ÖĞRENCİ DAVET ET --------------------
 // -------------------- VELİ ÖĞRENCİ DAVET ET --------------------
 async function inviteStudent() {
     const email = document.getElementById("inviteEmail").value.trim();
-    const token = localStorage.getItem("token"); // veli login olduktan sonra token burada olmalı
+    const token = localStorage.getItem("token");
     const messageEl = document.getElementById("inviteMessage");
 
     if (!email) {
@@ -265,7 +221,7 @@ async function inviteStudent() {
     }
 
     try {
-        const res = await fetch(`${API_URL}/invite`, {
+        const res = await fetch("/invite", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -277,29 +233,27 @@ async function inviteStudent() {
         const data = await res.json();
 
         if (res.ok) {
-            messageEl.textContent = `Davet başarıyla gönderildi! Link: ${data.link}`;
-            console.log("Davet linki:", data.link);
+            messageEl.textContent = "Davet başarıyla gönderildi!";
         } else {
             messageEl.textContent = data.message || "Davet gönderilemedi!";
-            console.error("INVITE ERROR:", data);
         }
 
-    } catch (err) {
-        console.error("Fetch hatası:", err);
+    } catch {
         messageEl.textContent = "Davet gönderilemedi!";
     }
-} 
+}
+
 // -------------------- KAYIT SAYFASI INIT --------------------
 document.addEventListener("DOMContentLoaded", () => {
 
     const emailInput = document.getElementById("email");
-    if (!emailInput) return; // sadece kayit sayfasında çalışsın
+    if (!emailInput) return;
 
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
 
     if (inviteToken) {
-        fetch(`${API_URL}/check-invite?invite=${inviteToken}`)
+        fetch(`/check-invite?invite=${inviteToken}`)
             .then(res => res.json())
             .then(data => {
                 if (!data.valid) {
