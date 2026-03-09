@@ -1,13 +1,14 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
-// Render'da DATABASE_URL (URL formunda), yerelde parçalı bilgiler kullanılır.
+// Render'da DATABASE_URL kullanılır, yerelde ise parçalı bilgiler.
 const dbConfig = process.env.DATABASE_URL 
   ? {
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }, // Render PostgreSQL için zorunludur
-      connectionTimeoutMillis: 15000,     // 15 saniye bekler, sonra hata verir
-      max: 5                              // Aynı anda çok fazla bağlantı açılmasını engeller
+      connectionTimeoutMillis: 30000,    // 30 saniye bekler (Timeout hatasını önlemek için)
+      idleTimeoutMillis: 30000,          // Boşta kalan bağlantıları 30 saniyede kapatır
+      max: 2                             // Ücretsiz planda bağlantı darboğazını önlemek için düşük tuttuk
     }
   : {
       user: process.env.DB_USER,
@@ -20,7 +21,12 @@ const dbConfig = process.env.DATABASE_URL
 
 const db = new Pool(dbConfig);
 
-db.on("connect", () => console.log("VERİTABANI BAĞLANDI ✅"));
-db.on("error", (err) => console.error("DB HATASI ❌", err));
+db.on("connect", () => {
+  console.log("VERİTABANI BAĞLANDI ✅");
+});
+
+db.on("error", (err) => {
+  console.error("DB HATASI ❌", err);
+});
 
 module.exports = db;
