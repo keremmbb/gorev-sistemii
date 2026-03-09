@@ -44,20 +44,22 @@ app.get("/", (req, res) => res.send("Backend çalışıyor 👍"));
 
 // ===== SEND CODE =====
 // ===== SEND CODE =====
+// ===== SEND CODE =====
 app.post("/send-code", async (req, res) => {
-    console.log("İstek alındı! Gelen veri:", req.body);
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email boş" });
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     try {
+        // password ve role alanlarına açıkça NULL gönderiyoruz
         await db.query(
-    `INSERT INTO users (email, code, verified, password, role)
-     VALUES ($1, $2, false, NULL, NULL)
-     ON CONFLICT (email)
-     DO UPDATE SET code = $2, verified = false`,
-    [email, code]
-);
+            `INSERT INTO users (email, code, verified, password, role)
+             VALUES ($1, $2, false, NULL, NULL)
+             ON CONFLICT (email)
+             DO UPDATE SET code = $2, verified = false`,
+            [email, code]
+        );
+
         await transporter.sendMail({
             from: `"Doğrulama" <${process.env.MAIL_USER}>`,
             to: email,
@@ -67,8 +69,7 @@ app.post("/send-code", async (req, res) => {
 
         res.json({ message: "Kod mail ile gönderildi" });
     } catch (error) {
-        // HATA YAKALAMA BURADA
-        console.error("SEND-CODE HATA DETAYI:", error); 
+        console.error("SEND-CODE HATA DETAYI:", error);
         res.status(500).json({ 
             message: "Sunucu hatası", 
             errorDetails: error.message 
