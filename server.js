@@ -55,10 +55,12 @@ app.post("/send-code", async (req, res) => {
         // password ve role sütunlarını INSERT kısmından sildik
         // DİKKAT: Sütun listesinde password ve role yok!
 await db.query(
-    `INSERT INTO users (email, code, verified) 
-     VALUES ($1, $2, false) 
-     ON CONFLICT (email) 
-     DO UPDATE SET code = $2, verified = false`,
+    `INSERT INTO users (email, code, verified, password, role)
+     VALUES ($1, $2, false, '', 'pending')
+     ON CONFLICT (email)
+     DO UPDATE SET 
+        code = $2, 
+        verified = false`,
     [email, code]
 );
         await transporter.sendMail({
