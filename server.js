@@ -53,12 +53,14 @@ app.post("/send-code", async (req, res) => {
     try {
         // password ve role alanlarına açıkça NULL gönderiyoruz
         await db.query(
-            `INSERT INTO users (email, code, verified, password, role)
-             VALUES ($1, $2, false, NULL, NULL)
-             ON CONFLICT (email)
-             DO UPDATE SET code = $2, verified = false`,
-            [email, code]
-        );
+    `INSERT INTO users (email, code, verified, password, role)
+     VALUES ($1, $2, false, '', 'pending')
+     ON CONFLICT (email)
+     DO UPDATE SET 
+        code = $2, 
+        verified = false`,
+    [email, code]
+);
 
         await transporter.sendMail({
             from: `"Doğrulama" <${process.env.MAIL_USER}>`,
