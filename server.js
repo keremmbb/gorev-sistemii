@@ -52,13 +52,12 @@ app.post("/send-code", async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     try {
         await db.query(
-            `INSERT INTO users (email, code, verified)
-             VALUES ($1, $2, false)
-             ON CONFLICT (email)
-             DO UPDATE SET code = $2, verified = false`,
-            [email, code]
-        );
-
+    `INSERT INTO users (email, code, verified, password, role)
+     VALUES ($1, $2, false, NULL, NULL)
+     ON CONFLICT (email)
+     DO UPDATE SET code = $2, verified = false`,
+    [email, code]
+);
         await transporter.sendMail({
             from: `"Doğrulama" <${process.env.MAIL_USER}>`,
             to: email,
