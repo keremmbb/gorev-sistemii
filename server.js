@@ -53,8 +53,7 @@ app.post("/send-code", async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     try {
-        // password için '' (boş tırnak), role için 'pending' gönderiyoruz
-        // Bu sayede veritabanındaki NOT NULL kısıtlamasına takılmazsın.
+        // 1. Önce Veritabanına Kaydet
         await db.query(
             `INSERT INTO users (email, code, verified, password, role) 
              VALUES ($1, $2, false, '', 'pending') 
@@ -63,10 +62,25 @@ app.post("/send-code", async (req, res) => {
             [email, code]
         );
 
-        res.json({ message: "Kod gönderildi" });
+        console.log(`Veritabanı güncellendi: ${email} için kod ${code}`);
+
+        // 2. Mail Gönder (AWAIT ekledik ve hata kontrolü yapıyoruz)
+        const info = await transporter.sendMail({
+            from: `"Doğrulama" <${process.env.MAIL_USER}>`,
+            to: email,
+            subject: "Doğrulama Kodu",
+            text: `Doğrulama kodunuz: ${code}`
+        });
+
+        console.log("Mail gönderildi: ", info.messageId);
+        res.json({ message: "Kod mail ile gönderildi" });
+
     } catch (error) {
-        console.error("KRİTİK HATA:", error);
-        res.status(500).json({ message: "Sunucu hatası", errorDetails: error.message });
+        console.error("MAIL VEYA DB HATASI:", error);
+        res.status(500).json({ 
+            message: "İşlem başarısız", 
+            error: error.message 
+        });
     }
 });
 
