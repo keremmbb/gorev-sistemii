@@ -30,15 +30,15 @@ function auth(req, res, next) {
 
 // ===== MAIL TRANSPORTER =====
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
+    service: "gmail", // Host yerine direkt service kullanmak daha stabildir
     auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS
+        pass: process.env.MAIL_PASS // Buraya aldığın 16 haneli kodu Render'a yazdığından emin ol
+    },
+    tls: {
+        rejectUnauthorized: false // Bağlantı güvenliğini esnetir, hata payını düşürür
     }
 });
-
 // ===== TEST =====
 app.get("/", (req, res) => res.send("Backend çalışıyor 👍"));
 
@@ -53,35 +53,22 @@ app.post("/send-code", async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     try {
-        // 1. Önce Veritabanına Kaydet
-        await db.query(
-            `INSERT INTO users (email, code, verified, password, role) 
-             VALUES ($1, $2, false, '', 'pending') 
-             ON CONFLICT (email) 
-             DO UPDATE SET code = $2, verified = false`,
-            [email, code]
-        );
+    // ... DB işlemleri bittikten sonra ...
+    console.log("Mail gönderimi başlıyor...");
+    
+    await transporter.sendMail({
+        from: `"Görev Sistemi" <${process.env.MAIL_USER}>`,
+        to: email,
+        subject: "Doğrulama Kodu",
+        text: `Doğrulama kodunuz: ${code}`
+    });
 
-        console.log(`Veritabanı güncellendi: ${email} için kod ${code}`);
-
-        // 2. Mail Gönder (AWAIT ekledik ve hata kontrolü yapıyoruz)
-        const info = await transporter.sendMail({
-            from: `"Doğrulama" <${process.env.MAIL_USER}>`,
-            to: email,
-            subject: "Doğrulama Kodu",
-            text: `Doğrulama kodunuz: ${code}`
-        });
-
-        console.log("Mail gönderildi: ", info.messageId);
-        res.json({ message: "Kod mail ile gönderildi" });
-
-    } catch (error) {
-        console.error("MAIL VEYA DB HATASI:", error);
-        res.status(500).json({ 
-            message: "İşlem başarısız", 
-            error: error.message 
-        });
-    }
+    console.log("Mail başarıyla iletildi ✅");
+    res.json({ message: "Kod gönderildi" });
+} catch (error) {
+    console.error("MAIL HATASI DETAYI:", error);
+    res.status(500).json({ message: "Mail gönderilemedi", detail: error.message });
+}
 });
 
 // ===== VERIFY CODE =====
