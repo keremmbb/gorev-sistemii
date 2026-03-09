@@ -46,16 +46,18 @@ app.get("/", (req, res) => res.send("Backend çalışıyor 👍"));
 // ===== SEND CODE =====
 // ===== SEND CODE =====
 // ===== SEND CODE =====
+// server.js içindeki /send-code kısmını bu tırnak içindeki ('', 'pending') eklenmiş haliyle değiştir:
+
 app.post("/send-code", async (req, res) => {
     const { email } = req.body;
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     try {
-        // password ve role'ü sorgudan tamamen çıkardık
-        // Veritabanı sütunlarında DEFAULT değeri varsa onlar devreye girecektir
+        // password için '' (boş tırnak), role için 'pending' gönderiyoruz
+        // Bu sayede veritabanındaki NOT NULL kısıtlamasına takılmazsın.
         await db.query(
-            `INSERT INTO users (email, code, verified) 
-             VALUES ($1, $2, false) 
+            `INSERT INTO users (email, code, verified, password, role) 
+             VALUES ($1, $2, false, '', 'pending') 
              ON CONFLICT (email) 
              DO UPDATE SET code = $2, verified = false`,
             [email, code]
