@@ -52,15 +52,15 @@ app.post("/send-code", async (req, res) => {
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     try {
-        // password ve role sütunlarını sorgudan tamamen çıkarttık
-        await db.query(
-            `INSERT INTO users (email, code, verified) 
-             VALUES ($1, $2, false) 
-             ON CONFLICT (email) 
-             DO UPDATE SET code = $2, verified = false`, 
-            [email, code]
-        );
-
+        // password ve role sütunlarını INSERT kısmından sildik
+        // DİKKAT: Sütun listesinde password ve role yok!
+await db.query(
+    `INSERT INTO users (email, code, verified) 
+     VALUES ($1, $2, false) 
+     ON CONFLICT (email) 
+     DO UPDATE SET code = $2, verified = false`,
+    [email, code]
+);
         await transporter.sendMail({
             from: `"Doğrulama" <${process.env.MAIL_USER}>`,
             to: email,
@@ -71,7 +71,7 @@ app.post("/send-code", async (req, res) => {
         res.json({ message: "Kod mail ile gönderildi" });
     } catch (error) {
         console.error("KRİTİK HATA:", error);
-        res.status(500).json({ message: "Sunucu hatası", error: error.message });
+        res.status(500).json({ message: "Sunucu hatası", errorDetails: error.message });
     }
 });
 

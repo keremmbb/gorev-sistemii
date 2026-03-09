@@ -28,5 +28,4 @@ db.on("connect", () => {
 db.on("error", (err) => {
   console.error("DB HATASI ❌", err);
 });
-
 module.exports = db;
