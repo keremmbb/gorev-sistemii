@@ -102,19 +102,54 @@ app.post("/set-password", async (req, res) => {
 
 // ===== LOGIN =====
 app.post("/login", async (req, res) => {
-    const { email, password, role } = req.body;
+    // Trim() kullanarak gelen verilerin sonundaki boşlukları temizliyoruz
+    const email = req.body.email ? req.body.email.trim() : "";
+    const password = req.body.password;
+    const role = req.body.role ? req.body.role.trim() : "";
+
     try {
-        const result = await db.query("SELECT id, password, verified, role FROM users WHERE email = $1", [email]);
-        if (!result.rows.length) return res.status(401).json({ message: "Mail veya şifre hatalı" });
+        // ILIKE kullanarak emailin büyük/küçük harf duyarlılığını ortadan kaldırıyoruz
+        const result = await db.query("SELECT id, password, verified, role FROM users WHERE email ILIKE $1", [email]);
+        
+        if (!result.rows.length) {
+            return res.status(401).json({ message: "Mail bulunamadı" });
+        }
 
         const user = result.rows[0];
-        if (!user.verified) return res.status(403).json({ message: "Mail doğrulanmamış" });
-        if (user.password !== password) return res.status(401).json({ message: "Mail veya şifre hatalı" });
-        if (user.role !== role) return res.status(403).json({ message: "Bu sayfaya giriş yetkiniz yok" });
 
-        const token = jwt.sign({ id: user.id, email, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
-        res.json({ message: "Giriş başarılı", token, userId: user.id, role: user.role });
-    } catch {
+        // 1. Şifre Kontrolü (Veritabanında düz metin ise)
+        if (user.password !== password) {
+            return res.status(401).json({ message: "Mail veya şifre hatalı" });
+        }
+
+        // 2. Doğrulama Kontrolü
+        if (!user.verified) {
+            return res.status(403).json({ message: "Mail doğrulanmamış" });
+        }
+
+        // 3. ROL KONTROLÜ (En kritik yer burası)
+        // Hem veritabanındaki hem de gelen rolü küçük harfe çevirip öyle karşılaştırıyoruz
+        if (user.role.toLowerCase() !== role.toLowerCase()) {
+            console.log(`Rol Uyuşmazlığı: Gelen=${role}, DB=${user.role}`); // Debug için terminale yazar
+            return res.status(403).json({ message: `Bu sayfaya giriş yetkiniz yok (Seçilen: ${role}, Mevcut: ${user.role})` });
+        }
+
+        // Token oluşturma
+        const token = jwt.sign(
+            { id: user.id, email, role: user.role }, 
+            process.env.JWT_SECRET || "gizli_anahtar", 
+            { expiresIn: "1d" }
+        );
+
+        res.json({ 
+            message: "Giriş başarılı", 
+            token, 
+            userId: user.id, 
+            role: user.role 
+        });
+
+    } catch (error) {
+        console.error("Login Hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
