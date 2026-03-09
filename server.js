@@ -43,7 +43,9 @@ const transporter = nodemailer.createTransport({
 app.get("/", (req, res) => res.send("Backend çalışıyor 👍"));
 
 // ===== SEND CODE =====
+// ===== SEND CODE =====
 app.post("/send-code", async (req, res) => {
+    console.log("İstek alındı! Gelen veri:", req.body);
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email boş" });
 
@@ -65,8 +67,13 @@ app.post("/send-code", async (req, res) => {
         });
 
         res.json({ message: "Kod mail ile gönderildi" });
-    } catch {
-        res.status(500).json({ message: "Hata oluştu" });
+    } catch (error) {
+        // HATA YAKALAMA BURADA
+        console.error("SEND-CODE HATA DETAYI:", error); 
+        res.status(500).json({ 
+            message: "Sunucu hatası", 
+            errorDetails: error.message 
+        });
     }
 });
 
