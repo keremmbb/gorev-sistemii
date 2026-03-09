@@ -56,7 +56,13 @@ function setPassword() {
 function login() {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
-    const role = localStorage.getItem("loginRole");
+    const role = localStorage.getItem("loginRole"); // Burası "parent" veya "student" olmalı
+
+    if (!role) {
+        return alert("Hata: Giriş rolü belirlenemedi. Lütfen ana sayfadan tekrar seçim yapın.");
+    }
+
+    console.log("Giriş deneniyor: ", { email, role }); // Debug için
 
     fetch("/login", {
         method: "POST",
@@ -69,11 +75,20 @@ function login() {
             localStorage.setItem("userId", data.userId);
             localStorage.setItem("role", data.role);
             localStorage.setItem("token", data.token);
+            
+            // Başarılı girişte geçici rolü siliyoruz
             localStorage.removeItem("loginRole");
 
             if (data.role === "parent") window.location.href = "veli-dashboard.html";
             else window.location.href = "dashboard.html";
-        } else alert(data.message);
+        } else {
+            // Hata mesajını detaylandıralım
+            alert("Hata: " + data.message + " (Seçilen Rol: " + role + ")");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Sunucuya bağlanılamadı.");
     });
 }
 
