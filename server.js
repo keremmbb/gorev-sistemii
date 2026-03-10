@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
+const { Resend } = require('resend');
 const db = require("./db");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
@@ -11,26 +11,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false, // 587 portu için false
-    auth: {
-        user: process.env.MAIL_USER, // Brevo mailin
-        pass: process.env.MAIL_PASS  // Brevo SMTP Key'in
-    }
-});
-// Yardımcı Mail Fonksiyonu
-async function sendMail(to, subject, html) {
-    return await transporter.sendMail({
-        from: process.env.MAIL_USER, // Gönderen olarak Brevo kullanıcı adın
-        to: to,
-        subject: subject,
-        html: html
-    });
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
-// ===== AUTH MIDDLEWARE =====
+// 1. AUTH FONKSİYONU BURADA OLMALI
 function auth(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ message: "Token yok" });
@@ -44,23 +28,39 @@ function auth(req, res, next) {
     }
 }
 
-// ===== TEST =====
-app.get("/", (req, res) => res.send("Backend çalışıyor 👍"));
+// Mail Fonksiyonu
+async function sendMail(to, subject, html) {
+    return await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: to,
+        subject: subject,
+        html: html
+    });
+}
 
-// ===== SEND CODE =====
+// ===== AUTH & ROUTES =====
+// (Diğer tüm rotaların /verify-code, /login vb. aynı kalacak)
+
 app.post("/send-code", async (req, res) => {
     const { email } = req.body;
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     try {
         await db.query(`INSERT INTO users (email, code, verified, password, role) VALUES ($1, $2, false, '', 'pending') ON CONFLICT (email) DO UPDATE SET code = $2, verified = false`, [email, code]);
         
-        await sendMail(email, 'Doğrulama Kodunuz', `<p>Doğrulama kodunuz: <strong>${code}</strong></p>`);
+        // Mail gönderme işlemi
+        const response = await sendMail(email, 'Doğrulama Kodunuz', `<p>Doğrulama kodunuz: <strong>${code}</strong></p>`);
+        console.log("Resend Yanıtı:", response);
+        
         res.json({ message: "Kod gönderildi" });
     } catch (error) { 
-        console.error("MAİL HATASI:", error);
+        console.error("API HATASI:", error);
         res.status(500).json({ message: "Mail gönderilemedi" }); 
     }
 });
+
+// ... diğer rotalar ...
+
+
 
 // ===== VERIFY CODE =====
 app.post("/verify-code", async (req, res) => {
