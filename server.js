@@ -30,45 +30,56 @@ function auth(req, res, next) {
 
 // ===== MAIL TRANSPORTER =====
 const transporter = nodemailer.createTransport({
-    service: "gmail", // Host yerine direkt service kullanmak daha stabildir
+    service: "gmail",
     auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS // Buraya aldığın 16 haneli kodu Render'a yazdığından emin ol
+        pass: process.env.MAIL_PASS 
     },
     tls: {
-        rejectUnauthorized: false // Bağlantı güvenliğini esnetir, hata payını düşürür
+        rejectUnauthorized: false
     }
 });
 // ===== TEST =====
 app.get("/", (req, res) => res.send("Backend çalışıyor 👍"));
 
-// ===== SEND CODE =====
-// ===== SEND CODE =====
-// ===== SEND CODE =====
-// ===== SEND CODE =====
 // server.js içindeki /send-code kısmını bu tırnak içindeki ('', 'pending') eklenmiş haliyle değiştir:
-
 app.post("/send-code", async (req, res) => {
     const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email gerekli" });
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     try {
-    // ... DB işlemleri bittikten sonra ...
-    console.log("Mail gönderimi başlıyor...");
-    
-    await transporter.sendMail({
-        from: `"Görev Sistemi" <${process.env.MAIL_USER}>`,
-        to: email,
-        subject: "Doğrulama Kodu",
-        text: `Doğrulama kodunuz: ${code}`
-    });
+        // 1. ÖNCE VERİTABANINA KAYDET (Bu kısım sende eksikti)
+        await db.query(
+            `INSERT INTO users (email, code, verified, password, role) 
+             VALUES ($1, $2, false, '', 'pending') 
+             ON CONFLICT (email) 
+             DO UPDATE SET code = $2, verified = false`,
+            [email, code]
+        );
+        console.log(`DB Kaydı Başarılı: ${email} -> ${code}`);
 
-    console.log("Mail başarıyla iletildi ✅");
-    res.json({ message: "Kod gönderildi" });
-} catch (error) {
-    console.error("MAIL HATASI DETAYI:", error);
-    res.status(500).json({ message: "Mail gönderilemedi", detail: error.message });
-}
+        // 2. SONRA MAİL GÖNDER
+        console.log("Mail gönderimi başlıyor...");
+        await transporter.sendMail({
+            from: `"Görev Sistemi" <${process.env.MAIL_USER}>`,
+            to: email,
+            subject: "Doğrulama Kodu",
+            text: `Doğrulama kodunuz: ${code}`
+        });
+
+        console.log("Mail başarıyla iletildi ✅");
+        res.json({ message: "Kod gönderildi" });
+
+    } catch (error) {
+        // Hata detayını loglarda net görelim
+        console.error("KRİTİK HATA:", error);
+        res.status(500).json({ 
+            message: "Mail gönderilemedi veya DB hatası", 
+            detail: error.message 
+        });
+    }
 });
 
 // ===== VERIFY CODE =====
