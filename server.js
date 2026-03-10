@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const nodemailer = require("nodemailer"); // Tekrar ekledik
+const nodemailer = require("nodemailer");
 const db = require("./db");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
@@ -11,28 +11,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// Gmail Transporter Kurulumu
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Port 465 için true olmalı
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // 587 portu için false
     auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS
-    },
-    // Bağlantı kopmalarını ve timeout hatalarını engellemek için:
-    pool: true, 
-    maxConnections: 1,
-    rateDelta: 20000, 
-    rateLimit: 5,
-    connectionTimeout: 20000, // 20 saniye bekleme süresi
-    greetingTimeout: 10000
+        user: process.env.MAIL_USER, // Brevo mailin
+        pass: process.env.MAIL_PASS  // Brevo SMTP Key'in
+    }
 });
-
 // Yardımcı Mail Fonksiyonu
 async function sendMail(to, subject, html) {
     return await transporter.sendMail({
-        from: process.env.MAIL_USER,
+        from: process.env.MAIL_USER, // Gönderen olarak Brevo kullanıcı adın
         to: to,
         subject: subject,
         html: html
