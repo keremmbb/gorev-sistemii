@@ -11,18 +11,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// Resend ve Config
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
-// Yardımcı Mail Fonksiyonu (Tüm işlemler artık bunu kullanacak)
+// Sadece Resend kullanan mail fonksiyonu
 async function sendMail(to, subject, html) {
-    return await resend.emails.send({
-        from: 'onboarding@resend.dev',
-        to: to,
-        subject: subject,
-        html: html
-    });
+    try {
+        return await resend.emails.send({
+            from: 'onboarding@resend.dev',
+            to: to,
+            subject: subject,
+            html: html
+        });
+    } catch (err) {
+        console.error("Mail gönderme hatası:", err);
+        throw err;
+    }
 }
 
 // ===== AUTH MIDDLEWARE =====
