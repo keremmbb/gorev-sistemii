@@ -32,14 +32,17 @@ function auth(req, res, next) {
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // 465 için true olmalı
+    secure: true,
+    pool: true, // Bağlantıyı açık tutar, timeout riskini azaltır
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS
     },
     tls: {
         rejectUnauthorized: false
-    }
+    },
+    connectionTimeout: 10000, // 10 saniye bekle
+    greetingTimeout: 5000     // 5 saniye bekle
 });
 // ===== TEST =====
 app.get("/", (req, res) => res.send("Backend çalışıyor 👍"));
