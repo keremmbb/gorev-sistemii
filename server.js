@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { Resend } = require('resend');
+const nodemailer = require("nodemailer"); // Tekrar ekledik
 const db = require("./db");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
@@ -11,22 +11,23 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FRONTEND_URL = process.env.FRONTEND_URL;
-
-// Sadece Resend kullanan mail fonksiyonu
-async function sendMail(to, subject, html) {
-    try {
-        return await resend.emails.send({
-            from: 'onboarding@resend.dev',
-            to: to,
-            subject: subject,
-            html: html
-        });
-    } catch (err) {
-        console.error("Mail gönderme hatası:", err);
-        throw err;
+// Gmail Transporter Kurulumu
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS
     }
+});
+
+// Yardımcı Mail Fonksiyonu
+async function sendMail(to, subject, html) {
+    return await transporter.sendMail({
+        from: process.env.MAIL_USER,
+        to: to,
+        subject: subject,
+        html: html
+    });
 }
 
 // ===== AUTH MIDDLEWARE =====
@@ -52,9 +53,13 @@ app.post("/send-code", async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     try {
         await db.query(`INSERT INTO users (email, code, verified, password, role) VALUES ($1, $2, false, '', 'pending') ON CONFLICT (email) DO UPDATE SET code = $2, verified = false`, [email, code]);
+        
         await sendMail(email, 'Doğrulama Kodunuz', `<p>Doğrulama kodunuz: <strong>${code}</strong></p>`);
         res.json({ message: "Kod gönderildi" });
-    } catch (error) { res.status(500).json({ message: "Mail gönderilemedi" }); }
+    } catch (error) { 
+        console.error("MAİL HATASI:", error);
+        res.status(500).json({ message: "Mail gönderilemedi" }); 
+    }
 });
 
 // ===== VERIFY CODE =====
