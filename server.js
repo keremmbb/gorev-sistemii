@@ -29,12 +29,21 @@ function auth(req, res, next) {
 }
 
 // Mail Fonksiyonu
+// server.js dosyanın en üstünde mail adresini bir değişkene al
+const MY_VERIFIED_EMAIL = 'keremacar3754is@gmail.com'; 
+
 async function sendMail(to, subject, html) {
     return await resend.emails.send({
         from: 'onboarding@resend.dev',
-        to: to,
+        // 'to' kısmını her zaman kendi mailin yapıyoruz.
+        // Kullanıcının yazdığı maili ise konunun içine veya içeriğe ekliyoruz.
+        to: MY_VERIFIED_EMAIL, 
         subject: subject,
-        html: html
+        html: `
+            <p><strong>Kime gönderilmek istendi:</strong> ${to}</p>
+            <hr>
+            ${html}
+        `
     });
 }
 
