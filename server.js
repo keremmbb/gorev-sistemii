@@ -42,15 +42,19 @@ async function sendMail(to, subject, html) {
 // (Diğer tüm rotaların /verify-code, /login vb. aynı kalacak)
 
 app.post("/send-code", async (req, res) => {
-    const { email } = req.body;
+    const { email } = req.body; // Kullanıcının ekrana yazdığı mail
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    
     try {
-        await db.query(`INSERT INTO users (email, code, verified, password, role) VALUES ($1, $2, false, '', 'pending') ON CONFLICT (email) DO UPDATE SET code = $2, verified = false`, [email, code]);
+        // Veritabanına kullanıcının yazdığı maili ve kodu kaydediyoruz
+        await db.query(`INSERT INTO users (email, code, verified, password, role) 
+                        VALUES ($1, $2, false, '', 'pending') 
+                        ON CONFLICT (email) DO UPDATE SET code = $2, verified = false`, [email, code]);
         
-        // Mail gönderme işlemi
-        const response = await sendMail(email, 'Doğrulama Kodunuz', `<p>Doğrulama kodunuz: <strong>${code}</strong></p>`);
-        console.log("Resend Yanıtı:", response);
+        // DİKKAT: Buradaki 'email' değişkeni yerine kendi mailini tırnak içinde yazıyoruz
+        await sendMail('keremacar3757@gmail.com', 'Ödev Doğrulama Kodunuz', `<p>Kayıt olmaya çalışan adres: <strong>${email}</strong></p><p>Doğrulama kodunuz: <strong>${code}</strong></p>`);
         
+        console.log(`Kod ${email} için oluşturuldu ama keremacar3757@gmail.com adresine gönderildi.`);
         res.json({ message: "Kod gönderildi" });
     } catch (error) { 
         console.error("API HATASI:", error);
