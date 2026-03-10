@@ -30,10 +30,12 @@ function auth(req, res, next) {
 
 // ===== MAIL TRANSPORTER =====
 const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // 465 için true olmalı
     auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS 
+        pass: process.env.MAIL_PASS
     },
     tls: {
         rejectUnauthorized: false
