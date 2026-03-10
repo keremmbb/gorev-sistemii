@@ -13,11 +13,20 @@ app.use(express.static("public"));
 
 // Gmail Transporter Kurulumu
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Port 465 için true olmalı
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS
-    }
+    },
+    // Bağlantı kopmalarını ve timeout hatalarını engellemek için:
+    pool: true, 
+    maxConnections: 1,
+    rateDelta: 20000, 
+    rateLimit: 5,
+    connectionTimeout: 20000, // 20 saniye bekleme süresi
+    greetingTimeout: 10000
 });
 
 // Yardımcı Mail Fonksiyonu
