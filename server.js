@@ -86,7 +86,7 @@ app.post("/verify-code", async (req, res) => {
     } catch { res.status(500).json({ message: "Sunucu hatası" }); }
 });
 
-
+    
 app.post("/set-password", async (req, res) => {
     const { email, password, role } = req.body;
     try {
