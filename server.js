@@ -86,14 +86,19 @@ app.post("/verify-code", async (req, res) => {
     } catch { res.status(500).json({ message: "Sunucu hatası" }); }
 });
 
-// ===== SET PASSWORD =====
+
 app.post("/set-password", async (req, res) => {
     const { email, password, role } = req.body;
     try {
-        await db.query(`UPDATE users SET password = $1, role = $2 WHERE email = $3 AND verified = true`, [password, role, email]);
-        await db.query("UPDATE invite SET used=true WHERE email=$1", [email]);
-        res.json({ message: "Şifre kaydedildi" });
-    } catch { res.status(500).json({ message: "Sunucu hatası" }); }
+        // İnvite tablosunu güncellemeyi kaldırdık, sadece kullanıcıyı güncelliyoruz
+        const query = `UPDATE users SET password = $1, role = $2 WHERE email = $3 AND verified = true`;
+        await db.query(query, [password, role, email]);
+        
+        res.json({ message: "Şifre başarıyla kaydedildi" });
+    } catch (err) {
+        console.error("SET PASSWORD HATASI:", err); // Hatayı terminalde göreceğiz
+        res.status(500).json({ message: "Şifre kaydedilirken hata oluştu: " + err.message });
+    }
 });
 
 // ===== LOGIN =====
