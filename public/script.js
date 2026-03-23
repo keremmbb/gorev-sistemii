@@ -174,34 +174,47 @@ function updateStatus(taskId) {
 // -------------------- VELİ GÖREVLERİ --------------------
 function loadMyAssignedTasks() {
     const userId = localStorage.getItem("userId");
-    if (!userId) return;
+    const token = localStorage.getItem("token");
+    if (!userId || !token) return;
 
     fetch(`/my-assigned-tasks/${userId}`, {
-        headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+        headers: { "Authorization": "Bearer " + token }
     })
     .then(res => res.json())
     .then(tasks => {
         const list = document.getElementById("assignedTaskList");
+        if (!list) return;
         list.innerHTML = "";
 
-        if (!tasks.length) {
-            list.innerHTML = "<li>Henüz görev atanmamış.</li>";
+        if (!tasks || tasks.length === 0) {
+            list.innerHTML = "<li>Henüz bir görev atamadınız.</li>";
             return;
         }
 
         tasks.forEach(task => {
             const li = document.createElement("li");
-            const date = new Date(task.assigned_at).toLocaleDateString("tr-TR");
+            const date = task.assigned_at ? new Date(task.assigned_at).toLocaleDateString("tr-TR") : "-";
+            const dueDateText = task.due_date ? new Date(task.due_date).toLocaleDateString("tr-TR") : "Belirtilmedi";
+
+            li.style.padding = "10px";
+            li.style.borderBottom = "1px solid #ccc";
+            li.style.listStyle = "none";
+
             li.innerHTML = `
-                <b>${task.title}</b><br>
-                Atanan: ${task.assigned_to}<br>
-                Atama Tarihi: ${date}<br>
-                Durum: ${task.status || "Başlamadı"}<br><br>
-                <button onclick="deleteTask(${task.id})">🗑️ Sil</button>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${task.title}</strong><br>
+                        <small>Kime: ${task.assigned_to}</small><br>
+                        <small>Son Tarih: ${dueDateText}</small><br>
+                        <small>Durum: ${task.status}</small>
+                    </div>
+                    <button onclick="deleteTask(${task.id})" style="background:red; color:white; border:none; padding:5px; border-radius:3px; cursor:pointer;">Sil</button>
+                </div>
             `;
             list.appendChild(li);
         });
-    });
+    })
+    .catch(err => console.error("Yükleme hatası:", err));
 }
 
 // -------------------- VELİ GÖREV EKLE --------------------

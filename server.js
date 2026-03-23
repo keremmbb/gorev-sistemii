@@ -197,8 +197,14 @@ app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
             FROM tasks t 
             JOIN users u ON t.assigned_to = u.id 
             WHERE t.assigned_by = $1`, [req.params.userId]);
+        
+        // Gelen veriyi kontrol etmek için log basalım (Render terminalinde görünür)
+        console.log("Atanan Görevler:", result.rows); 
         res.json(result.rows);
-    } catch { res.status(500).json([]); }
+    } catch (err) {
+        console.error("SQL Hatası:", err);
+        res.status(500).json([]); 
+    }
 });
 
 app.post("/update-task-status", auth, async (req, res) => {
