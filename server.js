@@ -119,18 +119,48 @@ app.post("/set-password", async (req, res) => {
 
 
 // ===== LOGIN =====
+// server.js içindeki LOGIN kısmını bununla DEĞİŞTİR
 app.post("/login", async (req, res) => {
+    // Gelen verileri temizleyelim (trim)
     const email = req.body.email ? req.body.email.trim() : "";
     const password = req.body.password;
-    const role = req.body.role ? req.body.role.trim() : "";
+    const role = req.body.role ? req.body.role.trim().toLowerCase() : "";
+
     try {
-        const result = await db.query("SELECT id, password, verified, role FROM users WHERE email ILIKE $1", [email]);
-        if (!result.rows.length || result.rows[0].password !== password || !result.rows[0].verified) return res.status(401).json({ message: "Hatalı bilgiler" });
-        if (result.rows[0].role.toLowerCase() !== role.toLowerCase()) return res.status(403).json({ message: "Yetkisiz rol" });
+        // 1. Kullanıcıyı bul
+        const result = await db.query(
+            "SELECT id, password, verified, role FROM users WHERE email ILIKE $1", 
+            [email]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ message: "Kullanıcı bulunamadı" });
+        }
+
+        const user = result.rows[0];
+
+        // 2. Şifre kontrolü
+        if (user.password !== password) {
+            return res.status(401).json({ message: "Şifre hatalı" });
+        }
+
+        // 3. Doğrulama kontrolü
+        if (!user.verified) {
+            return res.status(401).json({ message: "Hesap doğrulanmamış" });
+        }
+
+        // 4. Rol kontrolü (En kritik yer)
+        const userRole = user.role ? user.role.trim().toLowerCase() : "";
+        if (userRole !== role) {
+            return res.status(403).json({ message: `Rol uyuşmazlığı! Sistemdeki rolünüz: ${userRole}` });
+        }
         
-        const token = jwt.sign({ id: result.rows[0].id, role: result.rows[0].role }, process.env.JWT_SECRET, { expiresIn: "1d" });
-        res.json({ token, userId: result.rows[0].id, role: result.rows[0].role });
-    } catch { res.status(500).json({ message: "Sunucu hatası" }); }
+        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        res.json({ token, userId: user.id, role: user.role, message: "Giriş başarılı" }); // "Giriş başarılı" mesajını ekledik
+    } catch (err) {
+        console.error("Login Hatası:", err);
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
 });
 
 // ===== GÖREV İŞLEMLERİ =====

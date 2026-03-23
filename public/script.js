@@ -53,16 +53,20 @@ function setPassword() {
 }
 
 // -------------------- LOGIN --------------------
+// script.js içindeki login fonksiyonunu bununla GÜNCELLE
 function login() {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
-    const role = localStorage.getItem("loginRole"); // Burası "parent" veya "student" olmalı
-
+    
+    // Eğer loginRole boşsa, sayfadaki bir başlıktan veya URL'den tahmin etmeye çalışalım
+    let role = localStorage.getItem("loginRole"); 
+    
     if (!role) {
-        return alert("Hata: Giriş rolü belirlenemedi. Lütfen ana sayfadan tekrar seçim yapın.");
+        // Manuel yedek: Eğer hala yoksa kullanıcıya sor veya hata ver
+        alert("Lütfen önce Veli veya Öğrenci girişi seçeneğine tıklayın.");
+        window.location.href = "index.html";
+        return;
     }
-
-    console.log("Giriş deneniyor: ", { email, role }); // Debug için
 
     fetch("/login", {
         method: "POST",
@@ -71,19 +75,19 @@ function login() {
     })
     .then(res => res.json())
     .then(data => {
+        // Backend'den dönen mesaj tam olarak "Giriş başarılı" olmalı
         if (data.message === "Giriş başarılı") {
             localStorage.setItem("userId", data.userId);
             localStorage.setItem("role", data.role);
             localStorage.setItem("token", data.token);
             
-            // Başarılı girişte geçici rolü siliyoruz
-            localStorage.removeItem("loginRole");
-
-            if (data.role === "parent") window.location.href = "veli-dashboard.html";
-            else window.location.href = "dashboard.html";
+            if (data.role.toLowerCase() === "parent") {
+                window.location.href = "veli-dashboard.html";
+            } else {
+                window.location.href = "dashboard.html";
+            }
         } else {
-            // Hata mesajını detaylandıralım
-            alert("Hata: " + data.message + " (Seçilen Rol: " + role + ")");
+            alert("Hata: " + data.message);
         }
     })
     .catch(err => {
@@ -91,7 +95,6 @@ function login() {
         alert("Sunucuya bağlanılamadı.");
     });
 }
-
 // -------------------- LOGOUT --------------------
 function logout() {
     localStorage.clear();
