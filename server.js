@@ -221,5 +221,26 @@ app.get("/get-user-id", auth, async (req, res) => {
     const result = await db.query("SELECT id FROM users WHERE email=$1", [req.query.email]);
     res.json({ userId: result.rows[0]?.id || null });
 });
+// server.js içine eklenecek silme rotası
+app.delete("/delete-task/:id", auth, async (req, res) => {
+    const taskId = req.params.id;
+    const userId = req.user.id;
 
+    try {
+        // Güvenlik kontrolü: Sadece görevi atayan kişi silebilir
+        const result = await db.query(
+            "DELETE FROM tasks WHERE id = $1 AND assigned_by = $2", 
+            [taskId, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(403).json({ message: "Bu görevi silme yetkiniz yok veya görev bulunamadı." });
+        }
+
+        res.json({ message: "Görev başarıyla silindi" });
+    } catch (err) {
+        console.error("Silme Hatası:", err);
+        res.status(500).json({ message: "Görev silinirken hata oluştu" });
+    }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Server çalışıyor"));

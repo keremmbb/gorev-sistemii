@@ -362,3 +362,24 @@ function registerStart() {
     sendCode(); // Mevcut sendCode fonksiyonunu çağırır
 }
 // Örn kullanım: debugInviteWorkflow("ogrenci@test.com");
+// script.js içine eklenecek veya güncellenecek fonksiyon
+function deleteTask(taskId) {
+    if (!confirm("Bu görevi silmek istediğinize emin misiniz?")) return;
+
+    fetch(`/delete-task/${taskId}`, {
+        method: "DELETE",
+        headers: { 
+            "Authorization": "Bearer " + localStorage.getItem("token") 
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        // Görev silindikten sonra listeyi yenile
+        loadMyAssignedTasks(); 
+    })
+    .catch(err => {
+        console.error("Hata:", err);
+        alert("Görev silinemedi.");
+    });
+}
