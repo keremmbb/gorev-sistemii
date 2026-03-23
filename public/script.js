@@ -79,51 +79,51 @@ function loadMyTasks() {
     })
     .then(res => res.json())
     .then(tasks => {
-        const list = document.getElementById("taskList");
-        if (!list) return;
-        list.innerHTML = "";
-        if (!tasks.length) { list.innerHTML = "<li>Henüz görev atanmamış.</li>"; return; }
+        // Tüm listeleri temizle
+        const lists = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
+        lists.forEach(id => {
+            const el = document.getElementById(`list-${id}`);
+            if (el) el.innerHTML = "";
+        });
 
-        // script.js içindeki loadMyTasks döngüsünün içi:
-tasks.forEach(task => {
-    const li = document.createElement("li");
-    const assignedDate = new Date(task.assigned_at).toLocaleDateString("tr-TR");
-    
-    // Tarih objesini oluştur (Veritabanından gelen t.due_date kullanılır)
-    const dueDate = task.due_date ? new Date(task.due_date) : null;
-    const isOverdue = dueDate && dueDate < new Date() && task.status !== 'Tamamlandı';
+        tasks.forEach(task => {
+            // Durum ismindeki boşlukları temizle (Örn: "Devam Ediyor" -> "DevamEdiyor")
+            const statusId = task.status.replace(/\s+/g, '');
+            const targetList = document.getElementById(`list-${statusId}`);
 
-    li.style.borderLeft = isOverdue ? "5px solid red" : "5px solid #4CAF50";
-    li.style.padding = "10px";
-    li.style.marginBottom = "10px";
-    li.style.listStyle = "none";
-    li.style.backgroundColor = isOverdue ? "#fff5f5" : "#fff";
+            if (targetList) {
+                const li = document.createElement("li");
+                const dueDate = task.due_date ? new Date(task.due_date) : null;
+                const isOverdue = dueDate && dueDate < new Date() && task.status !== 'Tamamlandı';
 
-    li.innerHTML = `
-        <div style="margin-bottom: 5px;">
-            <b style="font-size: 1.1em;">${task.title}</b><br>
-            <small>Atayan: ${task.assigned_by}</small><br>
-            <small>Başlangıç: ${assignedDate}</small><br>
-            
-            ${dueDate ? `
-                <b style="color: ${isOverdue ? 'red' : '#2196F3'};">
-                    ⏳ Son Teslim: ${dueDate.toLocaleDateString("tr-TR")} 
-                    ${isOverdue ? ' (SÜRESİ GEÇTİ!)' : ''}
-                </b>
-            ` : '<i style="color:gray;">Son teslim tarihi yok</i>'}
-        </div>
-        
-        Durum: 
-        <select onchange="updateStatus(${task.id}, this.value)" style="padding: 3px; border-radius: 4px;">
-            <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>Başlamadı</option>
-            <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>Başlandı</option>
-            <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
-            <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
-        </select>
-        <hr style="border: 0; border-top: 1px solid #eee; margin-top: 10px;">
-    `;
-    list.appendChild(li);
-});
+                li.className = "task-card";
+                li.style = `background: white; margin-bottom: 10px; padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid ${isOverdue ? 'red' : '#ccc'}`;
+
+                li.innerHTML = `
+                    <b style="display:block; margin-bottom:5px;">${task.title}</b>
+                    ${dueDate ? `<small style="color:${isOverdue ? 'red' : '#666'}">⏳ ${dueDate.toLocaleDateString("tr-TR")}</small><br>` : ''}
+                    
+                    <select onchange="updateStatusAndReload(${task.id}, this.value)" style="width:100%; margin-top:5px; font-size:12px;">
+                        <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>🔴 Başlamadı</option>
+                        <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>🔵 Başlandı</option>
+                        <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
+                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
+                    </select>
+                `;
+                targetList.appendChild(li);
+            }
+        });
+    });
+}
+
+// Durum güncellendiğinde sayfayı yenileyen yardımcı fonksiyon
+function updateStatusAndReload(taskId, status) {
+    fetch("/update-task-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + localStorage.getItem("token") },
+        body: JSON.stringify({ taskId, status })
+    }).then(() => {
+        loadMyTasks(); // Kartı yeni kutusuna taşımak için listeyi yenile
     });
 }
 // -------------------- GÖREV DURUMU GÜNCELLE --------------------

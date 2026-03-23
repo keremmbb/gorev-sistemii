@@ -18,9 +18,27 @@ if (!userId || role !== "student") {
 }
 </script>
 
-<h2>Görevlerim</h2>
-<ul id="taskList"></ul>
-<button onclick="logout()">Çıkış Yap</button>
+<div class="kanban-board" style="display: flex; gap: 10px; overflow-x: auto; padding: 10px;">
+    <div class="column" style="flex: 1; min-width: 200px; background: #eee; padding: 10px; border-radius: 8px;">
+        <h3 style="text-align: center; color: #555;">🔴 Başlamadı</h3>
+        <ul id="list-Baslamadi" style="list-style: none; padding: 0;"></ul>
+    </div>
+
+    <div class="column" style="flex: 1; min-width: 200px; background: #e3f2fd; padding: 10px; border-radius: 8px;">
+        <h3 style="text-align: center; color: #1976d2;">🔵 Başlandı</h3>
+        <ul id="list-Baslandi" style="list-style: none; padding: 0;"></ul>
+    </div>
+
+    <div class="column" style="flex: 1; min-width: 200px; background: #fff3e0; padding: 10px; border-radius: 8px;">
+        <h3 style="text-align: center; color: #f57c00;">🟡 Devam Ediyor</h3>
+        <ul id="list-DevamEdiyor" style="list-style: none; padding: 0;"></ul>
+    </div>
+
+    <div class="column" style="flex: 1; min-width: 200px; background: #e8f5e9; padding: 10px; border-radius: 8px;">
+        <h3 style="text-align: center; color: #2e7d32;">🟢 Tamamlandı</h3>
+        <ul id="list-Tamamlandi" style="list-style: none; padding: 0;"></ul>
+    </div>
+</div>
 
 </body>
 </html>
