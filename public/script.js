@@ -121,11 +121,34 @@ function loadMyTasks() {
 
         tasks.forEach(task => {
             const li = document.createElement("li");
-            const date = new Date(task.assigned_at).toLocaleDateString("tr-TR");
+            
+            // Tarih Hesaplamaları
+            const assignedDate = new Date(task.assigned_at).toLocaleDateString("tr-TR");
+            const dueDate = task.due_date ? new Date(task.due_date) : null;
+            const now = new Date();
+            
+            // Gecikme Kontrolü: Tarih var mı, bugün geçti mi ve görev hala bitmedi mi?
+            const isOverdue = dueDate && dueDate < now && task.status !== 'Tamamlandı';
+
+            // Görsel stil: Gecikmişse kırmızı kenarlık ve arka plan
+            li.style.borderLeft = isOverdue ? "5px solid #ff4d4d" : "5px solid #4CAF50";
+            li.style.backgroundColor = isOverdue ? "#fff5f5" : "#fff";
+            li.style.padding = "10px";
+            li.style.marginBottom = "10px";
+            li.style.listStyle = "none";
+
             li.innerHTML = `
                 <b>${task.title}</b><br>
-                Atayan: ${task.assigned_by}<br>
-                Tarih: ${date}<br>
+                <small>Atayan: ${task.assigned_by}</small><br>
+                <small>Atanma Tarihi: ${assignedDate}</small><br>
+                
+                ${dueDate ? `
+                    <b style="color: ${isOverdue ? 'red' : '#555'}">
+                        Son Teslim: ${dueDate.toLocaleDateString("tr-TR")} 
+                        ${isOverdue ? ' (SÜRESİ GEÇTİ!)' : ''}
+                    </b><br>
+                ` : '<i>Son teslim tarihi belirtilmedi</i><br>'}
+                
                 Durum:
                 <select id="status-${task.id}" onchange="updateStatus(${task.id})">
                     <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>Başlamadı</option>
@@ -197,12 +220,10 @@ function loadMyAssignedTasks() {
 function addTask() {
     const title = document.getElementById("taskTitle").value.trim();
     const assignedToEmail = document.getElementById("assignedToEmail").value.trim();
+    const dueDate = document.getElementById("dueDate").value; // Yeni tarih inputu
     const assignedBy = localStorage.getItem("userId");
 
-    if (!title || !assignedToEmail || !assignedBy) {
-        alert("Eksik bilgi! Lütfen tüm alanları doldurun.");
-        return;
-    }
+    if (!title || !assignedToEmail) return alert("Eksik bilgi!");
 
     fetch(`/get-user-id?email=${assignedToEmail}`, {
         headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
@@ -217,7 +238,12 @@ function addTask() {
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + localStorage.getItem("token")
             },
-            body: JSON.stringify({ title, assignedBy, assignedTo: data.userId })
+            body: JSON.stringify({ 
+                title, 
+                assignedBy, 
+                assignedTo: data.userId,
+                due_date: dueDate || null // Veli seçmezse null gider
+            })
         })
         .then(res => res.json())
         .then(data => {

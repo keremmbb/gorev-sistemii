@@ -165,14 +165,24 @@ app.post("/login", async (req, res) => {
 
 // ===== GÖREV İŞLEMLERİ =====
 app.post("/add-task", auth, async (req, res) => {
-    const { title, assignedTo, assignedBy } = req.body;
+    // due_date'i de ekledik
+    const { title, assignedTo, assignedBy, due_date } = req.body; 
+    
     if (req.user.role !== "parent") return res.status(403).json({ message: "Yetkisiz" });
+    
     try {
-        await db.query(`INSERT INTO tasks (title, assigned_to, assigned_by, status, assigned_at) VALUES ($1, $2, $3, 'Başlamadı', NOW())`, [title, assignedTo, assignedBy]);
-        res.json({ message: "Görev eklendi" });
-    } catch { res.status(500).json({ message: "Görev eklenemedi" }); }
+        // null kontrolü yaparak kaydediyoruz
+        await db.query(
+            `INSERT INTO tasks (title, assigned_to, assigned_by, status, assigned_at, due_date) 
+             VALUES ($1, $2, $3, 'Başlamadı', NOW(), $4)`, 
+            [title, assignedTo, assignedBy, due_date || null] 
+        );
+        res.json({ message: "Görev başarıyla atandı" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Görev eklenemedi" });
+    }
 });
-
 app.get("/my-tasks/:userId", auth, async (req, res) => {
     try {
         const result = await db.query(`SELECT t.id, t.title, t.status, t.assigned_at, u.email AS assigned_by FROM tasks t JOIN users u ON t.assigned_by = u.id WHERE t.assigned_to = $1`, [req.params.userId]);

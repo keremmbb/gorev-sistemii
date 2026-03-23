@@ -1,42 +1,57 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>Veli Dashboard</title>
-<link rel="stylesheet" href="style.css">
-<script src="script.js" defer></script>
+    <meta charset="UTF-8">
+    <title>Veli Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
 </head>
 <body onload="loadMyAssignedTasks()">
 
 <script>
-const role = localStorage.getItem("role");
-const userId = localStorage.getItem("userId");
-if (!userId || role !== "parent") {
-  window.location.href = "index.html";
-}
+    const role = localStorage.getItem("role");
+    const userId = localStorage.getItem("userId");
+    // Küçük harf kontrolü ekleyerek daha güvenli hale getirdik
+    if (!userId || (role && role.toLowerCase() !== "parent")) {
+        window.location.href = "index.html";
+    }
 </script>
 
-<h2>Veli Dashboard</h2>
+<div class="container">
+    <h2>Veli Dashboard</h2>
 
-<h3>📝 Öğrenciye Görev Ata</h3>
-<input type="text" id="taskTitle" placeholder="Görev başlığı">
-<input type="email" id="assignedToEmail" placeholder="Öğrenci maili">
-<button onclick="addTask()">Görev Ekle</button>
+    <div class="section">
+        <h3>📝 Öğrenciye Görev Ata</h3>
+        <input type="text" id="taskTitle" placeholder="Görev başlığı">
+        <input type="email" id="assignedToEmail" placeholder="Öğrenci maili">
+        
+        <div style="margin: 10px 0;">
+            <label for="dueDate" style="display: block; font-size: 14px; margin-bottom: 5px;">Son Teslim Tarihi (Opsiyonel):</label>
+            <input type="date" id="dueDate">
+        </div>
+        
+        <button onclick="addTask()">Görev Ekle</button>
+    </div>
 
-<hr>
+    <hr>
 
-<h3>👥 Öğrenci Davet Et</h3>
-<input type="email" id="inviteEmail" placeholder="Öğrenci emaili">
-<button onclick="inviteStudent()">Davet Et</button>
-<p id="inviteMessage"></p>
+    <div class="section">
+        <h3>👥 Öğrenci Davet Et</h3>
+        <input type="email" id="inviteEmail" placeholder="Öğrenci emaili">
+        <button onclick="inviteStudent()">Davet Et</button>
+        <p id="inviteMessage"></p>
+    </div>
 
-<hr>
+    <hr>
 
-<h3>📝 Atadığınız Görevler</h3>
-<ul id="assignedTaskList"></ul>
+    <div class="section">
+        <h3>📋 Atadığınız Görevler</h3>
+        <ul id="assignedTaskList"></ul>
+    </div>
 
-<button onclick="logout()">Çıkış Yap</button>
+    <br>
+    <button onclick="logout()" style="background-color: #ff4d4d; color: white;">Çıkış Yap</button>
+</div>
 
 </body>
-
 </html>
