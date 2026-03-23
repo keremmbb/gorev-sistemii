@@ -69,51 +69,55 @@ function logout() {
 
 // -------------------- ÖĞRENCİ GÖREVLERİ --------------------
 // -------------------- VELİ GÖREVLERİ LİSTELE (GÜNCEL) --------------------
-function loadMyTasks() {
+function loadMyAssignedTasks() {
     const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
     if (!userId) return;
 
-    fetch(`/my-tasks/${userId}`, {
-        headers: { "Authorization": "Bearer " + token }
+    fetch(`/my-assigned-tasks/${userId}`, {
+        headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
     })
     .then(res => res.json())
     .then(tasks => {
-        // Tüm listeleri temizle
-        const lists = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
-        lists.forEach(id => {
-            const el = document.getElementById(`list-${id}`);
+        // Önce tüm kutucukları temizle
+        const columns = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
+        columns.forEach(id => {
+            const el = document.getElementById(`parent-list-${id}`);
             if (el) el.innerHTML = "";
         });
 
+        if (!tasks || tasks.length === 0) return;
+
         tasks.forEach(task => {
-            // Durum ismindeki boşlukları temizle (Örn: "Devam Ediyor" -> "DevamEdiyor")
+            // Boşlukları silerek ID uyumlu hale getir (Devam Ediyor -> DevamEdiyor)
             const statusId = task.status.replace(/\s+/g, '');
-            const targetList = document.getElementById(`list-${statusId}`);
+            const targetColumn = document.getElementById(`parent-list-${statusId}`);
 
-            if (targetList) {
-                const li = document.createElement("li");
-                const dueDate = task.due_date ? new Date(task.due_date) : null;
-                const isOverdue = dueDate && dueDate < new Date() && task.status !== 'Tamamlandı';
-
-                li.className = "task-card";
-                li.style = `background: white; margin-bottom: 10px; padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid ${isOverdue ? 'red' : '#ccc'}`;
-
-                li.innerHTML = `
-                    <b style="display:block; margin-bottom:5px;">${task.title}</b>
-                    ${dueDate ? `<small style="color:${isOverdue ? 'red' : '#666'}">⏳ ${dueDate.toLocaleDateString("tr-TR")}</small><br>` : ''}
-                    
-                    <select onchange="updateStatusAndReload(${task.id}, this.value)" style="width:100%; margin-top:5px; font-size:12px;">
-                        <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>🔴 Başlamadı</option>
-                        <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>🔵 Başlandı</option>
-                        <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
-                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
-                    </select>
+            if (targetColumn) {
+                const card = document.createElement("div");
+                const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString("tr-TR") : "Yok";
+                
+                card.style = `
+                    background: white; 
+                    margin-bottom: 10px; 
+                    padding: 15px; 
+                    border-radius: 6px; 
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    position: relative;
                 `;
-                targetList.appendChild(li);
+
+                card.innerHTML = `
+                    <b style="font-size: 1.1em; display: block; margin-bottom: 5px;">${task.title}</b>
+                    <small>👤 Öğrenci: ${task.assigned_to}</small><br>
+                    <small>⏳ Son Tarih: ${dueDate}</small><br>
+                    <div style="margin-top: 10px; text-align: right;">
+                        <button onclick="deleteTask(${task.id})" style="background:none; border:none; color:red; cursor:pointer; font-size:12px;">🗑️ Görevi Sil</button>
+                    </div>
+                `;
+                targetColumn.appendChild(card);
             }
         });
-    });
+    })
+    .catch(err => console.error("Veli görev yükleme hatası:", err));
 }
 
 // Durum güncellendiğinde sayfayı yenileyen yardımcı fonksiyon
@@ -130,9 +134,16 @@ function updateStatusAndReload(taskId, status) {
 function updateStatus(taskId, status) {
     fetch("/update-task-status", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + localStorage.getItem("token") },
+        headers: { 
+            "Content-Type": "application/json", 
+            "Authorization": "Bearer " + localStorage.getItem("token") 
+        },
         body: JSON.stringify({ taskId, status })
-    }).then(() => { if(status === "Tamamlandı") alert("Görev tamamlandı olarak işaretlendi!"); });
+    }).then(res => res.json())
+    .then(data => {
+        alert("Durum güncellendi!");
+        // Eğer öğrenci de kutucuklu görsün istersen loadMyTasks() çağırabilirsin
+    });
 }
 // -------------------- VELİ GÖREVLERİ --------------------
 // script.js içinde bu fonksiyonun adının doğruluğunu kontrol et
