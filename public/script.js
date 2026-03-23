@@ -269,35 +269,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
-    const urlRole = params.get("role"); // giris.html'den gelen rol
+    const urlRole = params.get("role");
 
     if (inviteToken) {
-        // Davetle gelmişse kesin öğrencidir
+        // Davet linkiyle gelmişse
         fetch(`/check-invite?invite=${inviteToken}`)
             .then(res => res.json())
             .then(data => {
-                if (!data.valid) {
-                    alert("Davet linki geçersiz!");
-                    window.location.href = "index.html";
+                if (data.valid) {
+                    emailInput.value = data.email; 
+                    emailInput.readOnly = true;    // Maili değiştiremesin
+                    localStorage.setItem("registerRole", "student"); // Davet edilen her zaman öğrencidir
+                    if (roleText) roleText.innerText = "Öğrenci (Davetli)";
                 } else {
-                    emailInput.value = data.email;
-                    emailInput.readOnly = true;
-                    localStorage.setItem("registerRole", "student");
-                    if(roleText) roleText.innerText = "Öğrenci (Davetli)";
+                    alert("Davet linki geçersiz veya daha önce kullanılmış!");
+                    window.location.href = "index.html";
                 }
-            });
+            })
+            .catch(err => console.error("Davet kontrol hatası:", err));
+
     } else if (urlRole) {
-        // giris.html'den "Kayıt Ol" diyerek gelmişse (Veli veya Öğrenci)
+        // Normal yolla (Veli/Öğrenci seçerek) gelmişse
         localStorage.setItem("registerRole", urlRole);
-        if(roleText) roleText.innerText = urlRole === "parent" ? "Veli" : "Öğrenci";
-    } else {
-        // Hiçbir parametre yoksa varsayılan öğrenci
+        if (roleText) roleText.innerText = urlRole === "parent" ? "Veli" : "Öğrenci";
         emailInput.readOnly = false;
-        if(!localStorage.getItem("registerRole")) {
-            localStorage.setItem("registerRole", "student");
-        }
-        const currentRole = localStorage.getItem("registerRole");
-        if(roleText) roleText.innerText = currentRole === "parent" ? "Veli" : "Öğrenci";
+        
+    } else {
+        // Parametre yoksa varsayılanı kullan
+        const savedRole = localStorage.getItem("registerRole") || "student";
+        if (roleText) roleText.innerText = savedRole === "parent" ? "Veli" : "Öğrenci";
+        emailInput.readOnly = false;
     }
 });
 // -------------------- DEBUG INVITE TOKEN WORKFLOW --------------------

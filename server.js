@@ -206,15 +206,41 @@ app.get("/check-invite", async (req, res) => {
     res.json(result.rows.length ? { valid: true, email: result.rows[0].email } : { valid: false });
 });
 
+// server.js içindeki app.post("/invite", ...) kısmını bununla güncelle
 app.post("/invite", auth, async (req, res) => {
     if (req.user.role !== "parent") return res.status(403).json({ message: "Yetkisiz" });
-    const { email } = req.body;
+    
+    const { email } = req.body; // Velinin yazdığı öğrenci maili
     const token = crypto.randomBytes(32).toString("hex");
+
     try {
-        await db.query("INSERT INTO invite (email, token) VALUES ($1, $2)", [email, token]);
-        await sendMail(email, "Davet", `Kayıt olmak için: ${FRONTEND_URL}/kayit.html?invite=${token}`);
-        res.json({ message: "Davet gönderildi" });
-    } catch { res.status(500).json({ message: "Hata" }); }
+        // 1. Daveti veritabanına kaydet
+        await db.query("INSERT INTO invite (email, token, used) VALUES ($1, $2, false)", [email, token]);
+
+        // 2. Davet linkini oluştur
+        // Örn: https://gorev-sistemii.onrender.com/kayit.html?invite=abc123token
+        const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
+
+        // 3. Gerçek maili gönder
+        // NOT: Resend ücretsiz planda olduğun için 'to' kısmını şimdilik yine 
+        // kendi onaylı mailin yapabilirsin ama 'email' değişkenini içeriğe ekleriz.
+        // Eğer domain doğrularsan direkt 'email'e gönderebilirsin.
+        await sendMail(email, "Görev Sistemine Davet Edildiniz!", `
+            <h2>Merhaba!</h2>
+            <p>Veli tarafından sisteme davet edildiniz.</p>
+            <p>Kayıt olup görevlerinizi görmek için aşağıdaki linke tıklayın:</p>
+            <a href="${inviteLink}" style="padding: 10px 20px; background: blue; color: white; text-decoration: none; border-radius: 5px;">
+                Kaydı Tamamla
+            </a>
+            <br><br>
+            <p>Davet edilen e-posta: ${email}</p>
+        `);
+
+        res.json({ message: "Davet başarıyla oluşturuldu ve mail gönderildi!" });
+    } catch (err) {
+        console.error("Davet Hatası:", err);
+        res.status(500).json({ message: "Davet gönderilirken bir hata oluştu." });
+    }
 });
 
 app.get("/get-user-id", auth, async (req, res) => {
