@@ -102,69 +102,57 @@ function logout() {
 }
 
 // -------------------- ÖĞRENCİ GÖREVLERİ --------------------
-function loadMyTasks() {
+// -------------------- VELİ GÖREVLERİ LİSTELE (GÜNCEL) --------------------
+function loadMyAssignedTasks() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
-    fetch(`/my-tasks/${userId}`, {
+    fetch(`/my-assigned-tasks/${userId}`, {
         headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
     })
     .then(res => res.json())
     .then(tasks => {
-        const list = document.getElementById("taskList");
+        const list = document.getElementById("assignedTaskList");
         list.innerHTML = "";
 
         if (!tasks.length) {
-            list.innerHTML = "<li>Henüz görev atanmamış.</li>";
+            list.innerHTML = "<li>Henüz bir görev atamadınız.</li>";
             return;
         }
 
         tasks.forEach(task => {
             const li = document.createElement("li");
+            const date = new Date(task.assigned_at).toLocaleDateString("tr-TR");
             
-            // Tarih Hesaplamaları
-            const assignedDate = new Date(task.assigned_at).toLocaleDateString("tr-TR");
-            const dueDate = task.due_date ? new Date(task.due_date) : null;
-            const now = new Date();
-            
-            // Gecikme Kontrolü: Tarih var mı, bugün geçti mi ve görev hala bitmedi mi?
-            const isOverdue = dueDate && dueDate < now && task.status !== 'Tamamlandı';
+            // Son Teslim Tarihi Kontrolü
+            const dueDateText = task.due_date 
+                ? new Date(task.due_date).toLocaleDateString("tr-TR") 
+                : "Belirtilmedi";
 
-            // Görsel stil: Gecikmişse kırmızı kenarlık ve arka plan
-            li.style.borderLeft = isOverdue ? "5px solid #ff4d4d" : "5px solid #4CAF50";
-            li.style.backgroundColor = isOverdue ? "#fff5f5" : "#fff";
-            li.style.padding = "10px";
-            li.style.marginBottom = "10px";
+            li.style.borderBottom = "1px solid #eee";
+            li.style.padding = "10px 0";
             li.style.listStyle = "none";
 
             li.innerHTML = `
-                <b>${task.title}</b><br>
-                <small>Atayan: ${task.assigned_by}</small><br>
-                <small>Atanma Tarihi: ${assignedDate}</small><br>
-                
-                ${dueDate ? `
-                    <b style="color: ${isOverdue ? 'red' : '#555'}">
-                        Son Teslim: ${dueDate.toLocaleDateString("tr-TR")} 
-                        ${isOverdue ? ' (SÜRESİ GEÇTİ!)' : ''}
-                    </b><br>
-                ` : '<i>Son teslim tarihi belirtilmedi</i><br>'}
-                
-                Durum:
-                <select id="status-${task.id}" onchange="updateStatus(${task.id})">
-                    <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>Başlamadı</option>
-                    <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>Başlandı</option>
-                    <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
-                    <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
-                </select>
-                <hr>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <b style="font-size: 1.1em;">${task.title}</b><br>
+                        <small>👤 Atanan: ${task.assigned_to}</small><br>
+                        <small>📅 Atama: ${date}</small><br>
+                        <b style="color: #555;">⏳ Son Teslim: ${dueDateText}</b><br>
+                        <span style="color: ${task.status === 'Tamamlandı' ? 'green' : 'orange'}; font-weight: bold;">
+                            Durum: ${task.status || "Başlamadı"}
+                        </span>
+                    </div>
+                    <button onclick="deleteTask(${task.id})" style="background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        🗑️ Sil
+                    </button>
+                </div>
             `;
             list.appendChild(li);
         });
     })
-    .catch(() => {
-        const list = document.getElementById("taskList");
-        list.innerHTML = "<li>Görevler yüklenemedi. Sayfayı yenileyin.</li>";
-    });
+    .catch(err => console.error("Görevler yüklenirken hata:", err));
 }
 
 // -------------------- GÖREV DURUMU GÜNCELLE --------------------

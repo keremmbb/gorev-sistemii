@@ -192,7 +192,11 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
 
 app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
     try {
-        const result = await db.query(`SELECT t.id, t.title, t.status, t.assigned_at, u.email AS assigned_to FROM tasks t JOIN users u ON t.assigned_to = u.id WHERE t.assigned_by = $1`, [req.params.userId]);
+        const result = await db.query(`
+            SELECT t.id, t.title, t.status, t.assigned_at, t.due_date, u.email AS assigned_to 
+            FROM tasks t 
+            JOIN users u ON t.assigned_to = u.id 
+            WHERE t.assigned_by = $1`, [req.params.userId]);
         res.json(result.rows);
     } catch { res.status(500).json([]); }
 });
