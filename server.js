@@ -183,11 +183,21 @@ app.post("/add-task", auth, async (req, res) => {
         res.status(500).json({ message: "Görev eklenemedi" });
     }
 });
+// server.js içinde bu rotayı bul ve GÜNCELLE
 app.get("/my-tasks/:userId", auth, async (req, res) => {
     try {
-        const result = await db.query(`SELECT t.id, t.title, t.status, t.assigned_at, u.email AS assigned_by FROM tasks t JOIN users u ON t.assigned_by = u.id WHERE t.assigned_to = $1`, [req.params.userId]);
+        const result = await db.query(`
+            SELECT t.id, t.title, t.status, t.assigned_at, t.due_date, u.email AS assigned_by 
+            FROM tasks t 
+            JOIN users u ON t.assigned_by = u.id 
+            WHERE t.assigned_to = $1 
+            ORDER BY t.assigned_at DESC`, [req.params.userId]);
+        
         res.json(result.rows);
-    } catch { res.status(500).json([]); }
+    } catch (err) {
+        console.error("Öğrenci görev çekme hatası:", err);
+        res.status(500).json([]);
+    }
 });
 
 app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
