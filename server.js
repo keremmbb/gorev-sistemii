@@ -189,15 +189,45 @@ app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
 
 app.post("/update-task-status", auth, async (req, res) => {
     const { taskId, status } = req.body;
+    
     try {
-        const task = (await db.query("SELECT assigned_to, title FROM tasks WHERE id=$1", [taskId])).rows[0];
-        if (!task || req.user.id != task.assigned_to) return res.status(403).json({ message: "Yetkisiz" });
-        await db.query("UPDATE tasks SET status=$1 WHERE id=$2", [status, taskId]);
+        // 1. Görevi ve bu görevi atayan velinin bilgilerini çekelim
+        const taskResult = await db.query(`
+            SELECT t.title, u.email as parent_email, u.id as parent_id 
+            FROM tasks t 
+            JOIN users u ON t.assigned_by = u.id 
+            WHERE t.id = $1`, [taskId]);
 
-        const parent = (await db.query("SELECT email FROM users WHERE id = (SELECT assigned_by FROM tasks WHERE id=$1)", [taskId])).rows[0];
-        if (parent) await sendMail(parent.email, "Görev Durumu Güncellendi", `Öğrenciniz "${task.title}" görevini "${status}" yaptı.`);
-        res.json({ message: "Güncellendi" });
-    } catch { res.status(500).json({ message: "Hata" }); }
+        const task = taskResult.rows[0];
+
+        if (!task) {
+            return res.status(404).json({ message: "Görev bulunamadı" });
+        }
+
+        // 2. Durumu güncelleyelim
+        await db.query("UPDATE tasks SET status = $1 WHERE id = $2", [status, taskId]);
+
+        // 3. EĞER durum "Tamamlandı" ise veliye mail atalım
+        if (status === "Tamamlandı") {
+            await sendMail(task.parent_email, "Görev Tamamlandı! ✅", `
+                <div style="font-family: sans-serif; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #2e7d32;">Güzel Haber!</h2>
+                    <p>Öğrenciniz bir görevi başarıyla tamamladı.</p>
+                    <hr>
+                    <p><strong>Tamamlanan Görev:</strong> ${task.title}</p>
+                    <p><strong>Durum:</strong> <span style="background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 4px;">Tamamlandı</span></p>
+                    <br>
+                    <p>Detayları görmek için sisteme giriş yapabilirsiniz.</p>
+                </div>
+            `);
+            console.log(`Tamamlandı bildirimi ${task.parent_email} adresine gönderildi.`);
+        }
+
+        res.json({ message: "Durum güncellendi ve veliye bilgi verildi." });
+    } catch (err) {
+        console.error("Durum Güncelleme Hatası:", err);
+        res.status(500).json({ message: "Hata oluştu" });
+    }
 });
 
 // ===== DAVET İŞLEMLERİ =====
@@ -210,36 +240,34 @@ app.get("/check-invite", async (req, res) => {
 app.post("/invite", auth, async (req, res) => {
     if (req.user.role !== "parent") return res.status(403).json({ message: "Yetkisiz" });
     
-    const { email } = req.body; // Velinin yazdığı öğrenci maili
+    const { email } = req.body; 
     const token = crypto.randomBytes(32).toString("hex");
 
     try {
-        // 1. Daveti veritabanına kaydet
         await db.query("INSERT INTO invite (email, token, used) VALUES ($1, $2, false)", [email, token]);
 
-        // 2. Davet linkini oluştur
-        // Örn: https://gorev-sistemii.onrender.com/kayit.html?invite=abc123token
+        // Linki oluşturuyoruz
         const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
 
-        // 3. Gerçek maili gönder
-        // NOT: Resend ücretsiz planda olduğun için 'to' kısmını şimdilik yine 
-        // kendi onaylı mailin yapabilirsin ama 'email' değişkenini içeriğe ekleriz.
-        // Eğer domain doğrularsan direkt 'email'e gönderebilirsin.
-        await sendMail(email, "Görev Sistemine Davet Edildiniz!", `
-            <h2>Merhaba!</h2>
-            <p>Veli tarafından sisteme davet edildiniz.</p>
-            <p>Kayıt olup görevlerinizi görmek için aşağıdaki linke tıklayın:</p>
-            <a href="${inviteLink}" style="padding: 10px 20px; background: blue; color: white; text-decoration: none; border-radius: 5px;">
-                Kaydı Tamamla
-            </a>
-            <br><br>
-            <p>Davet edilen e-posta: ${email}</p>
+        // Sadece linkin gittiği temiz mail içeriği
+        await sendMail(email, "Kayıt Davetiyesi", `
+            <div style="font-family: sans-serif; text-align: center; padding: 20px;">
+                <h2>Giriş Yapmak İçin Davet Edildiniz</h2>
+                <p>Aşağıdaki bağlantıya tıklayarak kaydınızı tamamlayabilirsiniz:</p>
+                <br>
+                <a href="${inviteLink}" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Kaydı Tamamla
+                </a>
+                <br><br>
+                <p>Veya bu linki tarayıcınıza yapıştırın:</p>
+                <p style="color: #666;">${inviteLink}</p>
+            </div>
         `);
 
-        res.json({ message: "Davet başarıyla oluşturuldu ve mail gönderildi!" });
+        res.json({ message: "Davet linki başarıyla gönderildi!" });
     } catch (err) {
         console.error("Davet Hatası:", err);
-        res.status(500).json({ message: "Davet gönderilirken bir hata oluştu." });
+        res.status(500).json({ message: "Hata oluştu." });
     }
 });
 
