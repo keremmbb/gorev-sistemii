@@ -30,26 +30,30 @@ function auth(req, res, next) {
 
 // Mail Fonksiyonu
 // server.js dosyanın en üstünde mail adresini bir değişkene al
-const MY_VERIFIED_EMAIL = 'keremacar3754is@gmail.com'; 
+const MY_VERIFIED_EMAIL = 'keremacar3757@gmail.com'; 
 
+// server.js içindeki sendMail fonksiyonunu bununla değiştir:
 async function sendMail(to, subject, html) {
-    return await resend.emails.send({
-        // BURASI ÇOK KRİTİK: 'onboarding@resend.dev' yerine kendi mailini yaz
-        from: 'keremacar3757@gmail.com', 
-        
-        // Gönderilecek yeri de kendi mailine sabitle ki hata almayalım
-        to: 'keremacar3757@gmail.com', 
-        
-        subject: subject,
-        html: `
-            <p><strong>Sistemden Gelen Mesaj</strong></p>
-            <p>Asıl alıcı: ${to}</p>
-            <hr>
-            ${html}
-        `
-    });
+    try {
+        const response = await resend.emails.send({
+            from: 'onboarding@resend.dev',
+            // DİKKAT: Buraya sadece senin onaylı mailini yazdım
+            to: 'keremacar3757@gmail.com', 
+            subject: subject,
+            // İçeriğe asıl gitmesi gereken adresi not düşüyoruz
+            html: `
+                <p><strong>Asıl Alıcı:</strong> ${to}</p>
+                <hr>
+                ${html}
+            `
+        });
+        console.log("Resend Başarılı:", response);
+        return response;
+    } catch (error) {
+        console.error("Resend Hatası:", error);
+        throw error;
+    }
 }
-
 // ===== AUTH & ROUTES =====
 // (Diğer tüm rotaların /verify-code, /login vb. aynı kalacak)
 
