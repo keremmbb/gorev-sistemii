@@ -30,17 +30,16 @@ function auth(req, res, next) {
 
 // Mail Fonksiyonu
 // server.js dosyanın en üstünde mail adresini bir değişkene al
-const MY_VERIFIED_EMAIL = 'keremacar3757@gmail.com'; 
+const MY_VERIFIED_EMAIL = 'keremacar3754is@gmail.com'; 
 
 // server.js içindeki sendMail fonksiyonunu bununla değiştir:
 async function sendMail(to, subject, html) {
     try {
         const response = await resend.emails.send({
             from: 'onboarding@resend.dev',
-            // DİKKAT: Buraya sadece senin onaylı mailini yazdım
-            to: 'keremacar3757@gmail.com', 
+            // BURAYI DEĞİŞTİR: Hata mesajındaki maili aynen kopyala
+            to: 'keremacar3754is@gmail.com', 
             subject: subject,
-            // İçeriğe asıl gitmesi gereken adresi not düşüyoruz
             html: `
                 <p><strong>Asıl Alıcı:</strong> ${to}</p>
                 <hr>
