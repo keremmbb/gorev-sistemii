@@ -35,10 +35,10 @@ const MY_VERIFIED_EMAIL = 'keremacar3754is@gmail.com';
 async function sendMail(to, subject, html) {
     return await resend.emails.send({
         // BURASI ÇOK KRİTİK: 'onboarding@resend.dev' yerine kendi mailini yaz
-        from: 'keremacar3754is@gmail.com', 
+        from: 'keremacar3757@gmail.com', 
         
         // Gönderilecek yeri de kendi mailine sabitle ki hata almayalım
-        to: 'keremacar3754is@gmail.com', 
+        to: 'keremacar3757@gmail.com', 
         
         subject: subject,
         html: `
