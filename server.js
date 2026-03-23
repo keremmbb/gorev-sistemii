@@ -34,13 +34,16 @@ const MY_VERIFIED_EMAIL = 'keremacar3754is@gmail.com';
 
 async function sendMail(to, subject, html) {
     return await resend.emails.send({
-        from: 'onboarding@resend.dev',
-        // 'to' kısmını her zaman kendi mailin yapıyoruz.
-        // Kullanıcının yazdığı maili ise konunun içine veya içeriğe ekliyoruz.
-        to: MY_VERIFIED_EMAIL, 
+        // BURASI ÇOK KRİTİK: 'onboarding@resend.dev' yerine kendi mailini yaz
+        from: 'keremacar3757@gmail.com', 
+        
+        // Gönderilecek yeri de kendi mailine sabitle ki hata almayalım
+        to: 'keremacar3757@gmail.com', 
+        
         subject: subject,
         html: `
-            <p><strong>Kime gönderilmek istendi:</strong> ${to}</p>
+            <p><strong>Sistemden Gelen Mesaj</strong></p>
+            <p>Asıl alıcı: ${to}</p>
             <hr>
             ${html}
         `
@@ -89,15 +92,25 @@ app.post("/verify-code", async (req, res) => {
     
 app.post("/set-password", async (req, res) => {
     const { email, password, role } = req.body;
+    
+    // Debug için log ekleyelim, terminalde ne geldiğini görelim
+    console.log("Şifre belirleme isteği geldi:", { email, role });
+
     try {
-        // İnvite tablosunu güncellemeyi kaldırdık, sadece kullanıcıyı güncelliyoruz
-        const query = `UPDATE users SET password = $1, role = $2 WHERE email = $3 AND verified = true`;
-        await db.query(query, [password, role, email]);
-        
+        // Kullanıcıyı güncelle
+        const result = await db.query(
+            `UPDATE users SET password = $1, role = $2 WHERE email = $3 AND verified = true`, 
+            [password, role, email]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(400).json({ message: "Kullanıcı bulunamadı veya kod doğrulanmadı!" });
+        }
+
         res.json({ message: "Şifre başarıyla kaydedildi" });
     } catch (err) {
-        console.error("SET PASSWORD HATASI:", err); // Hatayı terminalde göreceğiz
-        res.status(500).json({ message: "Şifre kaydedilirken hata oluştu: " + err.message });
+        console.error("SET PASSWORD HATASI:", err);
+        res.status(500).json({ message: "Sunucu hatası: " + err.message });
     }
 });
 
