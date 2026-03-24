@@ -77,42 +77,55 @@ function loadMyAssignedTasks() {
     })
     .then(res => res.json())
     .then(tasks => {
-        // 1. Sütunları temizle
+        // 1. Sayaçları ve sütunları sıfırla
+        const counts = { Baslamadi: 0, Baslandi: 0, DevamEdiyor: 0, Tamamlandi: 0 };
         const columns = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
+        
         columns.forEach(id => {
             const el = document.getElementById(`parent-list-${id}`);
             if (el) el.innerHTML = "";
+            // Başlıktaki sayıları da sıfırla
+            const countEl = document.getElementById(`count-${id}`);
+            if (countEl) countEl.innerText = "(0)";
         });
 
-        // 2. Görevleri dağıt
+        // 2. Görevleri dağıt ve sayacı artır
         tasks.forEach(task => {
-            // Durum eşleştirme (Database -> HTML ID)
             let statusKey = "";
             if (task.status === "Başlamadı") statusKey = "Baslamadi";
             else if (task.status === "Başlandı") statusKey = "Baslandi";
             else if (task.status === "Devam Ediyor") statusKey = "DevamEdiyor";
             else if (task.status === "Tamamlandı") statusKey = "Tamamlandi";
 
-            const targetColumn = document.getElementById(`parent-list-${statusKey}`);
-
-            if (targetColumn) {
-                const card = document.createElement("div");
-                const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString("tr-TR") : "Belirtilmedi";
+            if (statusKey) {
+                counts[statusKey]++; // Sayacı artır
                 
-                card.style = "background:white; margin-bottom:10px; padding:12px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1); border-left:4px solid #3498db;";
-                card.innerHTML = `
-                    <b style="display:block; color:#2c3e50;">${task.title}</b>
-                    <small style="color:#7f8c8d;">👤 Kime: ${task.assigned_to}</small><br>
-                    <small style="color:#7f8c8d;">📅 Son: ${dueDate}</small>
-                    <div style="text-align:right; margin-top:8px;">
-                        <button onclick="deleteTask(${task.id})" style="color:red; background:none; border:none; cursor:pointer; font-size:11px;">🗑️ Sil</button>
-                    </div>
-                `;
-                targetColumn.appendChild(card);
+                const targetColumn = document.getElementById(`parent-list-${statusKey}`);
+                if (targetColumn) {
+                    const card = document.createElement("div");
+                    const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString("tr-TR") : "Belirtilmedi";
+                    
+                    card.style = "background:white; margin-bottom:10px; padding:12px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1); border-left:4px solid #3498db;";
+                    card.innerHTML = `
+                        <b style="display:block; color:#2c3e50;">${task.title}</b>
+                        <small style="color:#7f8c8d;">👤 Kime: ${task.assigned_to}</small><br>
+                        <small style="color:#7f8c8d;">📅 Son: ${dueDate}</small>
+                        <div style="text-align:right; margin-top:8px;">
+                            <button onclick="deleteTask(${task.id})" style="color:red; background:none; border:none; cursor:pointer; font-size:11px;">🗑️ Sil</button>
+                        </div>
+                    `;
+                    targetColumn.appendChild(card);
+                }
             }
         });
+
+        // 3. Güncel sayıları başlıklara yazdır
+        columns.forEach(id => {
+            const countEl = document.getElementById(`count-${id}`);
+            if (countEl) countEl.innerText = `(${counts[id]})`;
+        });
     })
-    .catch(err => console.error("Görevler yüklenirken hata:", err));
+    .catch(err => console.error("Sayaç güncelleme hatası:", err));
 }
 
 function addTask() {
