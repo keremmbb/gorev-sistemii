@@ -9,9 +9,9 @@
     /* ---- GENEL ---- */
     body {
     min-height: 100vh;
-    background-color: #1a202c;
+    background-color: #4a90e2;
     padding: 30px;
-    color: #f7fafc; /* Yazıları açık renk yapmalısın */
+    color: #333;
 }
 
     /* ---- BAŞLIKLAR ---- */
