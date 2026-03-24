@@ -104,13 +104,23 @@ function loadMyAssignedTasks() {
 
             // Tarih ve Saat Formatlama
             let dateDisplay = "Belirtilmedi";
-            if (dueDate) {
-                const datePart = dueDate.toLocaleDateString("tr-TR");
-                // Veritabanından gelen veride saat kısmı varsa (T harfi içeriyorsa veya saat 00:00 değilse) göster
-                const timePart = dueDate.getHours() === 0 && dueDate.getMinutes() === 0 ? "" : " | ⏰ " + dueDate.toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' });
-                dateDisplay = datePart + timePart;
-            }
+             if (task.due_date) {
+             // Gelen tarihi 'Date' objesine çeviriyoruz
+             const dueDate = new Date(task.due_date);
+    
+             // Türkiye saat dilimine ve yerel formata zorla
+             const datePart = dueDate.toLocaleDateString("tr-TR");
+             const timePart = dueDate.toLocaleTimeString("tr-TR", { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: false // 24 saat formatı için
+    });
 
+    // Eğer saat 00:00 değilse saati de göster
+    dateDisplay = (dueDate.getHours() === 0 && dueDate.getMinutes() === 0) 
+                  ? datePart 
+                  : `${datePart} | ⏰ ${timePart}`;
+}
             if (isOverdue) {
                 overdueCount++;
                 const li = document.createElement("li");
