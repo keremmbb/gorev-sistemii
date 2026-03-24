@@ -37,7 +37,7 @@ function loadMyTasks() {
                     <b>${task.title}</b><br>
                     <small>Atayan: ${task.assigned_by}</small><br>
                     <small>Başlangıç: ${assignedDate}</small><br>
-                    ${dueDate ? `<b style="color: ${isOverdue ? 'red' : '#2196F3'};">⏳ Son Teslim: ${dueDate.toLocaleDateString("tr-TR")} ${isOverdue ? '(SÜRESİ GEÇTİ!)' : ''}</b>` : '<i>Süre belirtilmedi</i>'}
+                    ${dueDate ? `<b style="color: ${isOverdue ? 'red' : '#2196F3'};">⏳ Son Teslim: ${dueDate.toLocaleString("tr-TR")} ${isOverdue ? '(SÜRESİ GEÇTİ!)' : ''}</b>` : '<i>Süre belirtilmedi</i>'}
                 </div>
                 <div style="margin-top:10px;">
                     Durum: 
@@ -97,13 +97,9 @@ function loadMyAssignedTasks() {
 
             let dateDisplay = "Belirtilmedi";
             if (dueDate && !isNaN(dueDate)) {
-                // Türkiye saatine göre (Gün.Ay.Yıl Saat:Dakika)
                 dateDisplay = dueDate.toLocaleString("tr-TR", {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
                 });
             }
 
@@ -149,9 +145,9 @@ function loadMyAssignedTasks() {
         });
 
         if (overduePanel) overduePanel.style.display = overdueCount > 0 ? "block" : "none";
-    })
-    .catch(err => console.error("Hata:", err));
+    });
 }
+
 function addTask() {
     const title = document.getElementById("taskTitle").value;
     const email = document.getElementById("assignedToEmail").value;
@@ -177,8 +173,6 @@ function addTask() {
 
         let finalDateTime = null;
         if (dueDate && dueTime) {
-            // KESİN ÇÖZÜM: Tarih ve saati yerel olarak oluşturup ISO formatına çeviriyoruz.
-            // Bu yöntem, veritabanının "Haa bu Türkiye saatiymiş" demesini sağlar.
             const localDate = new Date(`${dueDate}T${dueTime}`);
             finalDateTime = localDate.toISOString(); 
         } else if (dueDate) {
@@ -208,8 +202,7 @@ function addTask() {
                 loadMyAssignedTasks();
             }
         });
-    })
-    .catch(err => console.error("Hata:", err));
+    });
 }
 
 function deleteTask(taskId) {
@@ -220,7 +213,7 @@ function deleteTask(taskId) {
     }).then(() => loadMyAssignedTasks());
 }
 
-// -------------------- KAYIT & DİĞER --------------------
+// -------------------- KAYIT & GİRİŞ FONKSİYONLARI --------------------
 function sendCode() {
     const email = document.getElementById("email").value.trim();
     if (!email) return alert("Email boş olamaz!");
@@ -276,16 +269,33 @@ function login() {
     });
 }
 
-async function inviteStudent() {
-    const email = document.getElementById("inviteEmail").value;
-    const res = await fetch("/invite", {
+// -------------------- DAVET SİSTEMİ --------------------
+function sendInvite() {
+    const email = document.getElementById("inviteEmail").value.trim();
+    if (!email) return alert("Lütfen davet gönderilecek bir mail adresi girin!");
+
+    const token = localStorage.getItem("token");
+
+    fetch("/send-invite", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
-        body: JSON.stringify({ email })
-    });
-    if (res.ok) document.getElementById("inviteMessage").innerText = "Davet Gönderildi!";
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token 
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Davet maili başarıyla gönderildi!");
+            document.getElementById("inviteEmail").value = "";
+        } else {
+            alert("Davet gönderilirken bir hata oluştu.");
+        }
+    })
+    .catch(err => console.error("Davet hatası:", err));
 }
 
+// Invite token kontrolü (Sayfa açıldığında)
 document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
