@@ -85,22 +85,20 @@ function loadMyAssignedTasks() {
         if (overdueList) overdueList.innerHTML = "";
         let overdueCount = 0;
 
-        // Sütunları temizle
         columns.forEach(id => {
             const el = document.getElementById(`parent-list-${id}`);
             if (el) el.innerHTML = "";
-            const countEl = document.getElementById(`count-${id}`);
-            if (countEl) countEl.innerText = "0";
         });
 
         tasks.forEach(task => {
             const now = new Date();
+            // Veritabanından gelen stringi direkt tarihe çevir
             const dueDate = task.due_date ? new Date(task.due_date) : null;
             const isOverdue = dueDate && dueDate < now && task.status !== "Tamamlandı";
 
             let dateDisplay = "Belirtilmedi";
             if (dueDate && !isNaN(dueDate)) {
-                // Türkiye formatında (Gün.Ay.Yıl Saat:Dakika) gösterim
+                // Sadece tarih ve saat kısmını Türkiye formatında al
                 dateDisplay = dueDate.toLocaleString("tr-TR", {
                     day: '2-digit',
                     month: '2-digit',
@@ -117,7 +115,6 @@ function loadMyAssignedTasks() {
                 if (overdueList) overdueList.appendChild(li);
             }
 
-            // Durum eşleştirme
             let statusKey = "";
             if (task.status === "Başlamadı") statusKey = "Baslamadi";
             else if (task.status === "Başlandı") statusKey = "Baslandi";
@@ -127,20 +124,9 @@ function loadMyAssignedTasks() {
             if (statusKey) {
                 counts[statusKey]++;
                 const targetColumn = document.getElementById(`parent-list-${statusKey}`);
-                
                 if (targetColumn) {
                     const card = document.createElement("div");
-                    // Belirgin dış çerçeve (2px solid) ve gölge
-                    card.style = `
-                        background: #fff; 
-                        border: 2px solid ${isOverdue ? '#fc8181' : '#ddd'}; 
-                        margin-bottom: 12px; 
-                        padding: 12px; 
-                        border-radius: 8px; 
-                        position: relative; 
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                    `;
-                    
+                    card.style = `background:#fff; border:2px solid ${isOverdue ? '#fc8181' : '#ddd'}; margin-bottom:12px; padding:12px; border-radius:8px; position:relative; box-shadow: 0 2px 5px rgba(0,0,0,0.1);`;
                     card.innerHTML = `
                         <div style="padding-right: 30px;">
                             <div style="font-weight:bold; color:${isOverdue ? '#c53030' : '#333'}; margin-bottom: 5px;">
@@ -151,26 +137,19 @@ function loadMyAssignedTasks() {
                                 📅 <b>Vade:</b> ${dateDisplay} ${isOverdue ? '<br><b style="color:red;">(GECİKTİ)</b>' : ''}
                             </div>
                         </div>
-                        <button onclick="deleteTask(${task.id})" 
-                                title="Sil"
-                                style="position:absolute; top:10px; right:10px; background:none; border:none; cursor:pointer; font-size:18px;">
-                            🗑️
-                        </button>
+                        <button onclick="deleteTask(${task.id})" style="position:absolute; top:10px; right:10px; background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button>
                     `;
                     targetColumn.appendChild(card);
                 }
             }
         });
 
-        // Sayaçları güncelle
         columns.forEach(id => {
             const countEl = document.getElementById(`count-${id}`);
             if (countEl) countEl.innerText = counts[id];
         });
 
-        if (overduePanel) {
-            overduePanel.style.display = overdueCount > 0 ? "block" : "none";
-        }
+        if (overduePanel) overduePanel.style.display = overdueCount > 0 ? "block" : "none";
     })
     .catch(err => console.error("Hata:", err));
 }
@@ -180,7 +159,10 @@ function addTask() {
     const dueDate = document.getElementById("dueDate").value; 
     const dueTime = document.getElementById("dueTime").value; 
 
-    if (!title || !email) return alert("Başlık ve email zorunludur!");
+    if (!title || !email) {
+        alert("Lütfen başlık ve öğrenci mailini doldurun!");
+        return;
+    }
 
     const token = localStorage.getItem("token");
 
@@ -189,19 +171,15 @@ function addTask() {
     })
     .then(res => res.json())
     .then(data => {
-        if (!data.userId) return alert("Öğrenci bulunamadı!");
+        if (!data.userId) {
+            alert("Öğrenci bulunamadı!");
+            return;
+        }
 
         let finalDateTime = null;
-        if (dueDate && dueTime) {
-            // SAAT FARKI İÇİN MANUEL DÜZELTME:
-            let tempDate = new Date(`${dueDate}T${dueTime}`);
-            // Seçilen saatten 3 saat çıkarıyoruz
-            tempDate.setHours(tempDate.getHours() - 3); 
-            
-            // Veritabanının anlayacağı formatta ISO string yapıyoruz
-            finalDateTime = tempDate.toISOString(); 
-        } else if (dueDate) {
-            finalDateTime = dueDate;
+        if (dueDate) {
+            // Hiçbir saat çıkarma işlemi yapmadan, olduğu gibi birleştirip gönderiyoruz
+            finalDateTime = dueTime ? `${dueDate}T${dueTime}:00` : dueDate;
         }
 
         fetch("/add-task", {
@@ -220,10 +198,15 @@ function addTask() {
         .then(res => {
             if (res.ok) {
                 alert("Görev başarıyla atandı!");
+                document.getElementById("taskTitle").value = "";
+                document.getElementById("assignedToEmail").value = "";
+                document.getElementById("dueDate").value = "";
+                document.getElementById("dueTime").value = "";
                 loadMyAssignedTasks();
             }
         });
-    });
+    })
+    .catch(err => console.error("Hata:", err));
 }
 
 function deleteTask(taskId) {
