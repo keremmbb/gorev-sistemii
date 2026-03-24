@@ -70,93 +70,79 @@ function loadMyAssignedTasks() {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
-    if (!userId || !token) {
-        console.error("Giriş bilgileri eksik!");
-        return;
-    }
+    if (!userId || !token) return;
 
     fetch(`/my-assigned-tasks/${userId}`, {
         headers: { "Authorization": "Bearer " + token }
     })
-    .then(res => {
-        if (!res.ok) throw new Error("Yetki hatası veya sunucu hatası");
-        return res.json();
-    })
+    .then(res => res.json())
     .then(tasks => {
-        console.log("Gelen Görevler:", tasks); // Tarayıcı konsolunda kontrol et (F12)
-
-        // Sütun ID'lerini temizle
+        // 1. Sütunları temizle
         const columns = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
         columns.forEach(id => {
             const el = document.getElementById(`parent-list-${id}`);
             if (el) el.innerHTML = "";
         });
 
-        if (!tasks || tasks.length === 0) {
-            console.log("Atanmış görev bulunamadı.");
-            return;
-        }
-
+        // 2. Görevleri dağıt
         tasks.forEach(task => {
-            // Durum metnindeki boşlukları kaldır (Örn: "Devam Ediyor" -> "DevamEdiyor")
-            const statusId = task.status.replace(/\s+/g, '');
-            const targetColumn = document.getElementById(`parent-list-${statusId}`);
+            // Durum eşleştirme (Database -> HTML ID)
+            let statusKey = "";
+            if (task.status === "Başlamadı") statusKey = "Baslamadi";
+            else if (task.status === "Başlandı") statusKey = "Baslandi";
+            else if (task.status === "Devam Ediyor") statusKey = "DevamEdiyor";
+            else if (task.status === "Tamamlandı") statusKey = "Tamamlandi";
+
+            const targetColumn = document.getElementById(`parent-list-${statusKey}`);
 
             if (targetColumn) {
                 const card = document.createElement("div");
                 const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString("tr-TR") : "Belirtilmedi";
                 
-                card.style = `
-                    background: white; 
-                    margin-bottom: 12px; 
-                    padding: 15px; 
-                    border-radius: 8px; 
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    border-left: 5px solid #3498db;
-                `;
-
+                card.style = "background:white; margin-bottom:10px; padding:12px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1); border-left:4px solid #3498db;";
                 card.innerHTML = `
-                    <strong style="display:block; font-size:1.1em; color:#2c3e50;">${task.title}</strong>
-                    <div style="margin-top:8px; font-size:0.9em; color:#7f8c8d;">
-                        <span>👤 <b>Öğrenci:</b> ${task.assigned_to}</span><br>
-                        <span>📅 <b>Son Tarih:</b> ${dueDate}</span>
-                    </div>
-                    <div style="margin-top: 12px; text-align: right; border-top: 1px solid #eee; padding-top: 8px;">
-                        <button onclick="deleteTask(${task.id})" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-weight:bold;">🗑️ Sil</button>
+                    <b style="display:block; color:#2c3e50;">${task.title}</b>
+                    <small style="color:#7f8c8d;">👤 Kime: ${task.assigned_to}</small><br>
+                    <small style="color:#7f8c8d;">📅 Son: ${dueDate}</small>
+                    <div style="text-align:right; margin-top:8px;">
+                        <button onclick="deleteTask(${task.id})" style="color:red; background:none; border:none; cursor:pointer; font-size:11px;">🗑️ Sil</button>
                     </div>
                 `;
                 targetColumn.appendChild(card);
-            } else {
-                console.warn("Hedef sütun bulunamadı:", `parent-list-${statusId}`);
             }
         });
     })
-    .catch(err => console.error("Görev yükleme hatası:", err));
+    .catch(err => console.error("Görevler yüklenirken hata:", err));
 }
 
 function addTask() {
     const title = document.getElementById("taskTitle").value;
     const email = document.getElementById("assignedToEmail").value;
     const dueDate = document.getElementById("dueDate").value;
-    const token = localStorage.getItem("token");
 
-    if(!title || !email) return alert("Başlık ve e-mail zorunludur!");
-
-    fetch(`/get-user-id?email=${email}`, { headers: { "Authorization": "Bearer " + token } })
-    .then(res => res.json()).then(data => {
+    fetch(`/get-user-id?email=${email}`, { 
+        headers: { "Authorization": "Bearer " + localStorage.getItem("token") } 
+    })
+    .then(res => res.json())
+    .then(data => {
         if (!data.userId) return alert("Öğrenci bulunamadı!");
+
         fetch("/add-task", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + localStorage.getItem("token") },
             body: JSON.stringify({ 
                 title, 
                 assignedBy: localStorage.getItem("userId"), 
                 assignedTo: data.userId, 
                 due_date: dueDate || null 
             })
-        }).then(() => { 
-            alert("Görev atandı!"); 
+        })
+        .then(() => {
+            alert("Görev atandı!");
+            // Formu temizle
             document.getElementById("taskTitle").value = "";
+            document.getElementById("assignedToEmail").value = "";
+            // LİSTEYİ YENİLE (En önemli kısım)
             loadMyAssignedTasks(); 
         });
     });
