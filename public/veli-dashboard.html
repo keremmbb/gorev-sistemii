@@ -34,13 +34,24 @@
     </div>
 
     <hr>
-
-    <div class="section">
-        <h3>👥 Öğrenci Davet Et</h3>
-        <input type="email" id="inviteEmail" placeholder="Öğrenci emaili">
-        <button onclick="inviteStudent()">Davet Et</button>
-        <p id="inviteMessage"></p>
+<div class="section">
+    <h3>📝 Öğrenciye Görev Ata</h3>
+    <input type="text" id="taskTitle" placeholder="Görev başlığı">
+    <input type="email" id="assignedToEmail" placeholder="Öğrenci maili">
+    
+    <div style="display: flex; gap: 10px; margin: 10px 0;">
+        <div style="flex: 1;">
+            <label style="display: block; font-size: 12px; margin-bottom: 3px;">Tarih:</label>
+            <input type="date" id="dueDate" style="width: 100%;">
+        </div>
+        <div style="flex: 1;">
+            <label style="display: block; font-size: 12px; margin-bottom: 3px;">Saat (Opsiyonel):</label>
+            <input type="time" id="dueTime" style="width: 100%;">
+        </div>
     </div>
+    
+    <button onclick="addTask()">Görev Ekle</button>
+</div>
 <div id="overdue-panel" style="display: none; background: #fff5f5; border: 2px solid #fc8181; padding: 15px; border-radius: 8px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
     <h3 style="color: #c53030; margin-top: 0; display: flex; align-items: center;">
         ⚠️ Dikkat: Süresi Geçen Görevler!
