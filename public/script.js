@@ -80,76 +80,112 @@ function loadMyAssignedTasks() {
         const columns = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
         const counts = { Baslamadi: 0, Baslandi: 0, DevamEdiyor: 0, Tamamlandi: 0 };
         
+        // Gecikenler paneli hazırlığı
+        const overduePanel = document.getElementById("overdue-panel");
         const overdueList = document.getElementById("overdue-list");
         if (overdueList) overdueList.innerHTML = "";
         let overdueCount = 0;
 
+        // Sütunları temizle
         columns.forEach(id => {
             const el = document.getElementById(`parent-list-${id}`);
             if (el) el.innerHTML = "";
+            const countEl = document.getElementById(`count-${id}`);
+            if (countEl) countEl.innerText = "0";
         });
 
         tasks.forEach(task => {
             const now = new Date();
-            // BURASI KRİTİK: Veritabanından gelen string'i gerçek bir tarih objesine çeviriyoruz.
-            // Tarayıcı bunu otomatik olarak senin yerel saatine (Türkiye) ayarlar.
+            
+            // SAAT FARKI ÇÖZÜMÜ: Veritabanından gelen UTC verisini yerel saate çevirir
             const dueDate = task.due_date ? new Date(task.due_date) : null;
             
+            // Eğer tarih geçmişse ve durum "Tamamlandı" değilse gecikmiş sayılır
             const isOverdue = dueDate && dueDate < now && task.status !== "Tamamlandı";
 
+            // Tarih ve Saat Formatlama (Türkiye Formatı)
             let dateDisplay = "Belirtilmedi";
-            if (dueDate) {
+            if (dueDate && !isNaN(dueDate)) {
                 const datePart = dueDate.toLocaleDateString("tr-TR");
                 const timePart = dueDate.toLocaleTimeString("tr-TR", { 
                     hour: '2-digit', 
-                    minute: '2-digit' 
+                    minute: '2-digit',
+                    hour12: false 
                 });
-                
-                // Eğer saat tam 00:00 değilse saati de göster
+
+                // Eğer saat 00:00 değilse (saat girilmişse) ekrana bas
                 dateDisplay = (dueDate.getHours() === 0 && dueDate.getMinutes() === 0) 
                     ? datePart 
                     : `${datePart} | ⏰ ${timePart}`;
             }
 
-            // --- Gecikenler Mantığı ---
+            // Gecikenler Listesine Ekle
             if (isOverdue) {
                 overdueCount++;
                 const li = document.createElement("li");
-                li.innerHTML = `⚠️ <b>${task.title}</b> (${dateDisplay})`;
+                li.style.marginBottom = "5px";
+                li.innerHTML = `⚠️ <b>${task.title}</b> - <small>(Öğrenci: ${task.assigned_to} / Vade: ${dateDisplay})</small>`;
                 if (overdueList) overdueList.appendChild(li);
             }
 
-            // --- Kanban Dağıtımı ---
-            let statusKey = task.status.replace(/\s+/g, '');
-            if (statusKey === "Başlamadı") statusKey = "Baslamadi";
-            if (statusKey === "Başlandı") statusKey = "Baslandi";
-            if (statusKey === "Tamamlandı") statusKey = "Tamamlandi";
+            // Kanban Sütun Eşleştirme
+            let statusKey = "";
+            if (task.status === "Başlamadı") statusKey = "Baslamadi";
+            else if (task.status === "Başlandı") statusKey = "Baslandi";
+            else if (task.status === "Devam Ediyor") statusKey = "DevamEdiyor";
+            else if (task.status === "Tamamlandı") statusKey = "Tamamlandi";
 
-            if (counts.hasOwnProperty(statusKey)) {
+            if (statusKey) {
                 counts[statusKey]++;
                 const targetColumn = document.getElementById(`parent-list-${statusKey}`);
+                
                 if (targetColumn) {
                     const card = document.createElement("div");
-                    card.style = `background:#fff; border:2px solid ${isOverdue ? '#fc8181' : '#ddd'}; margin-bottom:10px; padding:12px; border-radius:6px; position:relative;`;
+                    
+                    // Belirgin dış çizgiler ve gecikme durumuna göre renk
+                    card.style = `
+                        background: #fff; 
+                        border: 2px solid ${isOverdue ? '#fc8181' : '#ddd'}; 
+                        margin-bottom: 12px; 
+                        padding: 12px; 
+                        border-radius: 6px; 
+                        position: relative; 
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                    `;
+                    
                     card.innerHTML = `
-                        <div style="font-weight:bold; color:${isOverdue ? '#c53030' : '#333'};">${task.title}</div>
-                        <div style="font-size:12px; color:#666;">👤 ${task.assigned_to}<br>📅 ${dateDisplay}</div>
-                        <button onclick="deleteTask(${task.id})" style="position:absolute; top:10px; right:10px; background:none; border:none; cursor:pointer;">🗑️</button>
+                        <div style="padding-right: 25px;">
+                            <div style="font-weight:bold; color:${isOverdue ? '#c53030' : '#333'}; margin-bottom: 5px;">
+                                ${isOverdue ? '⏳ ' : ''}${task.title}
+                            </div>
+                            <div style="font-size:12px; color:#666; line-height: 1.5;">
+                                👤 <b>Öğrenci:</b> ${task.assigned_to}<br>
+                                📅 <b>Tarih:</b> ${dateDisplay} ${isOverdue ? '<br><b style="color:#c53030;">(SÜRESİ GEÇTİ)</b>' : ''}
+                            </div>
+                        </div>
+                        <button onclick="deleteTask(${task.id})" 
+                                title="Görevi Sil"
+                                style="position:absolute; top:10px; right:10px; background:none; border:none; cursor:pointer; font-size:18px;">
+                            🗑️
+                        </button>
                     `;
                     targetColumn.appendChild(card);
                 }
             }
         });
 
-        // Sayaçları güncelle
+        // Sayaçları Güncelle
         columns.forEach(id => {
-            const cEl = document.getElementById(`count-${id}`);
-            if (cEl) cEl.innerText = counts[id];
+            const countEl = document.getElementById(`count-${id}`);
+            if (countEl) countEl.innerText = counts[id];
         });
 
-        const overduePanel = document.getElementById("overdue-panel");
-        if (overduePanel) overduePanel.style.display = overdueCount > 0 ? "block" : "none";
-    });
+        // Gecikenler Paneli Görünürlüğü
+        if (overduePanel) {
+            overduePanel.style.display = overdueCount > 0 ? "block" : "none";
+        }
+    })
+    .catch(err => console.error("Görevler yüklenirken hata:", err));
 }
 
 function addTask() {
@@ -175,12 +211,12 @@ function addTask() {
             return;
         }
 
-        let finalDateTime = null;
-        if (dueDate) {
-            // SAAT FARKI ÇÖZÜMÜ: 'T' harfi ile birleştirip saniye ekliyoruz.
-            // Bu format tarayıcılar tarafından "Yerel Zaman" olarak algılanır.
-            finalDateTime = dueTime ? `${dueDate}T${dueTime}:00` : dueDate;
-        }
+        // addTask fonksiyonu içindeki o kısmı şununla değiştir:
+let finalDateTime = null;
+if (dueDate) {
+    // Sonuna +03 ekleyerek veritabanına bunun Türkiye saati olduğunu zorla öğretiyoruz
+    finalDateTime = dueTime ? `${dueDate} ${dueTime}:00+03` : dueDate;
+}
 
         fetch("/add-task", {
             method: "POST",
