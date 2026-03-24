@@ -92,13 +92,12 @@ function loadMyAssignedTasks() {
 
         tasks.forEach(task => {
             const now = new Date();
-            // Veritabanından gelen stringi direkt tarihe çevir
             const dueDate = task.due_date ? new Date(task.due_date) : null;
             const isOverdue = dueDate && dueDate < now && task.status !== "Tamamlandı";
 
             let dateDisplay = "Belirtilmedi";
             if (dueDate && !isNaN(dueDate)) {
-                // Sadece tarih ve saat kısmını Türkiye formatında al
+                // Türkiye saatine göre (Gün.Ay.Yıl Saat:Dakika)
                 dateDisplay = dueDate.toLocaleString("tr-TR", {
                     day: '2-digit',
                     month: '2-digit',
@@ -177,9 +176,13 @@ function addTask() {
         }
 
         let finalDateTime = null;
-        if (dueDate) {
-            // Hiçbir saat çıkarma işlemi yapmadan, olduğu gibi birleştirip gönderiyoruz
-            finalDateTime = dueTime ? `${dueDate}T${dueTime}:00` : dueDate;
+        if (dueDate && dueTime) {
+            // KESİN ÇÖZÜM: Tarih ve saati yerel olarak oluşturup ISO formatına çeviriyoruz.
+            // Bu yöntem, veritabanının "Haa bu Türkiye saatiymiş" demesini sağlar.
+            const localDate = new Date(`${dueDate}T${dueTime}`);
+            finalDateTime = localDate.toISOString(); 
+        } else if (dueDate) {
+            finalDateTime = dueDate;
         }
 
         fetch("/add-task", {
