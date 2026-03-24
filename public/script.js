@@ -105,15 +105,33 @@ function loadMyAssignedTasks() {
                     const card = document.createElement("div");
                     const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString("tr-TR") : "Belirtilmedi";
                     
-                    card.style = "background: #fdfdfd; border: 1px solid #eee; margin-bottom: 12px; padding: 12px; border-radius: 4px; position: relative;";
-                   card.innerHTML = `
-                     <div style="font-weight: bold; margin-bottom: 5px; color: #444;">${task.title}</div>
-                    <div style="font-size: 12px; color: #777;">
-                          Öğrenci: ${task.assigned_to}<br>
-                           Son Tarih: ${dueDate}
-                          </div>
-                           <button onclick="deleteTask(${task.id})" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px;" onmouseover="this.style.color='red'" onmouseout="this.style.color='#ccc'">✖</button>
-                        `;
+                    card.style = `
+     background: #ffffff; 
+    border: 1px solid #ddd; 
+    margin-bottom: 12px; 
+    padding: 12px; 
+    border-radius: 6px; 
+    position: relative; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+`;
+
+card.innerHTML = `
+    <div style="padding-right: 25px;">
+        <div style="font-weight: bold; color: #333; margin-bottom: 5px;">${task.title}</div>
+        <div style="font-size: 12px; color: #666; line-height: 1.4;">
+            👤 <b>Öğrenci:</b> ${task.assigned_to}<br>
+            📅 <b>Son Tarih:</b> ${dueDate}
+        </div>
+    </div>
+    
+    <button onclick="deleteTask(${task.id})" 
+            title="Görevi Sil"
+            style="position: absolute; top: 10px; right: 10px; background: none; border: none; cursor: pointer; font-size: 18px; transition: transform 0.2s;"
+            onmouseover="this.style.transform='scale(1.2)'" 
+            onmouseout="this.style.transform='scale(1)'">
+        🗑️
+    </button>
+`;
                     targetColumn.appendChild(card);
                 }
             }
