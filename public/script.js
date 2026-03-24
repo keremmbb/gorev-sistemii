@@ -105,15 +105,15 @@ function loadMyAssignedTasks() {
                     const card = document.createElement("div");
                     const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString("tr-TR") : "Belirtilmedi";
                     
-                    card.style = "background:white; margin-bottom:10px; padding:12px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1); border-left:4px solid #3498db;";
-                    card.innerHTML = `
-                        <b style="display:block; color:#2c3e50;">${task.title}</b>
-                        <small style="color:#7f8c8d;">👤 Kime: ${task.assigned_to}</small><br>
-                        <small style="color:#7f8c8d;">📅 Son: ${dueDate}</small>
-                        <div style="text-align:right; margin-top:8px;">
-                            <button onclick="deleteTask(${task.id})" style="color:red; background:none; border:none; cursor:pointer; font-size:11px;">🗑️ Sil</button>
-                        </div>
-                    `;
+                    card.style = "background: #fdfdfd; border: 1px solid #eee; margin-bottom: 12px; padding: 12px; border-radius: 4px; position: relative;";
+                   card.innerHTML = `
+                     <div style="font-weight: bold; margin-bottom: 5px; color: #444;">${task.title}</div>
+                    <div style="font-size: 12px; color: #777;">
+                          Öğrenci: ${task.assigned_to}<br>
+                           Son Tarih: ${dueDate}
+                          </div>
+                           <button onclick="deleteTask(${task.id})" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px;" onmouseover="this.style.color='red'" onmouseout="this.style.color='#ccc'">✖</button>
+                        `;
                     targetColumn.appendChild(card);
                 }
             }
