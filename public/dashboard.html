@@ -69,7 +69,20 @@
                     <div style="font-size: 1.2rem; font-weight: bold;">💰 <span id="total-points">0</span> GP</div>
                 </div>
             </div>
-            <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;">📜 Rütbe Tablosu</button>
+            <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; font-weight: bold; transition: 0.3s;">
+    📜 Rütbe Tablosunu Gör
+</button>
+
+<div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+    <h4 style="margin-top: 0; color: #2d3748; border-bottom: 2px solid #f0f4f8; padding-bottom: 10px; text-align: center;">🏆 Rütbe Gereksinimleri</h4>
+    <table style="width: 100%; font-size: 0.95rem; text-align: left; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 10px;">0 - 500 XP</td> <td style="text-align: right;"><b>Çaylak</b></td> </tr>
+        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 10px;">500 - 1500 XP</td> <td style="text-align: right; color: #3182ce;"><b>Asistan</b></td> </tr>
+        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 10px;">1500 - 3000 XP</td> <td style="text-align: right; color: #805ad5;"><b>Usta</b></td> </tr>
+        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 10px;">3000 - 6000 XP</td> <td style="text-align: right; color: #38a169;"><b>Kahraman</b></td> </tr>
+        <tr> <td style="padding: 10px;">6000+ XP</td> <td style="text-align: right; color: #d69e2e;"><b>Efsane 👑</b></td> </tr>
+    </table>
+</div>
         </div>
     </div>
 

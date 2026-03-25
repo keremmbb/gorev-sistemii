@@ -560,3 +560,13 @@ async function approvePurchase(purchaseId, status) {
         alert(`Ödül ${status}!`);
     }
 }
+function toggleLevelTable() {
+    const table = document.getElementById("levelTable");
+    if (table.style.display === "none" || table.style.display === "") {
+        table.style.display = "block";
+        // Tablo açıldığında yumuşak bir odaklanma sağlayalım
+        table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        table.style.display = "none";
+    }
+}
