@@ -33,19 +33,16 @@ async function loadMyTasks() {
             minute: '2-digit' 
         });
 
-        // Durumlara göre renk belirleme (Senin sistemindeki renkler)
-        let statusColor = "#cbd5e0"; // Boşta gri
-        if (task.status === "Başlamadı") statusColor = "#feb2b2"; // Kırmızı
-        if (task.status === "Başlandı") statusColor = "#90cdf4";   // Mavi
-        if (task.status === "Devam Ediyor") statusColor = "#faf089"; // Sarı
-        if (task.status === "Tamamlandı") statusColor = "#9ae6b4";   // Yeşil
+        let statusColor = "#cbd5e0"; 
+        if (task.status === "Başlamadı") statusColor = "#feb2b2"; 
+        if (task.status === "Başlandı") statusColor = "#90cdf4";   
+        if (task.status === "Devam Ediyor") statusColor = "#faf089"; 
+        if (task.status === "Tamamlandı") statusColor = "#9ae6b4";   
 
-        // Tamamlandıysa kilitli (disabled) yapıyoruz
-        const isDisabled = task.status === "Tamamlandı" ? "disabled" : "";
+        const isCompleted = task.status === "Tamamlandı";
 
         const li = document.createElement("li");
-        // Tamamlanan görevin opaklığını biraz düşürdük ki "bitmiş" olduğu anlaşılsın
-        li.style = `background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 10px solid ${statusColor}; opacity: ${task.status === "Tamamlandı" ? "0.85" : "1"};`;
+        li.style = `background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 10px solid ${statusColor}; opacity: ${isCompleted ? "0.85" : "1"};`;
         
         li.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -55,16 +52,21 @@ async function loadMyTasks() {
                     <span style="color: #e67e22; font-weight: bold;">⏰ Saat: ${temizSaat}</span> | 
                     <span style="color: #27ae60; font-weight: bold;">💎 ${task.points} Puan</span>
                 </div>
-                <div style="margin-left: 10px; display: flex; align-items: center; gap: 10px;">
+                <div style="margin-left: 10px; display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 14px; height: 14px; background-color: ${statusColor}; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.1);"></div>
                     
-                    <div title="${task.status}" style="width: 14px; height: 14px; background-color: ${statusColor}; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.1); shadow: inset 0 1px 2px rgba(0,0,0,0.2);"></div>
-                    
-                    <select onchange="updateStatus(${task.id}, this.value)" ${isDisabled} style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; cursor: ${task.status === "Tamamlandı" ? "not-allowed" : "pointer"}; font-weight: bold; background-color: ${task.status === "Tamamlandı" ? "#f8fafc" : "white"}; color: #333;">
+                    <select id="select-${task.id}" ${isCompleted ? "disabled" : ""} style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-weight: bold;">
                         <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>Başlamadı</option>
                         <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>Başlandı</option>
                         <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
                         <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
                     </select>
+
+                    ${!isCompleted ? `
+                        <button onclick="saveTaskStatus(${task.id})" style="background: #4A90E2; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">
+                            Kaydet
+                        </button>
+                    ` : '<span style="color: #27ae60; font-weight: bold; font-size: 0.8rem;">Bitti</span>'}
                 </div>
             </div>
         `;
@@ -412,5 +414,28 @@ async function completeTask(taskId) {
         alert("Görev tamamlandı! Puanın eklendi.");
         loadMyTasks();
         loadStudentPoints();
+    }
+}
+async function saveTaskStatus(taskId) {
+    const selectElement = document.getElementById(`select-${taskId}`);
+    const newStatus = selectElement.value;
+
+    if (newStatus === "Tamamlandı") {
+        const onay = confirm("Tamamlandı olarak işaretlerseniz bir daha değiştiremezsiniz. Emin misiniz?");
+        if (!onay) return;
+    }
+
+    const res = await fetch("/update-task-status", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ taskId, status: newStatus })
+    });
+
+    if (res.ok) {
+        alert("Durum güncellendi!");
+        loadMyTasks(); // Listeyi yenile (renkler ve kilitler güncellensin)
+        loadStudentPoints(); // Puanı güncelle
+    } else {
+        alert("Güncelleme sırasında bir hata oluştu.");
     }
 }
