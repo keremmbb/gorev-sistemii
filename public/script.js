@@ -25,11 +25,11 @@ function loadMyTasks() {
 
         tasks.forEach(task => {
             const li = document.createElement("li");
-            // SAAT DÜZELTMESİ: UTC'den Türkiye Saatine (GMT+3)
-            const dueDate = task.due_date ? new Date(task.due_date) : null;
-            const dateStr = dueDate ? dueDate.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" }) : 'Belirtilmedi';
             
-            const isOverdue = dueDate && dueDate < new Date() && task.status !== 'Tamamlandı';
+            // DÜZELTME BURADA: fixDate kullanıyoruz
+            const dateStr = fixDate(task.due_date);
+            const dueDateObj = new Date(task.due_date);
+            const isOverdue = dueDateObj < new Date() && task.status !== 'Tamamlandı';
             
             li.style = `border-left: 5px solid ${isOverdue ? '#e53e3e' : '#48bb78'}; background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; list-style:none; box-shadow: 0 2px 4px rgba(0,0,0,0.05);`;
             
@@ -53,6 +53,77 @@ function loadMyTasks() {
                 </div>`;
             list.appendChild(li);
         });
+    });
+}
+
+// --- VELİ TARAFI GÜNCELLEME ---
+function loadMyAssignedTasks() {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    fetch(`/my-assigned-tasks/${userId}`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(tasks => {
+        const columns = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
+        const counts = { Baslamadi: 0, Baslandi: 0, DevamEdiyor: 0, Tamamlandi: 0 };
+        
+        const overdueList = document.getElementById("overdue-list");
+        if (overdueList) overdueList.innerHTML = "";
+        let overdueCount = 0;
+
+        columns.forEach(id => {
+            const el = document.getElementById(`parent-list-${id}`);
+            if (el) el.innerHTML = "";
+        });
+
+        tasks.forEach(task => {
+            // DÜZELTME BURADA: fixDate kullanıyoruz
+            const dateStr = fixDate(task.due_date);
+            const dueDateObj = new Date(task.due_date);
+            const isOverdue = dueDateObj < new Date() && task.status !== "Tamamlandı";
+
+            if (isOverdue) {
+                overdueCount++;
+                const li = document.createElement("li");
+                li.innerHTML = `⚠️ <b>${task.title}</b> - <small>${task.assigned_to} (${dateStr})</small>`;
+                if (overdueList) overdueList.appendChild(li);
+            }
+
+            let statusKey = task.status;
+            if (statusKey === "Başlamadı") statusKey = "Baslamadi";
+            else if (statusKey === "Başlandı") statusKey = "Baslandi";
+            else if (statusKey === "Devam Ediyor") statusKey = "DevamEdiyor";
+            else if (statusKey === "Tamamlandı") statusKey = "Tamamlandi";
+
+            if (counts.hasOwnProperty(statusKey)) {
+                counts[statusKey]++;
+                const container = document.getElementById(`parent-list-${statusKey}`);
+                if (container) {
+                    const card = document.createElement("div");
+                    card.style = `background:#fff; border:1px solid ${isOverdue ? '#fc8181' : '#eee'}; padding:12px; margin-bottom:10px; border-radius:8px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.05);`;
+                    
+                    card.innerHTML = `
+                        <div style="padding-right:25px;">
+                            <b style="color:${isOverdue ? '#c53030' : '#333'}">${isOverdue ? '⏳ ' : ''}${task.title}</b>
+                            <span style="font-size:0.8em; color:#92400e; font-weight:bold;"> (🏆 ${task.points} Puan)</span><br>
+                            <p style="color: #666; font-size: 0.85em; margin: 5px 0; font-style: italic;">${task.description || ""}</p>
+                            <small style="display:block; margin-top:5px;">👤 Öğrenci: ${task.assigned_to}</small>
+                            <small style="color:#999;">📅 ${dateStr}</small>
+                        </div>
+                        <button onclick="deleteTask(${task.id})" style="position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; font-size:16px;">🗑️</button>
+                    `;
+                    container.appendChild(card);
+                }
+            }
+        });
+
+        columns.forEach(id => {
+            const countEl = document.getElementById(`count-${id}`);
+            if (countEl) countEl.innerText = counts[id];
+        });
+
+        const overduePanel = document.getElementById("overdue-panel");
+        if (overduePanel) overduePanel.style.display = overdueCount > 0 ? "block" : "none";
     });
 }
 
@@ -297,3 +368,21 @@ document.addEventListener("DOMContentLoaded", () => {
         loadMyAssignedTasks();
     }
 });
+function fixDate(dateSource) {
+    if (!dateSource) return "Belirtilmedi";
+    
+    const date = new Date(dateSource);
+    
+    // Eğer gelen tarih geçerli değilse hata verme
+    if (isNaN(date.getTime())) return "Geçersiz Tarih";
+
+    // Türkiye saati (Europe/Istanbul) için formatlama
+    return date.toLocaleString("tr-TR", {
+        timeZone: "Europe/Istanbul",
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
