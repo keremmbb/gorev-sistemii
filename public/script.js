@@ -25,20 +25,24 @@ function loadMyTasks() {
 
         tasks.forEach(task => {
             const li = document.createElement("li");
+            // SAAT DÜZELTMESİ: UTC'den Türkiye Saatine (GMT+3)
             const dueDate = task.due_date ? new Date(task.due_date) : null;
+            const dateStr = dueDate ? dueDate.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" }) : 'Belirtilmedi';
+            
             const isOverdue = dueDate && dueDate < new Date() && task.status !== 'Tamamlandı';
             
             li.style = `border-left: 5px solid ${isOverdue ? '#e53e3e' : '#48bb78'}; background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; list-style:none; box-shadow: 0 2px 4px rgba(0,0,0,0.05);`;
             
             const descHtml = task.description ? `<p style="color: #555; font-size: 0.9em; margin: 5px 0;">${task.description}</p>` : "";
+            const pointsHtml = `<span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:12px; font-size:0.8em; font-weight:bold; margin-left:10px;">🏆 ${task.points || 10} Puan</span>`;
 
             li.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:start;">
                     <div style="flex: 1;">
-                        <b style="font-size: 1.1em;">${task.title}</b>
+                        <b style="font-size: 1.1em;">${task.title}</b> ${pointsHtml}
                         ${descHtml}
                         <small style="display:block; margin-top:5px; color:#888;">Atayan: ${task.assigned_by}</small>
-                        <span style="color: ${isOverdue ? 'red' : '#666'}; font-size: 0.85em;">⏳ ${dueDate ? dueDate.toLocaleString("tr-TR") : 'Belirtilmedi'}</span>
+                        <span style="color: ${isOverdue ? 'red' : '#666'}; font-size: 0.85em;">⏳ ${dateStr}</span>
                     </div>
                     <select onchange="updateStatus(${task.id}, this.value)" style="margin-left: 10px; padding: 5px; border-radius: 5px;">
                         <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>🔴 Başlamadı</option>
@@ -52,6 +56,21 @@ function loadMyTasks() {
     });
 }
 
+async function loadStudentPoints() {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+    if (!userId || !token) return;
+
+    try {
+        const response = await fetch(`/user-points/${userId}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await response.json();
+        const pointsDisplay = document.getElementById("total-points");
+        if (pointsDisplay) pointsDisplay.innerText = data.total_points || 0;
+    } catch (error) { console.error("Puan yükleme hatası:", error); }
+}
+
 function updateStatus(taskId, status) {
     fetch("/update-task-status", {
         method: "POST",
@@ -60,6 +79,7 @@ function updateStatus(taskId, status) {
     }).then(res => {
         if (res.ok) {
             loadMyTasks();
+            loadStudentPoints(); 
         }
     });
 }
@@ -87,8 +107,8 @@ function loadMyAssignedTasks() {
 
         tasks.forEach(task => {
             const dueDate = task.due_date ? new Date(task.due_date) : null;
+            const dateStr = dueDate ? dueDate.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" }) : "Belirtilmedi";
             const isOverdue = dueDate && dueDate < new Date() && task.status !== "Tamamlandı";
-            const dateStr = dueDate ? dueDate.toLocaleString("tr-TR") : "Belirtilmedi";
 
             if (isOverdue) {
                 overdueCount++;
@@ -110,12 +130,11 @@ function loadMyAssignedTasks() {
                     const card = document.createElement("div");
                     card.style = `background:#fff; border:1px solid ${isOverdue ? '#fc8181' : '#eee'}; padding:12px; margin-bottom:10px; border-radius:8px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.05);`;
                     
-                    const descHtml = task.description ? `<p style="color: #666; font-size: 0.85em; margin: 5px 0; font-style: italic;">${task.description}</p>` : "";
-
                     card.innerHTML = `
                         <div style="padding-right:25px;">
-                            <b style="color:${isOverdue ? '#c53030' : '#333'}">${isOverdue ? '⏳ ' : ''}${task.title}</b><br>
-                            ${descHtml}
+                            <b style="color:${isOverdue ? '#c53030' : '#333'}">${isOverdue ? '⏳ ' : ''}${task.title}</b>
+                            <span style="font-size:0.8em; color:#92400e; font-weight:bold;"> (🏆 ${task.points} Puan)</span><br>
+                            <p style="color: #666; font-size: 0.85em; margin: 5px 0; font-style: italic;">${task.description || ""}</p>
                             <small style="display:block; margin-top:5px;">👤 Öğrenci: ${task.assigned_to}</small>
                             <small style="color:#999;">📅 ${dateStr}</small>
                         </div>
@@ -135,64 +154,45 @@ function loadMyAssignedTasks() {
     });
 }
 
-// -------------------- VELİ: GÖREV EKLEME --------------------
 async function addTask() {
     const title = document.getElementById("taskTitle").value.trim();
     const description = document.getElementById("taskDescription").value.trim();
     const assignedToEmail = document.getElementById("assignedToEmail").value.trim();
     const dueDate = document.getElementById("dueDate").value;
     const dueTime = document.getElementById("dueTime").value;
-    const points = document.getElementById("taskPoints")?.value || 10; // Puanı al (yoksa 10)
+    const points = document.getElementById("taskPoints")?.value || 10;
 
     const token = localStorage.getItem("token");
     const assignedBy = localStorage.getItem("userId");
 
-    if (!title || !assignedToEmail) {
-        alert("Lütfen başlık ve öğrenci mailini doldurun.");
+    if (!title || !assignedToEmail || !dueDate || !dueTime) {
+        alert("Lütfen tüm alanları doldurun.");
         return;
     }
 
     try {
-        // 1. Önce mail adresinden öğrencinin ID'sini bulalım
-        const userRes = await fetch(`/get-user-id?email=${assignedToEmail}`, {
-            headers: { "Authorization": "Bearer " + token }
-        });
+        const userRes = await fetch(`/get-user-id?email=${assignedToEmail}`, { headers: {"Authorization": "Bearer " + token} });
         const userData = await userRes.json();
 
-        if (!userData.userId) {
-            alert("Bu mail adresine sahip bir öğrenci bulunamadı! Lütfen önce davet edin.");
-            return;
-        }
+        if (!userData.userId) return alert("Bu mail adresine sahip bir öğrenci bulunamadı!");
 
-        // 2. Görevi puanla birlikte sunucuya gönderelim
+        // ISO Formatında birleştirme (Saat kaymasını engellemek için en güvenli yol)
+        const fullIsoDate = `${dueDate}T${dueTime}:00`;
+
         const response = await fetch("/add-task", {
             method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            },
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
             body: JSON.stringify({
-                title,
-                description,
-                assignedTo: userData.userId,
-                assignedBy,
-                due_date: `${dueDate} ${dueTime}`,
-                points: parseInt(points)
+                title, description, assignedTo: userData.userId, assignedBy,
+                due_date: fullIsoDate, points: parseInt(points)
             })
         });
 
-        const result = await response.json();
-        
         if (response.ok) {
             alert("Görev başarıyla eklendi!");
             location.reload();
-        } else {
-            alert("Hata: " + result.message);
         }
-    } catch (error) {
-        console.error("Görev ekleme hatası:", error);
-        alert("Sistemsel bir hata oluştu.");
-    }
+    } catch (error) { console.error("Hata:", error); }
 }
 
 function deleteTask(taskId) {
@@ -205,7 +205,6 @@ function deleteTask(taskId) {
 function sendInvite() {
     const email = document.getElementById("inviteEmail").value.trim();
     if (!email) return alert("Mail adresi girin!");
-
     fetch("/send-invite", {
         method: "POST",
         headers: getAuthHeaders(),
@@ -214,17 +213,13 @@ function sendInvite() {
 }
 
 function sendCode() {
-    const emailInput = document.getElementById("email");
-    const email = emailInput ? emailInput.value.trim() : "";
-    if (!email) return alert("Lütfen geçerli bir mail adresi giriniz!");
-
+    const email = document.getElementById("email").value.trim();
+    if (!email) return alert("Mail adresi gerekli!");
     fetch("/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email })
-    })
-    .then(res => res.json())
-    .then(data => alert(data.message));
+        body: JSON.stringify({ email })
+    }).then(res => res.json()).then(data => alert(data.message));
 }
 
 function verify() {
@@ -232,8 +227,6 @@ function verify() {
     const code = document.getElementById("code").value.trim();
     const password = document.getElementById("password").value.trim();
     const role = localStorage.getItem("registerRole") || "parent";
-
-    if (!email || !code || !password) return alert("Tüm alanları doldurun!");
 
     fetch("/verify-code", {
         method: "POST",
@@ -250,12 +243,10 @@ function verify() {
             });
         } else throw new Error(data.message);
     })
-    .then(res => res.json())
     .then(() => {
-        alert("Kayıt tamamlandı!");
+        alert("Kayıt başarılı!");
         window.location.href = "index.html";
-    })
-    .catch(err => alert("Hata: " + err.message));
+    }).catch(err => alert(err.message));
 }
 
 function login() {
@@ -277,16 +268,12 @@ function login() {
     });
 }
 
+// -------------------- SAYFA YÜKLENDİĞİNDE --------------------
 document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
     const emailInput = document.getElementById("email");
     const roleText = document.getElementById("roleText");
-
-    if (!inviteToken) {
-        localStorage.setItem("registerRole", "parent");
-        if (roleText) roleText.innerText = "Veli";
-    }
 
     if (inviteToken && emailInput) {
         fetch(`/check-invite?invite=${inviteToken}`)
@@ -298,30 +285,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (roleText) roleText.innerText = "Öğrenci (Davetli)";
             }
         });
+    } else {
+        localStorage.setItem("registerRole", "parent");
     }
-    if (document.getElementById("taskList")) loadMyTasks();
+
+    if (document.getElementById("taskList")) {
+        loadMyTasks();
+        loadStudentPoints();
+    }
+    if (document.getElementById("parent-list-Baslamadi")) {
+        loadMyAssignedTasks();
+    }
 });
-// Öğrencinin toplam puanını sunucudan çekip ekrana yazdırır
-async function loadStudentPoints() {
-    const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
-
-    try {
-        const response = await fetch(`/user-points/${userId}`, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        const pointsDisplay = document.getElementById("total-points");
-        if (pointsDisplay) {
-            pointsDisplay.innerText = data.total_points || 0;
-        }
-    } catch (error) {
-        console.error("Puan yükleme hatası:", error);
-    }
-}
-
-// Eğer öğrenci dashboard sayfasındaysak puanı otomatik yükle
-if (window.location.pathname.includes("student-dashboard.html")) {
-    loadStudentPoints();
-}

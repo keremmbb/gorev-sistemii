@@ -80,12 +80,12 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/add-task", auth, async (req, res) => {
-    // points değerini de body'den alıyoruz
     const { title, description, assignedTo, assignedBy, due_date, points } = req.body;
     try {
+        // Puanı ve Tarihi veritabanına kaydediyoruz
         await db.query(
             "INSERT INTO tasks (title, description, assigned_to, assigned_by, status, assigned_at, due_date, points) VALUES ($1, $2, $3, $4, 'Başlamadı', NOW(), $5, $6)", 
-            [title, description, assignedTo, assignedBy, due_date, points || 10] // Eğer puan gelmezse varsayılan 10
+            [title, description, assignedTo, assignedBy, due_date, points || 10]
         );
         res.json({ message: "Görev atandı" });
     } catch (error) { 
@@ -93,7 +93,6 @@ app.post("/add-task", auth, async (req, res) => {
         res.status(500).json({ message: "Hata" }); 
     }
 });
-
 app.get("/my-tasks/:userId", auth, async (req, res) => {
     const result = await db.query("SELECT t.*, u.email as assigned_by FROM tasks t JOIN users u ON t.assigned_by = u.id WHERE t.assigned_to = $1", [req.params.userId]);
     res.json(result.rows);
@@ -106,28 +105,22 @@ app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
 
 app.post("/update-task-status", auth, async (req, res) => {
     const { taskId, status } = req.body;
-    
     try {
-        // 1. Önce görevin mevcut durumunu, puanını ve kime atandığını bulalım
         const taskRes = await db.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
         const task = taskRes.rows[0];
-
         if (!task) return res.status(404).json({ message: "Görev bulunamadı" });
 
-        // 2. Durumu güncelle
         await db.query("UPDATE tasks SET status = $1 WHERE id = $2", [status, taskId]);
 
-        // 3. EĞER yeni durum 'Tamamlandı' ise ve daha önce tamamlanmadıysa PUAN EKLE
+        // PUAN EKLEME MANTIĞI
         if (status === "Tamamlandı" && task.status !== "Tamamlandı") {
             await db.query(
                 "UPDATE users SET total_points = COALESCE(total_points, 0) + $1 WHERE id = $2",
                 [task.points || 10, task.assigned_to]
             );
         }
-        
-        res.json({ message: "Güncellendi ve puan eklendi" });
+        res.json({ message: "Güncellendi" });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ message: "Hata oluştu" });
     }
 });
