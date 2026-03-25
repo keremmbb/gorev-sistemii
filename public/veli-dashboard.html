@@ -9,9 +9,7 @@
 <body onload="loadMyAssignedTasks()">
 
 <script>
-    const role = localStorage.getItem("role");
-    const userId = localStorage.getItem("userId");
-    if (!userId || (role && role.toLowerCase() !== "parent")) {
+    if (!localStorage.getItem("userId") || localStorage.getItem("role") !== "parent") {
         window.location.href = "index.html";
     }
 </script>
@@ -20,93 +18,44 @@
     <h2 style="color: white; text-align: center; margin-bottom: 25px;">👨‍👩‍👧‍👦 Veli Kontrol Paneli</h2>
 
     <div class="section" style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-        <h3 style="margin-top:0; color: #333;">📝 Öğrenciye Görev Ata</h3>
-        
-        <div style="display: flex; flex-direction: column; gap: 15px;">
-            <input type="text" id="taskTitle" placeholder="Görev başlığı (Örn: Kitap Okuma)" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-            
-            <textarea id="taskDescription" placeholder="Görev detayları ve notlar (Opsiyonel)" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-height: 80px; font-family: inherit; resize: vertical;"></textarea>
-            
-            <input type="email" id="assignedToEmail" placeholder="Öğrencinin kayıtlı mail adresi" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-            
-            <div style="display: flex; gap: 10px;">
-                <div style="flex: 1;">
-                    <label style="display: block; font-size: 12px; margin-bottom: 5px; color: #666;">📅 Teslim Tarihi:</label>
-                    <input type="date" id="dueDate" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-                </div>
-                <div style="flex: 1;">
-                    <label style="display: block; font-size: 12px; margin-bottom: 5px; color: #666;">⏰ Saat (Opsiyonel):</label>
-                    <input type="time" id="dueTime" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-                </div>
-            </div>
-            
-            <button onclick="addTask()" style="background: #667eea; color: white; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s;">
-                🚀 Görevi Tanımla
-            </button>
+        <h3 style="margin-top:0; color: #333;">📝 Görev Ata</h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="text" id="taskTitle" placeholder="Görev başlığı" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+            <textarea id="taskDescription" placeholder="Görev detayları (Opsiyonel)" rows="2" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: none; font-family: inherit;"></textarea>
+            <input type="email" id="assignedToEmail" placeholder="Öğrenci maili" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+            <input type="date" id="dueDate" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+            <button onclick="addTask()" style="background: #667eea; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Görevi Tanımla</button>
         </div>
 
-        <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
-        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px dashed #667eea;">
-            <p style="margin: 0 0 10px 0; font-size: 14px; color: #555;">
-                📢 <b>Öğrenci sistemde kayıtlı değil mi?</b> Buradan davet gönderin:
-            </p>
-            <div style="display: flex; gap: 10px;">
-                <input type="email" id="inviteEmail" placeholder="Davet edilecek mail adresi" 
-                       style="flex: 3; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                <button onclick="sendInvite()" 
-                        style="flex: 1; background: #2d3748; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold;">
-                    Davet Et
-                </button>
-            </div>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+        <div style="display: flex; gap: 10px;">
+            <input type="email" id="inviteEmail" placeholder="Davet maili" style="flex: 3; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+            <button onclick="sendInvite()" style="flex: 1; background: #2d3748; color: white; border: none; border-radius: 8px; cursor: pointer;">Davet Et</button>
         </div>
     </div>
 
-    <div id="overdue-panel" style="display: none; background: #fff5f5; border: 2px solid #fc8181; padding: 15px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-        <h3 style="color: #c53030; margin-top: 0; display: flex; align-items: center;">
-            ⚠️ Dikkat: Süresi Geçen Görevler!
-        </h3>
-        <ul id="overdue-list" style="margin: 0; padding-left: 20px; color: #742a2a; font-weight: bold;">
-        </ul>
-    </div>
-
-    <br>
-
-    <div class="kanban-board" style="display: flex; gap: 15px; overflow-x: auto; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 12px;">
-        
-        <div class="column" style="flex: 1; min-width: 280px; background: #fff; border: 2px solid #ed5e68; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h3 style="display: flex; justify-content: space-between; align-items: center; color: #721c24; margin-top: 0; border-bottom: 2px solid #f8d7da; padding-bottom: 10px;">
-                🔴 Başlamadı <span id="count-Baslamadi" style="background: #ed5e68; color: white; padding: 2px 10px; border-radius: 20px; font-size: 14px;">0</span>
-            </h3>
+    <div class="kanban-board" style="display: flex; gap: 15px; overflow-x: auto; padding: 15px; margin-top: 20px;">
+        <div class="column" style="flex: 1; min-width: 250px; background: #fff; border-top: 5px solid #ed5e68; padding: 10px; border-radius: 8px;">
+            <h3>🔴 Başlamadı <span id="count-Baslamadi">0</span></h3>
             <div id="parent-list-Baslamadi"></div>
         </div>
-
-        <div class="column" style="flex: 1; min-width: 280px; background: #fff; border: 2px solid #3498db; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h3 style="display: flex; justify-content: space-between; align-items: center; color: #1976d2; margin-top: 0; border-bottom: 2px solid #cfe2f3; padding-bottom: 10px;">
-                🔵 Başlandı <span id="count-Baslandi" style="background: #3498db; color: white; padding: 2px 10px; border-radius: 20px; font-size: 14px;">0</span>
-            </h3>
+        <div class="column" style="flex: 1; min-width: 250px; background: #fff; border-top: 5px solid #3498db; padding: 10px; border-radius: 8px;">
+            <h3>🔵 Başlandı <span id="count-Baslandi">0</span></h3>
             <div id="parent-list-Baslandi"></div>
         </div>
-
-        <div class="column" style="flex: 1; min-width: 280px; background: #fff; border: 2px solid #f1c40f; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h3 style="display: flex; justify-content: space-between; align-items: center; color: #856404; margin-top: 0; border-bottom: 2px solid #fff3cd; padding-bottom: 10px;">
-                🟡 Devam Ediyor <span id="count-DevamEdiyor" style="background: #f1c40f; color: white; padding: 2px 10px; border-radius: 20px; font-size: 14px;">0</span>
-            </h3>
+        <div class="column" style="flex: 1; min-width: 250px; background: #fff; border-top: 5px solid #f1c40f; padding: 10px; border-radius: 8px;">
+            <h3>🟡 Devam Ediyor <span id="count-DevamEdiyor">0</span></h3>
             <div id="parent-list-DevamEdiyor"></div>
         </div>
-
-        <div class="column" style="flex: 1; min-width: 280px; background: #fff; border: 2px solid #2ecc71; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h3 style="display: flex; justify-content: space-between; align-items: center; color: #155724; margin-top: 0; border-bottom: 2px solid #d4edda; padding-bottom: 10px;">
-                🟢 Tamamlandı <span id="count-Tamamlandi" style="background: #2ecc71; color: white; padding: 2px 10px; border-radius: 20px; font-size: 14px;">0</span>
-            </h3>
+        <div class="column" style="flex: 1; min-width: 250px; background: #fff; border-top: 5px solid #2ecc71; padding: 10px; border-radius: 8px;">
+            <h3>🟢 Tamamlandı <span id="count-Tamamlandi">0</span></h3>
             <div id="parent-list-Tamamlandi"></div>
         </div>
     </div>
 
-    <br>
-    <div style="text-align: center;">
-        <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">Güvenli Çıkış</button>
+    <div style="text-align: center; margin-top: 20px;">
+        <button onclick="logout()" style="background: #ff4d4d; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;">Çıkış Yap</button>
     </div>
 </div>
-
 </body>
 </html>
