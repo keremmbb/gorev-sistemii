@@ -476,3 +476,63 @@ async function buyReward(name, cost) {
         loadStudentPoints(); // Bakiyeyi güncelle
     }
 }
+function showSection(section) {
+    const tasksDiv = document.getElementById('section-tasks');
+    const marketDiv = document.getElementById('section-market');
+    const btnTasks = document.getElementById('btn-tasks');
+    const btnMarket = document.getElementById('btn-market');
+
+    if (section === 'market') {
+        tasksDiv.style.display = 'none';
+        marketDiv.style.display = 'block';
+        btnMarket.style.background = '#4facfe';
+        btnMarket.style.color = 'white';
+        btnTasks.style.background = '#e2e8f0';
+        btnTasks.style.color = '#4a5568';
+    } else {
+        tasksDiv.style.display = 'block';
+        marketDiv.style.display = 'none';
+        btnTasks.style.background = '#4facfe';
+        btnTasks.style.color = 'white';
+        btnMarket.style.background = '#e2e8f0';
+        btnMarket.style.color = '#4a5568';
+    }
+}
+async function loadPendingPurchases() {
+    const userId = localStorage.getItem("userId");
+    const container = document.getElementById("pending-purchases-list");
+    if (!container) return;
+
+    const res = await fetch(`/pending-purchases/${userId}`, { headers: getAuthHeaders() });
+    const purchases = await res.json();
+    
+    container.innerHTML = purchases.length === 0 ? "<p style='color: #a0aec0;'>Onay bekleyen ödül yok.</p>" : "";
+
+    purchases.forEach(p => {
+        const div = document.createElement("div");
+        div.style = "background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;";
+        div.innerHTML = `
+            <div>
+                <strong style="color: #2d3748;">${p.reward_name}</strong> <br>
+                <small style="color: #718096;">👤 ${p.student_email} - 💰 ${p.cost} GP</small>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <button onclick="approvePurchase(${p.id}, 'Onaylandı')" style="background: #48bb78; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">✅</button>
+                <button onclick="approvePurchase(${p.id}, 'Reddedildi')" style="background: #f56565; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">❌</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function approvePurchase(purchaseId, status) {
+    const res = await fetch("/update-purchase-status", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ purchaseId, status })
+    });
+    if (res.ok) {
+        loadPendingPurchases();
+        alert(`Ödül ${status}!`);
+    }
+}

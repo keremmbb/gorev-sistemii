@@ -215,4 +215,28 @@ app.post("/buy-reward", auth, async (req, res) => {
         res.status(500).json({ message: "Hata oluştu." });
     }
 });
+app.get("/pending-purchases/:parentId", auth, async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT p.*, u.email as student_email 
+             FROM purchases p 
+             JOIN users u ON p.student_id = u.id 
+             JOIN tasks t ON t.assigned_to = u.id
+             WHERE t.assigned_by = $1 AND p.status = 'Bekliyor'
+             GROUP BY p.id, u.email`, [req.params.parentId]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: "Hata oluştu" });
+    }
+});
+app.post("/update-purchase-status", auth, async (req, res) => {
+    const { purchaseId, status } = req.body;
+    try {
+        await db.query("UPDATE purchases SET status = $1 WHERE id = $2", [status, purchaseId]);
+        res.json({ message: `İşlem ${status} olarak güncellendi.` });
+    } catch (error) {
+        res.status(500).json({ message: "Güncelleme hatası" });
+    }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

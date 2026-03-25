@@ -6,60 +6,102 @@
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
-<body onload="loadMyTasks(); loadStudentPoints();"> <script>
+<body onload="loadMyTasks(); loadStudentPoints();"> 
+<script>
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
 
-    // Eğer giriş yok veya öğrenci değilse ana sayfaya yönlendir
     if (!userId || (role && role.toLowerCase() !== "student")) {
         window.location.href = "index.html";
     }
 </script>
 
-<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: sans-serif;">
-    <h2 style="text-align: center; color: #333;">📖 Görevlerim</h2>
+<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', sans-serif;">
+    
+    <div style="text-align: center; margin-bottom: 25px;">
+        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3); display: inline-block; min-width: 320px;">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.9;">Mevcut Seviye: <span id="user-level" style="font-weight: bold;">1</span></div>
+            <div id="user-rank" style="font-size: 1.6rem; font-weight: bold; text-shadow: 1px 1px 4px rgba(0,0,0,0.2); margin-bottom: 10px;">Çaylak Görevci</div>
+            
+            <div style="margin: 15px 0; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px; display: flex; justify-content: space-around;">
+                <div>
+                    <div style="font-size: 0.7rem; opacity: 0.8;">TOPLAM TECRÜBE</div>
+                    <div style="font-size: 1.2rem; font-weight: bold;">✨ <span id="total-xp-display">0</span> XP</div>
+                </div>
+                <div style="border-left: 1px solid rgba(255,255,255,0.3); height: 30px;"></div>
+                <div>
+                    <div style="font-size: 0.7rem; opacity: 0.8;">HARCANABİLİR</div>
+                    <div style="font-size: 1.2rem; font-weight: bold;">💰 <span id="total-points">0</span> GP</div>
+                </div>
+            </div>
 
-    <div style="text-align: center; margin-bottom: 25px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); display: inline-block; min-width: 300px;">
-        <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px;">Mevcut Seviye: <span id="user-level" style="font-weight: bold;">1</span></div>
-        <div id="user-rank" style="font-size: 1.4rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Çaylak Görevci</div>
-        
-        <div style="margin: 15px 0; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px;">
-            <div style="font-size: 1.1rem;">✨ Toplam Puan: <span id="total-xp-display" style="font-weight: bold;">0</span> XP</div>
-            <div style="font-size: 1.1rem;">💰 Kullanılabilir Puan: <span id="total-points" style="font-weight: bold;">0</span> GP</div>
+            <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">📜 Rütbe Tablosu</button>
         </div>
 
-        <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;">📜 Rütbe Tablosuna Bak</button>
+        <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 350px; margin-left: auto; margin-right: auto;">
+            <h4 style="margin-top: 0; color: #2d3748; border-bottom: 1px solid #eee; padding-bottom: 5px;">Rütbe Gereksinimleri</h4>
+            <table style="width: 100%; font-size: 0.9rem; text-align: left; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 8px;">0 - 500 XP</td> <td><b>Çaylak</b></td> </tr>
+                <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 8px;">500 - 1500 XP</td> <td style="color: #3182ce;"><b>Asistan</b></td> </tr>
+                <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 8px;">1500 - 3000 XP</td> <td style="color: #805ad5;"><b>Usta</b></td> </tr>
+                <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 8px;">3000 - 6000 XP</td> <td style="color: #38a169;"><b>Kahraman</b></td> </tr>
+                <tr> <td style="padding: 8px;">6000+ XP</td> <td style="color: #d69e2e;"><b>Efsane 👑</b></td> </tr>
+            </table>
+        </div>
     </div>
 
-    <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 350px; margin-left: auto; margin-right: auto;">
-        <h4 style="margin-top: 0; color: #2d3748;">Rütbe Gereksinimleri</h4>
-        <table style="width: 100%; font-size: 0.9rem; text-align: left; border-collapse: collapse;">
-            <tr style="border-bottom: 1px solid #eee;"> <td style="padding: 5px;">0 - 500 XP</td> <td><b>Çaylak</b></td> </tr>
-            <tr style="border-bottom: 1px solid #eee;"> <td style="padding: 5px;">500 - 1500 XP</td> <td><b>Asistan</b></td> </tr>
-            <tr style="border-bottom: 1px solid #eee;"> <td style="padding: 5px;">1500 - 3000 XP</td> <td><b>Usta</b></td> </tr>
-            <tr style="border-bottom: 1px solid #eee;"> <td style="padding: 5px;">3000 - 6000 XP</td> <td><b>Kahraman</b></td> </tr>
-            <tr> <td style="padding: 5px;">6000+ XP</td> <td style="color: #ecc94b;"><b>Efsane</b></td> </tr>
-        </table>
+    <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
+        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">📖 Görevlerim</button>
+        <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s;">🛒 Ödül Marketi</button>
     </div>
-</div>
-    <ul id="taskList" style="padding: 0; list-style: none;">
-        </ul>
 
-    <div style="text-align: center; margin-top: 30px;">
-        <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">
+    <div id="section-tasks">
+        <h3 style="color: #2d3748; margin-bottom: 15px;">Aktif Görevler</h3>
+        <ul id="taskList" style="padding: 0; list-style: none;">
+            </ul>
+    </div>
+
+    <div id="section-market" style="display: none;">
+        <h3 style="color: #2d3748; margin-bottom: 15px;">Ödül Marketi</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            
+            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🎮</div>
+                <strong style="display: block; font-size: 1rem; color: #2d3748;">Oyun Molası</strong>
+                <div style="color: #4facfe; font-weight: bold; margin: 5px 0;">200 GP</div>
+                <button onclick="buyReward('Oyun Molası', 200)" style="width: 100%; margin-top: 10px; padding: 8px; border: none; background: #ebf8ff; color: #3182ce; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.background='#3182ce'; this.style.color='#fff'" onmouseout="this.style.background='#ebf8ff'; this.style.color='#3182ce'">Satın Al</button>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍕</div>
+                <strong style="display: block; font-size: 1rem; color: #2d3748;">Yemek Seçimi</strong>
+                <div style="color: #4facfe; font-weight: bold; margin: 5px 0;">300 GP</div>
+                <button onclick="buyReward('Yemek Seçimi', 300)" style="width: 100%; margin-top: 10px; padding: 8px; border: none; background: #ebf8ff; color: #3182ce; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.background='#3182ce'; this.style.color='#fff'" onmouseout="this.style.background='#ebf8ff'; this.style.color='#3182ce'">Satın Al</button>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍿</div>
+                <strong style="display: block; font-size: 1rem; color: #2d3748;">Film Gecesi</strong>
+                <div style="color: #4facfe; font-weight: bold; margin: 5px 0;">500 GP</div>
+                <button onclick="buyReward('Film Gecesi', 500)" style="width: 100%; margin-top: 10px; padding: 8px; border: none; background: #ebf8ff; color: #3182ce; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.background='#3182ce'; this.style.color='#fff'" onmouseout="this.style.background='#ebf8ff'; this.style.color='#3182ce'">Satın Al</button>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍦</div>
+                <strong style="display: block; font-size: 1rem; color: #2d3748;">Dondurma</strong>
+                <div style="color: #4facfe; font-weight: bold; margin: 5px 0;">150 GP</div>
+                <button onclick="buyReward('Dondurma', 150)" style="width: 100%; margin-top: 10px; padding: 8px; border: none; background: #ebf8ff; color: #3182ce; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.background='#3182ce'; this.style.color='#fff'" onmouseout="this.style.background='#ebf8ff'; this.style.color='#3182ce'">Satın Al</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+        <button onclick="logout()" style="background-color: #fff; color: #ff4d4d; padding: 10px 25px; border: 2px solid #ff4d4d; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s;" onmouseover="this.style.background='#ff4d4d'; this.style.color='#fff'" onmouseout="this.style.background='#fff'; this.style.color='#ff4d4d'">
             Çıkış Yap
         </button>
     </div>
 </div>
-<div style="background: #f8fafc; padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #e2e8f0;">
-    <h3 style="margin-top:0;">🛒 Ödül Marketi</h3>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button onclick="buyReward('Oyun Molası', 200)" style="padding:10px; cursor:pointer; border-radius:8px; border:none; background:#edf2f7;">🎮 Oyun (200 GP)</button>
-        <button onclick="buyReward('Yemek Seçimi', 300)" style="padding:10px; cursor:pointer; border-radius:8px; border:none; background:#edf2f7;">🍕 Yemek (300 GP)</button>
-        <button onclick="buyReward('Film Gecesi', 500)" style="padding:10px; cursor:pointer; border-radius:8px; border:none; background:#edf2f7;">🍿 Film (500 GP)</button>
-        <button onclick="buyReward('Dondurma', 150)" style="padding:10px; cursor:pointer; border-radius:8px; border:none; background:#edf2f7;">🍦 Tatlı (150 GP)</button>
-    </div>
-</div>
+
 </body>
 </html>
