@@ -197,35 +197,26 @@ function sendInvite() {
 
 // script.js içindeki sendCode fonksiyonunu bununla değiştir
 function sendCode() {
-    const emailInput = document.getElementById("email");
-    const email = emailInput.value.trim();
+    const email = document.getElementById("email").value.trim();
+    if (!email) return alert("Lütfen mail adresinizi kontrol edin!");
 
-    if (!email) {
-        alert("Lütfen önce bir mail adresi yazın!");
-        return;
-    }
-
-    // Kullanıcıya bilgi verelim
-    const originalText = event.target.innerText;
-    event.target.innerText = "Gönderiliyor...";
-    event.target.disabled = true;
+    // Butonu geçici olarak devre dışı bırakalım (çok kez basılmasın)
+    const btn = document.querySelector("button[onclick='sendCode()']");
+    if(btn) btn.disabled = true;
 
     fetch("/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email })
+        body: JSON.stringify({ email })
     })
     .then(res => res.json())
     .then(data => {
         alert(data.message);
-        event.target.innerText = originalText;
-        event.target.disabled = false;
+        if(btn) btn.disabled = false;
     })
     .catch(err => {
-        console.error("Hata:", err);
-        alert("Kod gönderilirken bir hata oluştu.");
-        event.target.innerText = originalText;
-        event.target.disabled = false;
+        console.error(err);
+        if(btn) btn.disabled = false;
     });
 }
 
@@ -278,8 +269,9 @@ function login() {
 }
 
 // -------------------- SAYFA YÜKLENDİĞİNDE --------------------
+// script.js içindeki DOMContentLoaded kısmını bu şekilde güncelle:
+
 document.addEventListener("DOMContentLoaded", () => {
-    // Davet linki kontrolü
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
     const emailInput = document.getElementById("email");
@@ -289,14 +281,16 @@ document.addEventListener("DOMContentLoaded", () => {
         .then(res => res.json())
         .then(data => {
             if (data.valid) {
-                emailInput.value = data.email;
-                emailInput.readOnly = true;
+                // Maili inputa doldur ama kilitleme (readOnly yapmıyoruz)
+                emailInput.value = data.email; 
+                
+                // Kullanıcı rolünü student olarak işaretle
                 localStorage.setItem("registerRole", "student");
+                
+                // İstersen kullanıcıya bir bilgi notu verebilirsin
+                console.log("Davet onaylandı, e-postanızı değiştirebilirsiniz.");
             }
         });
     }
-
-    // Sayfaya göre otomatik yükleme
-    if (document.getElementById("taskList")) loadMyTasks();
-    if (document.getElementById("parent-list-Baslamadi")) loadMyAssignedTasks();
+    // ... diğer yüklemeler (loadMyTasks vb.)
 });
