@@ -1,26 +1,39 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>Öğrenci Dashboard</title>
-<link rel="stylesheet" href="style.css">
-<script src="script.js" defer></script>
+    <meta charset="UTF-8">
+    <title>Öğrenci Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
 </head>
-<body onload="loadMyTasks()">
+<body onload="loadMyTasks(); loadStudentPoints();"> <script>
+    const userId = localStorage.getItem("userId");
+    const role = localStorage.getItem("role");
 
-<script>
-const userId = localStorage.getItem("userId");
-const role = localStorage.getItem("role");
-
-// Eğer giriş yok veya öğrenci değilse ana sayfaya yönlendir
-if (!userId || role !== "student") {
-  window.location.href = "index.html";
-}
+    // Eğer giriş yok veya öğrenci değilse ana sayfaya yönlendir
+    if (!userId || (role && role.toLowerCase() !== "student")) {
+        window.location.href = "index.html";
+    }
 </script>
 
-<h2>Görevlerim</h2>
-<ul id="taskList" style="padding: 0;"></ul>
-<button onclick="logout()">Çıkış Yap</button>
+<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: sans-serif;">
+    <h2 style="text-align: center; color: #333;">📖 Görevlerim</h2>
+
+    <div style="text-align: center; margin-bottom: 25px;">
+        <div style="display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #fff; padding: 15px 30px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 165, 0, 0.3); font-size: 1.2rem; border: 2px solid #fff;">
+            🏆 Toplam Puanım: <span id="total-points">0</span>
+        </div>
+    </div>
+
+    <ul id="taskList" style="padding: 0; list-style: none;">
+        </ul>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">
+            Çıkış Yap
+        </button>
+    </div>
+</div>
 
 </body>
 </html>

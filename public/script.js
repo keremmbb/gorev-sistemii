@@ -135,36 +135,64 @@ function loadMyAssignedTasks() {
     });
 }
 
-function addTask() {
-    const title = document.getElementById("taskTitle").value;
-    const description = document.getElementById("taskDescription").value;
-    const assignedToEmail = document.getElementById("assignedToEmail").value;
+// -------------------- VELİ: GÖREV EKLEME --------------------
+async function addTask() {
+    const title = document.getElementById("taskTitle").value.trim();
+    const description = document.getElementById("taskDescription").value.trim();
+    const assignedToEmail = document.getElementById("assignedToEmail").value.trim();
     const dueDate = document.getElementById("dueDate").value;
     const dueTime = document.getElementById("dueTime").value;
-    const points = document.getElementById("taskPoints").value; // Yeni eklenen satır
+    const points = document.getElementById("taskPoints")?.value || 10; // Puanı al (yoksa 10)
+
+    const token = localStorage.getItem("token");
+    const assignedBy = localStorage.getItem("userId");
 
     if (!title || !assignedToEmail) {
         alert("Lütfen başlık ve öğrenci mailini doldurun.");
         return;
     }
 
-    fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            title,
-            description,
-            assignedToEmail,
-            dueDate,
-            dueTime,
-            points: parseInt(points) // Puanı sayı olarak gönderiyoruz
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert("Görev başarıyla eklendi!");
-        location.reload();
-    });
+    try {
+        // 1. Önce mail adresinden öğrencinin ID'sini bulalım
+        const userRes = await fetch(`/get-user-id?email=${assignedToEmail}`, {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const userData = await userRes.json();
+
+        if (!userData.userId) {
+            alert("Bu mail adresine sahip bir öğrenci bulunamadı! Lütfen önce davet edin.");
+            return;
+        }
+
+        // 2. Görevi puanla birlikte sunucuya gönderelim
+        const response = await fetch("/add-task", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({
+                title,
+                description,
+                assignedTo: userData.userId,
+                assignedBy,
+                due_date: `${dueDate} ${dueTime}`,
+                points: parseInt(points)
+            })
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert("Görev başarıyla eklendi!");
+            location.reload();
+        } else {
+            alert("Hata: " + result.message);
+        }
+    } catch (error) {
+        console.error("Görev ekleme hatası:", error);
+        alert("Sistemsel bir hata oluştu.");
+    }
 }
 
 function deleteTask(taskId) {
@@ -273,3 +301,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (document.getElementById("taskList")) loadMyTasks();
 });
+// Öğrencinin toplam puanını sunucudan çekip ekrana yazdırır
+async function loadStudentPoints() {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+
+    try {
+        const response = await fetch(`/user-points/${userId}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        const pointsDisplay = document.getElementById("total-points");
+        if (pointsDisplay) {
+            pointsDisplay.innerText = data.total_points || 0;
+        }
+    } catch (error) {
+        console.error("Puan yükleme hatası:", error);
+    }
+}
+
+// Eğer öğrenci dashboard sayfasındaysak puanı otomatik yükle
+if (window.location.pathname.includes("student-dashboard.html")) {
+    loadStudentPoints();
+}
