@@ -14,6 +14,18 @@
     if (!userId || (role && role.toLowerCase() !== "student")) {
         window.location.href = "index.html";
     }
+
+    function toggleArchive() {
+        const list = document.getElementById("completedTaskList");
+        const chevron = document.getElementById("archive-chevron");
+        if (list.style.display === "none") {
+            list.style.display = "block";
+            chevron.innerText = "▲";
+        } else {
+            list.style.display = "none";
+            chevron.innerText = "▼";
+        }
+    }
 </script>
 
 <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', sans-serif;">
@@ -21,7 +33,7 @@
     <div style="text-align: center; margin-bottom: 25px;">
         <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3); display: inline-block; min-width: 320px;">
             <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.9;">Mevcut Seviye: <span id="user-level" style="font-weight: bold;">1</span></div>
-            <div id="user-rank" style="font-size: 1.6rem; font-weight: bold; text-shadow: 1px 1px 4px rgba(0,0,0,0.2); margin-bottom: 10px;">Çaylak Görevci</div>
+            <div id="user-rank" style="font-size: 1.6rem; font-weight: bold; margin-bottom: 10px;">Çaylak Görevci</div>
             
             <div style="margin: 15px 0; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px; display: flex; justify-content: space-around;">
                 <div>
@@ -34,88 +46,42 @@
                     <div style="font-size: 1.2rem; font-weight: bold;">💰 <span id="total-points">0</span> GP</div>
                 </div>
             </div>
-
-            <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">📜 Rütbe Tablosu</button>
-        </div>
-
-        <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 350px; margin-left: auto; margin-right: auto;">
-            <h4 style="margin-top: 0; color: #2d3748; border-bottom: 1px solid #eee; padding-bottom: 5px;">Rütbe Gereksinimleri</h4>
-            <table style="width: 100%; font-size: 0.9rem; text-align: left; border-collapse: collapse;">
-                <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 8px;">0 - 500 XP</td> <td><b>Çaylak</b></td> </tr>
-                <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 8px;">500 - 1500 XP</td> <td style="color: #3182ce;"><b>Asistan</b></td> </tr>
-                <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 8px;">1500 - 3000 XP</td> <td style="color: #805ad5;"><b>Usta</b></td> </tr>
-                <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 8px;">3000 - 6000 XP</td> <td style="color: #38a169;"><b>Kahraman</b></td> </tr>
-                <tr> <td style="padding: 8px;">6000+ XP</td> <td style="color: #d69e2e;"><b>Efsane 👑</b></td> </tr>
-            </table>
+            <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;">📜 Rütbe Tablosu</button>
         </div>
     </div>
 
     <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
-        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">📖 Görevlerim</button>
+        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s;">📖 Görevlerim</button>
         <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s;">🛒 Ödül Marketi</button>
     </div>
 
     <div id="section-tasks">
-        <h3 style="color: #2d3748; margin-bottom: 15px;">Aktif Görevler</h3>
         <ul id="taskList" style="padding: 0; list-style: none;"></ul>
+
+        <div id="section-archive" style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px;">
+            <div onclick="toggleArchive()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <span style="color: #64748b; font-size: 0.9rem; font-weight: 600;">🏆 Tamamlananlar (<span id="completed-count">0</span>)</span>
+                <span id="archive-chevron">▼</span>
+            </div>
+            <ul id="completedTaskList" style="display: none; padding: 10px 0; list-style: none; margin-top: 10px;"></ul>
+        </div>
     </div>
 
     <div id="section-market" style="display: none;">
         <h3 style="color: #2d3748; margin-bottom: 15px;">Ödül Marketi</h3>
         <div id="market-items-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            
             <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
                 <div style="font-size: 2.5rem; margin-bottom: 10px;">💻</div>
                 <strong style="display: block; font-size: 1rem; color: #2d3748;">+1 Saat Bilgisayar</strong>
                 <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">200 GP</div>
-                <button onclick="buyReward('+1 Saat Bilgisayar', 200)" 
-                    style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
-                    onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
-                    onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
-                >Satın Al</button>
+                <button onclick="buyReward('+1 Saat Bilgisayar', 200)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold;">Satın Al</button>
             </div>
-
-            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍕</div>
-                <strong style="display: block; font-size: 1rem; color: #2d3748;">Yemek Seçimi</strong>
-                <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">300 GP</div>
-                <button onclick="buyReward('Yemek Seçimi', 300)" 
-                    style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
-                    onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
-                    onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
-                >Satın Al</button>
             </div>
-
-            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍿</div>
-                <strong style="display: block; font-size: 1rem; color: #2d3748;">Film Gecesi</strong>
-                <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">500 GP</div>
-                <button onclick="buyReward('Film Gecesi', 500)" 
-                    style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
-                    onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
-                    onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
-                >Satın Al</button>
-            </div>
-
-            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍦</div>
-                <strong style="display: block; font-size: 1rem; color: #2d3748;">Dondurma</strong>
-                <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">150 GP</div>
-                <button onclick="buyReward('Dondurma', 150)" 
-                    style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
-                    onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
-                    onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
-                >Satın Al</button>
-            </div>
-        </div>
     </div>
 
-    <div style="text-align: center; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
-        <button onclick="logout()" style="background-color: #fff; color: #ff4d4d; padding: 10px 25px; border: 2px solid #ff4d4d; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s;" onmouseover="this.style.background='#ff4d4d'; this.style.color='#fff'" onmouseout="this.style.background='#fff'; this.style.color='#ff4d4d'">
-            Çıkış Yap
-        </button>
+    <div style="text-align: center; margin-top: 50px;">
+        <button onclick="logout()" style="background: none; color: #94a3b8; border: 1px solid #e2e8f0; padding: 8px 20px; border-radius: 10px; cursor: pointer; font-size: 0.8rem;">Güvenli Çıkış</button>
     </div>
 </div>
-
 </body>
 </html>

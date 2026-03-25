@@ -14,12 +14,17 @@ function getAuthHeaders() {
 // -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
 async function loadMyTasks() {
     const userId = localStorage.getItem("userId");
-    const res = await fetch(`/tasks/${userId}`, { headers: getAuthHeaders() });
+    // URL düzeltildi: /my-tasks/
+    const res = await fetch(`/my-tasks/${userId}`, { 
+        headers: {
+            "Authorization": "Bearer " + localStorage.getItem("token")
+        } 
+    });
     const tasks = await res.json();
     
     const taskList = document.getElementById("taskList");
     const completedTaskList = document.getElementById("completedTaskList");
-    const completedCount = document.getElementById("completedCount");
+    const completedCount = document.getElementById("completed-count");
 
     taskList.innerHTML = "";
     completedTaskList.innerHTML = "";
@@ -28,30 +33,31 @@ async function loadMyTasks() {
     tasks.forEach(task => {
         const li = document.createElement("li");
         
-        if (task.completed) {
-            // ARŞİVDE DURACAK ŞIK TASARIM
+        // Görev Tamamlandı mı?
+        if (task.status === "Tamamlandı") {
             doneCounter++;
-            li.style = "background: #fdfdfd; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center;";
+            li.style = "background: #fdfdfd; padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; opacity: 0.6;";
             li.innerHTML = `
                 <span style="color: #a0aec0; text-decoration: line-through; font-size: 0.9rem;">✅ ${task.title}</span>
                 <span style="color: #48bb78; font-weight: bold; font-size: 0.8rem;">+${task.points} GP</span>
             `;
             completedTaskList.appendChild(li);
         } else {
-            // ANA LİSTEDE DURACAK AKTİF GÖREVLER
-            li.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border-left: 5px solid #4facfe;";
+            // Aktif Görev Tasarımı
+            li.style = "background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 6px solid #4facfe;";
             li.innerHTML = `
                 <div>
-                    <strong style="color: #2d3748; display: block;">${task.title}</strong>
-                    <div style="font-size: 0.8rem; color: #4facfe; font-weight: bold; margin-top: 4px;">✨ ${task.xp} XP | 💰 ${task.points} GP</div>
+                    <strong style="color: #2d3748; font-size: 1.1rem;">${task.title}</strong>
+                    <div style="font-size: 0.85rem; color: #718096; margin-top: 5px;">${task.description || 'Görev detayları...'}</div>
+                    <div style="font-size: 0.8rem; color: #4facfe; font-weight: bold; margin-top: 10px;">💎 ${task.points} GP</div>
                 </div>
-                <button onclick="completeTask(${task.id})" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(72, 187, 120, 0.2);">Bitir</button>
+                <button onclick="completeTask(${task.id})" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);">Bitir</button>
             `;
             taskList.appendChild(li);
         }
     });
 
-    completedCount.innerText = doneCounter;
+    if(completedCount) completedCount.innerText = doneCounter;
 }
 // --- VELİ TARAFI GÜNCELLEME ---
 function loadMyAssignedTasks() {
