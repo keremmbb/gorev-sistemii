@@ -14,11 +14,8 @@ function getAuthHeaders() {
 // -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
 async function loadMyTasks() {
     const userId = localStorage.getItem("userId");
-    // URL düzeltildi: /my-tasks/
     const res = await fetch(`/my-tasks/${userId}`, { 
-        headers: {
-            "Authorization": "Bearer " + localStorage.getItem("token")
-        } 
+        headers: { "Authorization": "Bearer " + localStorage.getItem("token") } 
     });
     const tasks = await res.json();
     
@@ -33,7 +30,6 @@ async function loadMyTasks() {
     tasks.forEach(task => {
         const li = document.createElement("li");
         
-        // Görev Tamamlandı mı?
         if (task.status === "Tamamlandı") {
             doneCounter++;
             li.style = "background: #fdfdfd; padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; opacity: 0.6;";
@@ -43,16 +39,29 @@ async function loadMyTasks() {
             `;
             completedTaskList.appendChild(li);
         } else {
-            // Aktif Görev Tasarımı
-            li.style = "background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 6px solid #4facfe;";
-            li.innerHTML = `
-                <div>
-                    <strong style="color: #2d3748; font-size: 1.1rem;">${task.title}</strong>
-                    <div style="font-size: 0.85rem; color: #718096; margin-top: 5px;">${task.description || 'Görev detayları...'}</div>
-                    <div style="font-size: 0.8rem; color: #4facfe; font-weight: bold; margin-top: 10px;">💎 ${task.points} GP</div>
-                </div>
-                <button onclick="completeTask(${task.id})" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);">Bitir</button>
-            `;
+            // Aktif Görev Kartı
+            li.style = "background: white; padding: 18px; border-radius: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 6px solid #4facfe;";
+            
+          li.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+        <div>
+            <strong style="color: #2d3748; font-size: 1.1rem; display: block;">${task.title}</strong>
+            <small style="color: #718096;">${task.description || ''}</small>
+        </div>
+        <div style="font-weight: bold; color: #4facfe;">✨ ${task.points} GP</div>
+    </div>
+    
+    <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+        <span style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; text-transform: uppercase;">Durum:</span>
+        <select onchange="updateTaskStatus(${task.id}, this.value)" 
+                style="padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; cursor: pointer; outline: none; background: #fff;">
+            <option value="Baslamadi" ${task.status === 'Baslamadi' ? 'selected' : ''}>🔴 Başlamadı</option>
+            <option value="Baslandi" ${task.status === 'Baslandi' ? 'selected' : ''}>🔵 Başlandı</option>
+            <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
+            <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
+        </select>
+    </div>
+`;
             taskList.appendChild(li);
         }
     });
@@ -145,17 +154,26 @@ async function loadStudentPoints() {
     } catch (error) { console.error("Puan yükleme hatası:", error); }
 }
 
-function updateStatus(taskId, status) {
-    fetch("/update-task-status", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ taskId, status })
-    }).then(res => {
+// script.js içinde bunu kullan (Senin server.js kodunla tam uyumlu)
+async function updateTaskStatus(taskId, newStatus) {
+    try {
+        const res = await fetch("/update-task-status", {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ taskId, status: newStatus })
+        });
+
         if (res.ok) {
+            // Liste ve puanları yenile (Server tarafında puan eklendiği için bu önemli)
             loadMyTasks();
-            loadStudentPoints(); 
+            if (typeof loadStudentPoints === "function") loadStudentPoints(); 
+        } else {
+            const errorData = await res.json();
+            alert("Hata: " + errorData.message);
         }
-    });
+    } catch (error) {
+        console.error("Güncelleme hatası:", error);
+    }
 }
 
 // -------------------- VELİ FONKSİYONLARI (KANBAN) --------------------
