@@ -6,20 +6,17 @@
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
     <style>
-        /* Tüm input ve textarea öğeleri için odaklanma efekti */
         input:focus, textarea:focus {
             outline: none !important;
-            border-color: #000000 !important; /* Odaklanınca tam siyah border */
+            border-color: #000000 !important;
             border-width: 1px;
         }
 
-        /* Geçişlerin yumuşak olması ve kutu modelinin sabitlenmesi */
         input, textarea {
             transition: border-color 0.2s ease;
-            box-sizing: border-box !important; /* Genişlik taşmalarını engeller */
+            box-sizing: border-box !important;
         }
 
-        /* Form elemanlarının ortak stili */
         .form-input {
             width: 100%;
             height: 42px;
@@ -59,6 +56,11 @@
             <div style="display: flex; gap: 10px; width: 100%;">
                 <input type="date" id="dueDate" class="form-input" style="flex: 1;">
                 <input type="time" id="dueTime" class="form-input" style="flex: 1;">
+            </div>
+
+            <div style="width: 100%; display: flex; align-items: center; gap: 10px; background: #fffbeb; padding: 8px; border-radius: 8px; border: 1px solid #fef3c7;">
+                <label style="font-size: 13px; font-weight: bold; color: #92400e; white-space: nowrap;">🏆 Görev Puanı:</label>
+                <input type="number" id="taskPoints" class="form-input" min="0" value="10" style="height: 35px; border-color: #fde68a;">
             </div>
             
             <button onclick="addTask()" 
@@ -128,10 +130,6 @@
     <div style="text-align: center;">
         <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">Güvenli Çıkış</button>
     </div>
-</div>
-<div style="width: 100%;">
-    <label style="display: block; font-size: 12px; margin-bottom: 5px; color: #666;">🏆 Görev Puanı:</label>
-    <input type="number" id="taskPoints" placeholder="Puan (Örn: 50)" class="form-input" min="0" value="10">
 </div>
 </body>
 </html>
