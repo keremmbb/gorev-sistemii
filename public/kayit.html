@@ -1,27 +1,31 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kayıt Ol</title>
-
-<link rel="stylesheet" href="style.css">
-<script src="script.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
 </head>
-
 <body class="center">
 
 <div class="card">
     <h2>Kayıt Ol</h2>
-    <p>Kayıt Türü: <b id="roleText">Yükleniyor...</b></p>
+    <p>Kayıt Türü: <b id="roleText">Veli</b></p>
 
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Şifre">
+    <div class="input-group">
+        <input type="email" id="email" placeholder="E-posta Adresiniz">
+        <button id="sendCodeBtn" onclick="sendCode()">Doğrulama Kodunu Gönder</button>
+    </div>
 
-    <button onclick="registerStart()">Doğrulama Kodunu Gönder</button>
+    <div id="verificationSection" style="margin-top: 15px;">
+        <input type="text" id="code" placeholder="Mailinize Gelen Kod">
+        <input type="password" id="password" placeholder="Yeni Şifreniz">
+        <button onclick="verify()">Kodu Doğrula ve Kaydı Tamamla</button>
+    </div>
 
-    <input type="text" id="code" placeholder="Mail kodu">
-    <button onclick="verify()">Kodu Doğrula ve Kaydı Tamamla</button>
+    <p><a href="index.html" style="font-size: 0.8em; color: #666;">Giriş Sayfasına Dön</a></p>
 </div>
+
 </body>
 </html>

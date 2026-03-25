@@ -198,11 +198,13 @@ function sendInvite() {
 // script.js içindeki sendCode fonksiyonunu bununla değiştir
 function sendCode() {
     const email = document.getElementById("email").value.trim();
-    if (!email) return alert("Lütfen mail adresinizi kontrol edin!");
+    if (!email) return alert("Lütfen mail adresinizi girin!");
 
-    // Butonu geçici olarak devre dışı bırakalım (çok kez basılmasın)
-    const btn = document.querySelector("button[onclick='sendCode()']");
-    if(btn) btn.disabled = true;
+    const btn = document.getElementById("sendCodeBtn");
+    if(btn) {
+        btn.disabled = true;
+        btn.innerText = "Gönderiliyor...";
+    }
 
     fetch("/send-code", {
         method: "POST",
@@ -212,11 +214,17 @@ function sendCode() {
     .then(res => res.json())
     .then(data => {
         alert(data.message);
-        if(btn) btn.disabled = false;
+        if(btn) {
+            btn.disabled = false;
+            btn.innerText = "Yeniden Gönder";
+        }
     })
     .catch(err => {
         console.error(err);
-        if(btn) btn.disabled = false;
+        if(btn) {
+            btn.disabled = false;
+            btn.innerText = "Hata! Tekrar Dene";
+        }
     });
 }
 
@@ -275,22 +283,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
     const emailInput = document.getElementById("email");
+    const roleText = document.getElementById("roleText");
 
+    // Varsayılan rol (Eğer davet linki yoksa)
+    if (!inviteToken) {
+        localStorage.setItem("registerRole", "parent");
+        if (roleText) roleText.innerText = "Veli";
+    }
+
+    // Davet linki kontrolü
     if (inviteToken && emailInput) {
         fetch(`/check-invite?invite=${inviteToken}`)
         .then(res => res.json())
         .then(data => {
             if (data.valid) {
-                // Maili inputa doldur ama kilitleme (readOnly yapmıyoruz)
-                emailInput.value = data.email; 
+                // 1. Maili doldur (Yazılabilir halde bırak)
+                emailInput.value = data.email;
+                emailInput.readOnly = false; // Kullanıcı isterse değiştirebilir
                 
-                // Kullanıcı rolünü student olarak işaretle
+                // 2. Rolü ÖĞRENCİ yap ve ekranda göster
                 localStorage.setItem("registerRole", "student");
-                
-                // İstersen kullanıcıya bir bilgi notu verebilirsin
-                console.log("Davet onaylandı, e-postanızı değiştirebilirsiniz.");
+                if (roleText) {
+                    roleText.innerText = "Öğrenci (Davetli)";
+                    roleText.style.color = "#48bb78"; // Yeşil renk
+                }
+            } else {
+                if (roleText) roleText.innerText = "Geçersiz Davet!";
+                alert("Davet linki geçersiz.");
             }
+        })
+        .catch(err => {
+            console.error("Hata:", err);
+            if (roleText) roleText.innerText = "Bağlantı Hatası!";
         });
     }
-    // ... diğer yüklemeler (loadMyTasks vb.)
 });
