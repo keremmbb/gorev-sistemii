@@ -62,55 +62,51 @@
 
     <div id="section-market" style="display: none;">
         <h3 style="color: #2d3748; margin-bottom: 15px;">Ödül Marketi</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div id="market-items-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             
-            <script>
-                // Market kartlarını daha kolay yönetmek için yardımcı bir fonksiyon
-                function generateMarketCard(emoji, title, cost) {
-                    return `
-                    <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                        <div style="font-size: 2.5rem; margin-bottom: 10px;">${emoji}</div>
-                        <strong style="display: block; font-size: 1rem; color: #2d3748;">${title}</strong>
-                        <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">${cost} GP</div>
-                        <button onclick="buyReward('${title}', ${cost})" 
-                            style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
-                            onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
-                            onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
-                        >Satın Al</button>
-                    </div>`;
-                }
-            </script>
-
-            <div style="contents;" id="market-items-container">
-                <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🎮</div>
-                    <strong style="display: block; font-size: 1rem; color: #2d3748;">Oyun Molası</strong>
-                    <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">200 GP</div>
-                    <button onclick="buyReward('Oyun Molası', 200)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';" >Satın Al</button>
-                </div>
-
-                <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🍕</div>
-                    <strong style="display: block; font-size: 1rem; color: #2d3748;">Yemek Seçimi</strong>
-                    <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">300 GP</div>
-                    <button onclick="buyReward('Yemek Seçimi', 300)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';" >Satın Al</button>
-                </div>
-
-                <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🍿</div>
-                    <strong style="display: block; font-size: 1rem; color: #2d3748;">Film Gecesi</strong>
-                    <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">500 GP</div>
-                    <button onclick="buyReward('Film Gecesi', 500)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';" >Satın Al</button>
-                </div>
-
-                <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🍦</div>
-                    <strong style="display: block; font-size: 1rem; color: #2d3748;">Dondurma</strong>
-                    <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">150 GP</div>
-                    <button onclick="buyReward('Dondurma', 150)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';" >Satın Al</button>
-                </div>
+            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🎮</div>
+                <strong style="display: block; font-size: 1rem; color: #2d3748;">Oyun Molası</strong>
+                <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">200 GP</div>
+                <button onclick="buyReward('Oyun Molası', 200)" 
+                    style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
+                    onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
+                    onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
+                >Satın Al</button>
             </div>
 
+            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍕</div>
+                <strong style="display: block; font-size: 1rem; color: #2d3748;">Yemek Seçimi</strong>
+                <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">300 GP</div>
+                <button onclick="buyReward('Yemek Seçimi', 300)" 
+                    style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
+                    onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
+                    onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
+                >Satın Al</button>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍿</div>
+                <strong style="display: block; font-size: 1rem; color: #2d3748;">Film Gecesi</strong>
+                <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">500 GP</div>
+                <button onclick="buyReward('Film Gecesi', 500)" 
+                    style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
+                    onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
+                    onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
+                >Satın Al</button>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍦</div>
+                <strong style="display: block; font-size: 1rem; color: #2d3748;">Dondurma</strong>
+                <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">150 GP</div>
+                <button onclick="buyReward('Dondurma', 150)" 
+                    style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 3px 6px rgba(49, 130, 206, 0.2);" 
+                    onmouseover="this.style.background='#2b6cb0'; this.style.transform='translateY(-2px)';" 
+                    onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
+                >Satın Al</button>
+            </div>
         </div>
     </div>
 
