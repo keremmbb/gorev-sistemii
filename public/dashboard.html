@@ -19,13 +19,28 @@
 <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: sans-serif;">
     <h2 style="text-align: center; color: #333;">📖 Görevlerim</h2>
 
-    <div style="text-align: center; margin-bottom: 25px;">
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 15px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: inline-block; min-width: 250px;">
-        <div style="font-size: 0.8rem; text-transform: uppercase; opacity: 0.9;">SEVİYE <span id="user-level">1</span></div>
-        <div id="user-rank" style="font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">Çaylak Görevci</div>
-        <div style="font-size: 1.3rem; font-weight: bold; border-top: 1px solid rgba(255,255,255,0.2); paddingTop: 5px;">
-            💰 Para: <span id="total-points">0</span> GP
+    <div style="text-align: center; margin-bottom: 25px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); display: inline-block; min-width: 300px;">
+        <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px;">Mevcut Seviye: <span id="user-level" style="font-weight: bold;">1</span></div>
+        <div id="user-rank" style="font-size: 1.4rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Çaylak Görevci</div>
+        
+        <div style="margin: 15px 0; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px;">
+            <div style="font-size: 1.1rem;">✨ Toplam Puan: <span id="total-xp-display" style="font-weight: bold;">0</span> XP</div>
+            <div style="font-size: 1.1rem;">💰 Kullanılabilir Puan: <span id="total-points" style="font-weight: bold;">0</span> GP</div>
         </div>
+
+        <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;">📜 Rütbe Tablosuna Bak</button>
+    </div>
+
+    <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 350px; margin-left: auto; margin-right: auto;">
+        <h4 style="margin-top: 0; color: #2d3748;">Rütbe Gereksinimleri</h4>
+        <table style="width: 100%; font-size: 0.9rem; text-align: left; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid #eee;"> <td style="padding: 5px;">0 - 500 XP</td> <td><b>Çaylak</b></td> </tr>
+            <tr style="border-bottom: 1px solid #eee;"> <td style="padding: 5px;">500 - 1500 XP</td> <td><b>Asistan</b></td> </tr>
+            <tr style="border-bottom: 1px solid #eee;"> <td style="padding: 5px;">1500 - 3000 XP</td> <td><b>Usta</b></td> </tr>
+            <tr style="border-bottom: 1px solid #eee;"> <td style="padding: 5px;">3000 - 6000 XP</td> <td><b>Kahraman</b></td> </tr>
+            <tr> <td style="padding: 5px;">6000+ XP</td> <td style="color: #ecc94b;"><b>Efsane</b></td> </tr>
+        </table>
     </div>
 </div>
     <ul id="taskList" style="padding: 0; list-style: none;">

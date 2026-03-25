@@ -450,23 +450,28 @@ async function loadStudentPoints() {
         });
         const data = await response.json();
 
-        // 1. Toplam Puan ve Seviye Hesaplama
-        const totalXP = data.total_points || 0;
-        const level = Math.floor(totalXP / 100) + 1; // Her 100 XP bir level
-        
-        // 2. Harcanabilir Bakiye (Cüzdan)
-        const balance = data.current_balance || 0;
+        const totalXP = data.total_points || 0; // Seviye için azalmayan puan
+        const balanceGP = data.current_balance || 0; // Market için harcanabilir puan
 
-        // 3. Rütbe Belirleme
+        // 1. Seviye Hesaplama (Gelişmiş Mantık)
+        const level = Math.floor(totalXP / 200) + 1; // Her 200 XP bir level
+
+        // 2. Rütbe Belirleme (Yeni Tabloya Göre)
         let rank = "Çaylak Görevci";
-        if (level >= 5) rank = "Düzenli Kahraman";
-        if (level >= 10) rank = "Görev Ustası";
-        if (level >= 20) rank = "Efsanevi Evlat";
+        if (totalXP >= 500) rank = "Görev Asistanı";
+        if (totalXP >= 1500) rank = "Görev Ustası";
+        if (totalXP >= 3000) rank = "Şehir Kahramanı";
+        if (totalXP >= 6000) rank = "Efsanevi Görevci 👑";
 
-        // HTML'deki elementleri doldur
+        // 3. Ekrana Yazdırma
         if (document.getElementById("user-level")) document.getElementById("user-level").innerText = level;
         if (document.getElementById("user-rank")) document.getElementById("user-rank").innerText = rank;
-        if (document.getElementById("total-points")) document.getElementById("total-points").innerText = balance;
+        if (document.getElementById("total-xp-display")) document.getElementById("total-xp-display").innerText = totalXP;
+        if (document.getElementById("total-points")) document.getElementById("total-points").innerText = balanceGP;
         
     } catch (error) { console.error("Puan yükleme hatası:", error); }
+}
+function toggleLevelTable() {
+    const table = document.getElementById("levelTable");
+    table.style.display = table.style.display === "none" ? "block" : "none";
 }
