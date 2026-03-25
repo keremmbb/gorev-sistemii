@@ -562,9 +562,13 @@ async function approvePurchase(purchaseId, status) {
 }
 function toggleLevelTable() {
     const table = document.getElementById("levelTable");
+    const currentXp = document.getElementById("total-xp-display")?.innerText || "0"; // Mevcut XP'yi al
+    const infoBox = document.getElementById("current-xp-info");
+    
+    if (infoBox) infoBox.innerText = currentXp; // Tablo altındaki kutuya yaz
+
     if (table.style.display === "none" || table.style.display === "") {
         table.style.display = "block";
-        // Tablo açıldığında yumuşak bir odaklanma sağlayalım
         table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } else {
         table.style.display = "none";
