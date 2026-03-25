@@ -600,3 +600,70 @@ async function archiveTask(taskId) {
         loadTasks(); // Veli listesini yenile
     }
 }
+let cart = []; // Sepeti tutan dizi
+
+function addToCart(rewardName, cost) {
+    cart.push({ rewardName, cost });
+    updateCartUI();
+    console.log(`🛒 Sepete eklendi: ${rewardName}`);
+}
+function updateCartUI() {
+    const cartItemsElement = document.getElementById("cart-items");
+    const cartTotalElement = document.getElementById("cart-total");
+    const checkoutBtn = document.getElementById("checkout-btn");
+
+    if (!cartItemsElement) return;
+
+    cartItemsElement.innerHTML = "";
+    let total = 0;
+
+    cart.forEach((item, index) => {
+        total += item.cost;
+        const div = document.createElement("div");
+        div.style = "display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; background: #f8fafc; padding: 5px 10px; border-radius: 5px;";
+        div.innerHTML = `
+            <span>${item.rewardName}</span>
+            <span style="font-weight: bold; color: #4facfe;">${item.cost} GP 
+                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:red; cursor:pointer; margin-left:5px;">✕</button>
+            </span>
+        `;
+        cartItemsElement.appendChild(div);
+    });
+
+    cartTotalElement.innerText = total;
+    checkoutBtn.disabled = cart.length === 0;
+}
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCartUI();
+}
+async function checkout() {
+    const totalCost = cart.reduce((sum, item) => sum + item.cost, 0);
+    const userId = localStorage.getItem("userId");
+
+    // Mevcut puan kontrolü
+    const currentPoints = parseInt(document.getElementById("current-balance-display").innerText);
+    if (totalCost > currentPoints) {
+        alert("Yetersiz GP! Daha fazla görev yapmalısın. 💪");
+        return;
+    }
+
+    if (!confirm(`${totalCost} GP karşılığında sepeti onaylıyor musunuz?`)) return;
+
+    try {
+        const res = await fetch("/checkout", {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ userId, items: cart, totalCost })
+        });
+
+        if (res.ok) {
+            alert("Sepet onay için veliye gönderildi! 🚀");
+            cart = [];
+            updateCartUI();
+            loadStudentPoints(); // Puanları yenile
+        }
+    } catch (error) {
+        console.error("Checkout hatası:", error);
+    }
+}
