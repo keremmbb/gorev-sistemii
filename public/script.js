@@ -34,14 +34,18 @@ async function loadMyTasks() {
         });
 
         // Durumlara göre renk belirleme
-        let borderColor = "#cbd5e0"; // Varsayılan Gri
-        if (task.status === "Başlamadı") borderColor = "#feb2b2"; // Kırmızımsı
-        if (task.status === "Başlandı") borderColor = "#90cdf4";   // Mavi
-        if (task.status === "Devam Ediyor") borderColor = "#faf089"; // Sarı
-        if (task.status === "Tamamlandı") borderColor = "#9ae6b4";   // Yeşil
+        let borderColor = "#cbd5e0"; 
+        if (task.status === "Başlamadı") borderColor = "#feb2b2"; 
+        if (task.status === "Başlandı") borderColor = "#90cdf4";   
+        if (task.status === "Devam Ediyor") borderColor = "#faf089"; 
+        if (task.status === "Tamamlandı") borderColor = "#9ae6b4";   
+
+        // --- KİLİTLEME KONTROLÜ ---
+        // Eğer durum "Tamamlandı" ise select kutusunu devre dışı bırakıyoruz (disabled)
+        const isDisabled = task.status === "Tamamlandı" ? "disabled" : "";
 
         const li = document.createElement("li");
-        li.style = `background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 10px solid ${borderColor};`;
+        li.style = `background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 10px solid ${borderColor}; opacity: ${task.status === "Tamamlandı" ? "0.8" : "1"};`;
         
         li.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -52,7 +56,7 @@ async function loadMyTasks() {
                     <span style="color: #27ae60; font-weight: bold;">💎 ${task.points} Puan</span>
                 </div>
                 <div style="margin-left: 10px;">
-                    <select onchange="updateStatus(${task.id}, this.value)" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-weight: bold;">
+                    <select onchange="updateStatus(${task.id}, this.value)" ${isDisabled} style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; cursor: ${task.status === "Tamamlandı" ? "not-allowed" : "pointer"}; font-weight: bold; background-color: ${task.status === "Tamamlandı" ? "#f1f5f9" : "white"};">
                         <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>❌ Başlamadı</option>
                         <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>🚀 Başlandı</option>
                         <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>⏳ Devam Ediyor</option>
