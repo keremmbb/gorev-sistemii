@@ -14,64 +14,47 @@ function getAuthHeaders() {
 // -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
 async function loadMyTasks() {
     const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
+    try {
+        const res = await fetch(`/my-tasks/${userId}`, { headers: getAuthHeaders() });
+        const tasks = await res.json();
+        const taskList = document.getElementById("taskList");
+        if (!taskList) return;
+        taskList.innerHTML = "";
 
-    const res = await fetch(`/my-tasks/${userId}`, {
-        headers: { "Authorization": "Bearer " + token }
-    });
-    
-    const tasks = await res.json();
-    const taskList = document.getElementById("taskList");
-    if (!taskList) return;
-    taskList.innerHTML = "";
+        tasks.forEach(task => {
+            const tarihObjesi = new Date(task.due_date || task.task_date);
+            const temizSaat = tarihObjesi.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            
+            let statusColor = "#cbd5e0"; 
+            if (task.status === "Başlamadı") statusColor = "#feb2b2"; 
+            if (task.status === "Başlandı") statusColor = "#90cdf4";   
+            if (task.status === "Devam Ediyor") statusColor = "#faf089"; 
+            if (task.status === "Tamamlandı") statusColor = "#9ae6b4";   
 
-    tasks.forEach(task => {
-        const tarihObjesi = new Date(task.due_date || task.task_date);
-        const temizSaat = tarihObjesi.toLocaleTimeString('tr-TR', { 
-            timeZone: 'Europe/Istanbul', 
-            hour: '2-digit', 
-            minute: '2-digit' 
+            const isCompleted = task.status === "Tamamlandı";
+            const li = document.createElement("li");
+            li.style = `background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; border-left: 10px solid ${statusColor};`;
+            
+            li.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${task.title}</strong><br>
+                        <small>${task.description}</small><br>
+                        <span style="color: #e67e22;">⏰ ${temizSaat}</span> | <span style="color: #27ae60;">💎 ${task.points} XP</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <select id="select-${task.id}" ${isCompleted ? "disabled" : ""} style="padding: 5px;">
+                            <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>Başlamadı</option>
+                            <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>Başlandı</option>
+                            <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
+                            <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
+                        </select>
+                        ${!isCompleted ? `<button onclick="saveTaskStatus(${task.id})" style="padding: 5px 10px; background: #4A90E2; color: white; border: none; border-radius: 4px; cursor: pointer;">Kaydet</button>` : '✅'}
+                    </div>
+                </div>`;
+            taskList.appendChild(li);
         });
-
-        let statusColor = "#cbd5e0"; 
-        if (task.status === "Başlamadı") statusColor = "#feb2b2"; 
-        if (task.status === "Başlandı") statusColor = "#90cdf4";   
-        if (task.status === "Devam Ediyor") statusColor = "#faf089"; 
-        if (task.status === "Tamamlandı") statusColor = "#9ae6b4";   
-
-        const isCompleted = task.status === "Tamamlandı";
-
-        const li = document.createElement("li");
-        li.style = `background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 10px solid ${statusColor}; opacity: ${isCompleted ? "0.85" : "1"};`;
-        
-        li.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="flex: 1;">
-                    <strong style="font-size: 1.1rem; color: #2c3e50;">${task.title}</strong><br>
-                    <small style="color: #7f8c8d;">${task.description}</small><br>
-                    <span style="color: #e67e22; font-weight: bold;">⏰ Saat: ${temizSaat}</span> | 
-                    <span style="color: #27ae60; font-weight: bold;">💎 ${task.points} Puan</span>
-                </div>
-                <div style="margin-left: 10px; display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 14px; height: 14px; background-color: ${statusColor}; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.1);"></div>
-                    
-                    <select id="select-${task.id}" ${isCompleted ? "disabled" : ""} style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-weight: bold;">
-                        <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>Başlamadı</option>
-                        <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>Başlandı</option>
-                        <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
-                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
-                    </select>
-
-                    ${!isCompleted ? `
-                        <button onclick="saveTaskStatus(${task.id})" style="background: #4A90E2; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">
-                            Kaydet
-                        </button>
-                    ` : '<span style="color: #27ae60; font-weight: bold; font-size: 0.8rem;">Bitti</span>'}
-                </div>
-            </div>
-        `;
-        taskList.appendChild(li);
-    });
+    } catch (e) { console.error(e); }
 }
 // --- VELİ TARAFI GÜNCELLEME ---
 function loadMyAssignedTasks() {
@@ -418,63 +401,43 @@ async function completeTask(taskId) {
 }
 async function saveTaskStatus(taskId) {
     const selectElement = document.getElementById(`select-${taskId}`);
-    if (!selectElement) return;
-
     const newStatus = selectElement.value;
-    const token = localStorage.getItem("token");
 
-    // "Tamamlandı" onayı
-    if (newStatus === "Tamamlandı") {
-        if (!confirm("Puan kazanmak için görevi tamamlıyorsunuz. Onaylıyor musunuz?")) return;
-    }
+    if (newStatus === "Tamamlandı" && !confirm("Puan kazanmak için onaylıyor musunuz?")) return;
 
     try {
         const res = await fetch("/update-task-status", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json", // Bu satır eksikse 500 hatası alabilirsin
-                "Authorization": "Bearer " + token
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ taskId: parseInt(taskId), status: newStatus })
         });
 
         if (res.ok) {
-            alert("İşlem Başarılı! Puanlarınız yükleniyor...");
-            await loadStudentPoints(); // Önce puanı yenile
-            await loadMyTasks();      // Sonra listeyi yenile
+            await loadStudentPoints(); 
+            await loadMyTasks();
         } else {
-            const err = await res.json();
-            alert("Hata oluştu: " + err.message);
+            alert("Hata oluştu!");
         }
-    } catch (e) {
-        alert("Bağlantı hatası!");
-    }
+    } catch (e) { console.error(e); }
 }
 async function loadStudentPoints() {
     const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
-    if (!userId || !token) return;
+    if (!userId) return;
 
     try {
-        const response = await fetch(`/user-points/${userId}`, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
+        const response = await fetch(`/user-points/${userId}`, { headers: getAuthHeaders() });
         const data = await response.json();
 
-        const totalXP = data.total_points || 0; // Seviye için azalmayan puan
-        const balanceGP = data.current_balance || 0; // Market için harcanabilir puan
+        const totalXP = data.total_points || 0;
+        const balanceGP = data.current_balance || 0;
+        const level = Math.floor(totalXP / 200) + 1;
 
-        // 1. Seviye Hesaplama (Gelişmiş Mantık)
-        const level = Math.floor(totalXP / 200) + 1; // Her 200 XP bir level
-
-        // 2. Rütbe Belirleme (Yeni Tabloya Göre)
         let rank = "Çaylak Görevci";
         if (totalXP >= 500) rank = "Görev Asistanı";
         if (totalXP >= 1500) rank = "Görev Ustası";
         if (totalXP >= 3000) rank = "Şehir Kahramanı";
         if (totalXP >= 6000) rank = "Efsanevi Görevci 👑";
 
-        // 3. Ekrana Yazdırma
         if (document.getElementById("user-level")) document.getElementById("user-level").innerText = level;
         if (document.getElementById("user-rank")) document.getElementById("user-rank").innerText = rank;
         if (document.getElementById("total-xp-display")) document.getElementById("total-xp-display").innerText = totalXP;
@@ -486,3 +449,15 @@ function toggleLevelTable() {
     const table = document.getElementById("levelTable");
     table.style.display = table.style.display === "none" ? "block" : "none";
 }
+function getAuthHeaders() {
+    return {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + localStorage.getItem("token")
+    };
+}
+document.addEventListener("DOMContentLoaded", () => {
+    if (document.getElementById("taskList")) {
+        loadMyTasks();
+        loadStudentPoints();
+    }
+});

@@ -178,13 +178,20 @@ app.get("/get-user-id", auth, async (req, res) => {
 });
 app.get("/user-points/:userId", auth, async (req, res) => {
     try {
-        const result = await db.query("SELECT total_points, current_balance FROM users WHERE id = $1", [req.params.userId]);
+        const userId = parseInt(req.params.userId); // ID'nin sayı olduğundan emin ol
+        const result = await db.query("SELECT total_points, current_balance FROM users WHERE id = $1", [userId]);
+        
+        if (result.rows.length === 0) {
+            return res.json({ total_points: 0, current_balance: 0 });
+        }
+
         res.json({ 
-            total_points: result.rows[0]?.total_points || 0,
-            current_balance: result.rows[0]?.current_balance || 0 
+            total_points: result.rows[0].total_points || 0,
+            current_balance: result.rows[0].current_balance || 0 
         });
     } catch (error) {
-        res.status(500).json({ message: "Hata" });
+        console.error("Puan çekme hatası:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
