@@ -24,14 +24,14 @@
     
     <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
         
-        <input type="text" id="taskTitle" placeholder="Görev başlığı (Örn: Kitap Okuma)" 
-            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; height: 45px; box-sizing: border-box;">
+        <input type="text" id="taskTitle" placeholder="Görev başlığı" 
+            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; height: 45px; box-sizing: border-box; display: block;">
         
-        <textarea id="taskDescription" placeholder="Görev detayları ve notlar (Opsiyonel)" 
-            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; height: 45px; font-family: inherit; resize: none; box-sizing: border-box;"></textarea>
+        <textarea id="taskDescription" placeholder="Görev detayları ve notlar" 
+            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; height: 45px; font-family: inherit; resize: none; box-sizing: border-box; display: block;"></textarea>
         
         <input type="email" id="assignedToEmail" placeholder="Öğrencinin kayıtlı mail adresi" 
-            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; height: 45px; box-sizing: border-box;">
+            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; height: 45px; box-sizing: border-box; display: block;">
         
         <div style="display: flex; gap: 10px; width: 100%;">
             <input type="date" id="dueDate" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; height: 45px; box-sizing: border-box; font-size: 13px;">
@@ -47,7 +47,7 @@
 
         <hr style="width: 100%; margin: 10px 0; border: 0; border-top: 1px solid #eee;">
 
-        <div style="width: 100%; background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #f0f0f0;">
+        <div style="width: 100%; background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #f0f0f0; box-sizing: border-box;">
             <p style="margin: 0 0 8px 0; font-size: 12px; color: #777; text-align: center;">Öğrenci kayıtlı değilse davet edin:</p>
             <div style="display: flex; gap: 8px;">
                 <input type="email" id="inviteEmail" placeholder="E-posta adresi" 
