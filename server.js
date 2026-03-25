@@ -106,37 +106,50 @@ app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
 
 app.post("/update-task-status", auth, async (req, res) => {
     const { taskId, status } = req.body;
+    
+    console.log(`--- Güncelleme Başladı: Task ID: ${taskId}, Yeni Durum: ${status} ---`);
+
     try {
-        // 1. Görevi ve puanını bul
+        // 1. Görevi kontrol et
         const taskRes = await db.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
         const task = taskRes.rows[0];
 
-        if (!task) return res.status(404).json({ message: "Görev bulunamadı" });
+        if (!task) {
+            console.log("❌ HATA: Görev bulunamadı.");
+            return res.status(404).json({ message: "Görev bulunamadı" });
+        }
 
         const oldStatus = task.status;
         const studentId = task.assigned_to;
         const taskPoints = parseInt(task.points) || 0;
 
+        console.log(`Görev Sahibi: ${studentId}, Puan Değeri: ${taskPoints}, Eski Durum: ${oldStatus}`);
+
         // 2. Durumu güncelle
         await db.query("UPDATE tasks SET status = $1 WHERE id = $2", [status, taskId]);
+        console.log("✅ Görev durumu güncellendi.");
 
-        // 3. Puan ekleme mantığı: Eğer "Tamamlandı" seçildiyse ve önceden tamamlanmamışsa
+        // 3. Puan ekleme (Sadece Tamamlandı ise ve daha önce tamamlanmamışsa)
         if (status === "Tamamlandı" && oldStatus !== "Tamamlandı") {
-            // users tablosundaki puanları güncelle (COALESCE kullanarak null hatalarını önle)
-            await db.query(
-                `UPDATE users 
-                 SET total_points = COALESCE(total_points, 0) + $1, 
-                     current_balance = COALESCE(current_balance, 0) + $1 
-                 WHERE id = $2`,
-                [taskPoints, studentId]
-            );
-            console.log(`✅ ${studentId} ID'li öğrenciye ${taskPoints} puan eklendi.`);
+            if (!studentId) {
+                console.log("⚠️ UYARI: Görev bir öğrenciye atanmamış, puan eklenemedi.");
+            } else {
+                const updateRes = await db.query(
+                    `UPDATE users 
+                     SET total_points = COALESCE(total_points, 0) + $1, 
+                         current_balance = COALESCE(current_balance, 0) + $1 
+                     WHERE id = $2`,
+                    [taskPoints, studentId]
+                );
+                console.log(`✅ Puanlar eklendi. Etkilenen satır: ${updateRes.rowCount}`);
+            }
         }
 
-        res.json({ message: "Durum başarıyla güncellendi ve puanlar eklendi." });
+        res.json({ message: "Başarıyla güncellendi." });
+
     } catch (error) {
-        console.error("🔴 Puan Güncelleme Hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası oluştu." });
+        console.error("🔴 SUNUCU HATASI (500):", error.message);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 

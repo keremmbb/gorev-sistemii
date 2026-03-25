@@ -418,36 +418,36 @@ async function completeTask(taskId) {
 }
 async function saveTaskStatus(taskId) {
     const selectElement = document.getElementById(`select-${taskId}`);
+    if (!selectElement) return;
+
     const newStatus = selectElement.value;
     const token = localStorage.getItem("token");
 
+    // "Tamamlandı" onayı
     if (newStatus === "Tamamlandı") {
-        const onay = confirm("Tamamlandı olarak işaretlerseniz bu işlem geri alınamaz ve puanınız eklenir. Emin misiniz?");
-        if (!onay) return;
+        if (!confirm("Puan kazanmak için görevi tamamlıyorsunuz. Onaylıyor musunuz?")) return;
     }
 
     try {
         const res = await fetch("/update-task-status", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/json", // Bu satır eksikse 500 hatası alabilirsin
                 "Authorization": "Bearer " + token
             },
-            body: JSON.stringify({ taskId, status: newStatus })
+            body: JSON.stringify({ taskId: parseInt(taskId), status: newStatus })
         });
 
         if (res.ok) {
-            alert("Harika! Durum güncellendi.");
-            // Önce puanları yükle, sonra listeyi yenile
-            await loadStudentPoints(); 
-            await loadMyTasks();
+            alert("İşlem Başarılı! Puanlarınız yükleniyor...");
+            await loadStudentPoints(); // Önce puanı yenile
+            await loadMyTasks();      // Sonra listeyi yenile
         } else {
-            const errorData = await res.json();
-            alert("Hata: " + errorData.message);
+            const err = await res.json();
+            alert("Hata oluştu: " + err.message);
         }
-    } catch (error) {
-        console.error("İstek hatası:", error);
-        alert("Bağlantı hatası oluştu, lütfen tekrar deneyin.");
+    } catch (e) {
+        alert("Bağlantı hatası!");
     }
 }
 async function loadStudentPoints() {
