@@ -91,20 +91,44 @@
     </div>
 
     <div id="section-market" style="display: none;">
-        <h3 style="color: #2d3748; margin-bottom: 15px;">Ödül Marketi</h3>
-        <div id="market-items-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">💻</div>
-                <strong style="display: block; font-size: 1rem; color: #2d3748;">+1 Saat Bilgisayar</strong>
-                <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">200 GP</div>
-                <button onclick="buyReward('+1 Saat Bilgisayar', 200)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold;">Satın Al</button>
-            </div>
-            </div>
-    </div>
+    <h3 style="color: #2d3748; margin-bottom: 15px;">🛒 Ödül Marketi</h3>
+    <div id="market-items-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        
+        <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">💻</div>
+            <strong style="display: block; font-size: 1rem; color: #2d3748;">+1 Saat Oyun</strong>
+            <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">200 GP</div>
+            <button onclick="buyReward('+1 Saat Oyun', 200)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold;">Satın Al</button>
+        </div>
 
-    <div style="text-align: center; margin-top: 50px;">
-        <button onclick="logout()" style="background: none; color: #94a3b8; border: 1px solid #e2e8f0; padding: 8px 20px; border-radius: 10px; cursor: pointer; font-size: 0.8rem;">Güvenli Çıkış</button>
+        <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">🍕</div>
+            <strong style="display: block; font-size: 1rem; color: #2d3748;">Yemek Seçimi</strong>
+            <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">300 GP</div>
+            <button onclick="buyReward('Yemek Seçimi', 300)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold;">Satın Al</button>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">🍿</div>
+            <strong style="display: block; font-size: 1rem; color: #2d3748;">Film Gecesi</strong>
+            <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">500 GP</div>
+            <button onclick="buyReward('Film Gecesi', 500)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold;">Satın Al</button>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">🍦</div>
+            <strong style="display: block; font-size: 1rem; color: #2d3748;">Dondurma</strong>
+            <div style="color: #2b6cb0; font-weight: 800; margin: 5px 0; font-size: 1.1rem;">150 GP</div>
+            <button onclick="buyReward('Dondurma', 150)" style="width: 100%; margin-top: 10px; padding: 10px; border: none; background: #3182ce; color: white; border-radius: 8px; cursor: pointer; font-weight: bold;">Satın Al</button>
+        </div>
     </div>
+</div>
+
+<div style="text-align: center; margin-top: 60px; padding-bottom: 40px;">
+    <button onclick="logout()" style="background-color: #ff4d4d; color: white; border: none; padding: 12px 30px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 10px rgba(255, 77, 77, 0.3); transition: 0.3s;" onmouseover="this.style.background='#e60000'" onmouseout="this.style.background='#ff4d4d'">
+        🚪 Sistemden Çıkış Yap
+    </button>
+</div>
 </div>
 </body>
 </html>

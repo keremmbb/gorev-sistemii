@@ -14,14 +14,13 @@ function getAuthHeaders() {
 // -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
 async function loadMyTasks() {
     const userId = localStorage.getItem("userId");
-    const res = await fetch(`/my-tasks/${userId}`, { 
-        headers: { "Authorization": "Bearer " + localStorage.getItem("token") } 
-    });
+    // Senin server.js'deki route ile uyumlu (/my-tasks/)
+    const res = await fetch(`/my-tasks/${userId}`, { headers: getAuthHeaders() });
     const tasks = await res.json();
     
     const taskList = document.getElementById("taskList");
     const completedTaskList = document.getElementById("completedTaskList");
-    const completedCount = document.getElementById("completed-count");
+    const completedCountLabel = document.getElementById("completed-count");
 
     taskList.innerHTML = "";
     completedTaskList.innerHTML = "";
@@ -31,42 +30,39 @@ async function loadMyTasks() {
         const li = document.createElement("li");
         
         if (task.status === "Tamamlandı") {
+            // BURASI SENİN GEÇMİŞİN - HİÇBİR ZAMAN SİLİNMEZ
             doneCounter++;
-            li.style = "background: #fdfdfd; padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; opacity: 0.6;";
+            li.style = "background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; opacity: 0.8;";
             li.innerHTML = `
-                <span style="color: #a0aec0; text-decoration: line-through; font-size: 0.9rem;">✅ ${task.title}</span>
-                <span style="color: #48bb78; font-weight: bold; font-size: 0.8rem;">+${task.points} GP</span>
+                <div>
+                    <span style="color: #64748b; text-decoration: line-through; font-weight: 500;">✅ ${task.title}</span>
+                    <br><small style="color: #94a3b8;">Tamamlandı</small>
+                </div>
+                <span style="color: #38a169; font-weight: bold; background: #dcfce7; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem;">+${task.points} GP</span>
             `;
             completedTaskList.appendChild(li);
         } else {
-            // Aktif Görev Kartı
-            li.style = "background: white; padding: 18px; border-radius: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 6px solid #4facfe;";
-            
-          li.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-        <div>
-            <strong style="color: #2d3748; font-size: 1.1rem; display: block;">${task.title}</strong>
-            <small style="color: #718096;">${task.description || ''}</small>
-        </div>
-        <div style="font-weight: bold; color: #4facfe;">✨ ${task.points} GP</div>
-    </div>
-    
-    <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-        <span style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; text-transform: uppercase;">Durum:</span>
-        <select onchange="updateTaskStatus(${task.id}, this.value)" 
-                style="padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; cursor: pointer; outline: none; background: #fff;">
-            <option value="Baslamadi" ${task.status === 'Baslamadi' ? 'selected' : ''}>🔴 Başlamadı</option>
-            <option value="Baslandi" ${task.status === 'Baslandi' ? 'selected' : ''}>🔵 Başlandı</option>
-            <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
-            <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
-        </select>
-    </div>
-`;
+            // AKTİF GÖREVLER (4 Seçenekli Statü Menüsü ile)
+            li.style = "background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 6px solid #4facfe; display: flex; flex-direction: column; gap: 12px;";
+            li.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>${task.title}</strong>
+                    <span style="color: #4facfe; font-weight: bold;">💎 ${task.points} GP</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                    <select onchange="updateTaskStatus(${task.id}, this.value)" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer;">
+                        <option value="Baslamadi" ${task.status === 'Baslamadi' ? 'selected' : ''}>🔴 Başlamadı</option>
+                        <option value="Baslandi" ${task.status === 'Baslandi' ? 'selected' : ''}>🔵 Başlandı</option>
+                        <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
+                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
+                    </select>
+                </div>
+            `;
             taskList.appendChild(li);
         }
     });
 
-    if(completedCount) completedCount.innerText = doneCounter;
+    if(completedCountLabel) completedCountLabel.innerText = doneCounter;
 }
 // --- VELİ TARAFI GÜNCELLEME ---
 function loadMyAssignedTasks() {
