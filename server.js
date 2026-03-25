@@ -111,17 +111,23 @@ app.post("/update-task-status", auth, async (req, res) => {
         const task = taskRes.rows[0];
         if (!task) return res.status(404).json({ message: "Görev bulunamadı" });
 
+        const oldStatus = task.status;
         await db.query("UPDATE tasks SET status = $1 WHERE id = $2", [status, taskId]);
 
-        // PUAN EKLEME MANTIĞI
-        if (status === "Tamamlandı" && task.status !== "Tamamlandı") {
+        // Puan ve Para ekleme: Sadece "Tamamlandı" seçildiğinde ve önceden tamamlanmamışsa
+        if (status === "Tamamlandı" && oldStatus !== "Tamamlandı") {
+            const pointsToAdd = task.points || 10;
             await db.query(
-                "UPDATE users SET total_points = COALESCE(total_points, 0) + $1 WHERE id = $2",
-                [task.points || 10, task.assigned_to]
+                `UPDATE users 
+                 SET total_points = COALESCE(total_points, 0) + $1, 
+                     current_balance = COALESCE(current_balance, 0) + $1 
+                 WHERE id = $2`,
+                [pointsToAdd, task.assigned_to]
             );
         }
         res.json({ message: "Güncellendi" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: "Hata oluştu" });
     }
 });
@@ -151,8 +157,11 @@ app.get("/get-user-id", auth, async (req, res) => {
 });
 app.get("/user-points/:userId", auth, async (req, res) => {
     try {
-        const result = await db.query("SELECT total_points FROM users WHERE id = $1", [req.params.userId]);
-        res.json({ total_points: result.rows[0]?.total_points || 0 });
+        const result = await db.query("SELECT total_points, current_balance FROM users WHERE id = $1", [req.params.userId]);
+        res.json({ 
+            total_points: result.rows[0]?.total_points || 0,
+            current_balance: result.rows[0]?.current_balance || 0 
+        });
     } catch (error) {
         res.status(500).json({ message: "Hata" });
     }

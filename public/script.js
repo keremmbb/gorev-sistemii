@@ -439,3 +439,34 @@ async function saveTaskStatus(taskId) {
         alert("Güncelleme sırasında bir hata oluştu.");
     }
 }
+async function loadStudentPoints() {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+    if (!userId || !token) return;
+
+    try {
+        const response = await fetch(`/user-points/${userId}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        // 1. Toplam Puan ve Seviye Hesaplama
+        const totalXP = data.total_points || 0;
+        const level = Math.floor(totalXP / 100) + 1; // Her 100 XP bir level
+        
+        // 2. Harcanabilir Bakiye (Cüzdan)
+        const balance = data.current_balance || 0;
+
+        // 3. Rütbe Belirleme
+        let rank = "Çaylak Görevci";
+        if (level >= 5) rank = "Düzenli Kahraman";
+        if (level >= 10) rank = "Görev Ustası";
+        if (level >= 20) rank = "Efsanevi Evlat";
+
+        // HTML'deki elementleri doldur
+        if (document.getElementById("user-level")) document.getElementById("user-level").innerText = level;
+        if (document.getElementById("user-rank")) document.getElementById("user-rank").innerText = rank;
+        if (document.getElementById("total-points")) document.getElementById("total-points").innerText = balance;
+        
+    } catch (error) { console.error("Puan yükleme hatası:", error); }
+}
