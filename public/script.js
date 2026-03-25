@@ -197,11 +197,16 @@ function sendInvite() {
 
 // script.js içindeki sendCode fonksiyonunu bununla değiştir
 function sendCode() {
-    const email = document.getElementById("email").value.trim();
-    if (!email) return alert("Lütfen mail adresinizi girin!");
+    const emailInput = document.getElementById("email");
+    const email = emailInput ? emailInput.value.trim() : "";
+    
+    if (!email) {
+        return alert("Lütfen geçerli bir mail adresi giriniz!");
+    }
 
-    const btn = document.getElementById("sendCodeBtn");
-    if(btn) {
+    // Butonu geçici olarak devre dışı bırakalım (Yanlışlıkla iki kez basılmasın)
+    const btn = document.querySelector("button[onclick='sendCode()']");
+    if (btn) {
         btn.disabled = true;
         btn.innerText = "Gönderiliyor...";
     }
@@ -209,21 +214,22 @@ function sendCode() {
     fetch("/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email: email })
     })
     .then(res => res.json())
     .then(data => {
         alert(data.message);
-        if(btn) {
+        if (btn) {
             btn.disabled = false;
-            btn.innerText = "Yeniden Gönder";
+            btn.innerText = "Kodu Yeniden Gönder";
         }
     })
     .catch(err => {
-        console.error(err);
-        if(btn) {
+        console.error("Kod gönderme hatası:", err);
+        alert("Kod gönderilemedi, lütfen internetinizi kontrol edin.");
+        if (btn) {
             btn.disabled = false;
-            btn.innerText = "Hata! Tekrar Dene";
+            btn.innerText = "Tekrar Dene";
         }
     });
 }
@@ -231,13 +237,42 @@ function sendCode() {
 function verify() {
     const email = document.getElementById("email").value.trim();
     const code = document.getElementById("code").value.trim();
+    const password = document.getElementById("password").value.trim();
+    
+    // Sayfa yüklendiğinde belirlenen rolü al (Öğrenci veya Veli)
+    const role = localStorage.getItem("registerRole") || "parent";
+
+    if (!email || !code || !password) {
+        return alert("Lütfen tüm alanları (Email, Kod ve Şifre) doldurunuz!");
+    }
+
+    // 1. Adım: Kodu doğrula
     fetch("/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code })
-    }).then(res => res.json()).then(data => {
-        if (data.message === "Kod doğrulandı") setPassword();
-        else alert(data.message);
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message === "Kod doğrulandı") {
+            // 2. Adım: Kod doğruysa şifreyi ve rolü kaydet
+            return fetch("/set-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password, role })
+            });
+        } else {
+            throw new Error(data.message); // Kod hatalıysa durdur
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Kayıt işleminiz başarıyla tamamlandı! Şimdi giriş yapabilirsiniz.");
+        window.location.href = "index.html"; // Giriş sayfasına yönlendir
+    })
+    .catch(err => {
+        alert("Hata: " + err.message);
+        console.error("Doğrulama hatası:", err);
     });
 }
 

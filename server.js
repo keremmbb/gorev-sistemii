@@ -14,7 +14,7 @@ app.use(express.static("public"));
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
-// --- MIDDLEWARE ---
+// --- MIDDLEWARE: Yetki Kontrolü ---
 function auth(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ message: "Token yok" });
@@ -28,14 +28,25 @@ function auth(req, res, next) {
     }
 }
 
-// --- MAIL HELPER ---
-async function sendMail(to, subject, html) {
+// --- TASARIMSAL MAIL HELPER (RESEND) ---
+async function sendMail(to, subject, htmlContent) {
     try {
         await resend.emails.send({
-            from: 'onboarding@resend.dev',
-            to: 'keremacar3754is@gmail.com', // Ücretsiz planda kendi mailinize gider
+            from: 'Sistem <onboarding@resend.dev>',
+            to: 'keremacar3754is@gmail.com', // Ücretsiz planda kendi mailine gider
             subject: subject,
-            html: `<p><strong>Asıl Alıcı:</strong> ${to}</p><hr>${html}`
+            html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
+                <div style="background-color: #4A90E2; padding: 20px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">Görev Takip Sistemi</h1>
+                </div>
+                <div style="padding: 30px; line-height: 1.6; color: #333;">
+                    ${htmlContent}
+                </div>
+                <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 0.8em; color: #999; border-top: 1px solid #eee;">
+                    © 2026 Görev Takip Uygulaması
+                </div>
+            </div>`
         });
     } catch (error) {
         console.error("Mail Hatası:", error);
@@ -47,31 +58,27 @@ async function sendMail(to, subject, html) {
 app.post("/send-code", async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email gerekli" });
-
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    
     try {
-        // Kullanıcıyı 'pending' (beklemede) olarak kaydet veya varsa kodunu güncelle
         await db.query(`
             INSERT INTO users (email, code, verified, password, role) 
             VALUES ($1, $2, false, '', 'student') 
             ON CONFLICT (email) DO UPDATE SET code = $2, verified = false
         `, [email.trim(), code]);
         
-        // Mail gönderme (Önemli: Resend ücretsiz planda sadece onaylı maillere gider)
-        await sendMail(email.trim(), 'Kayıt Doğrulama Kodunuz', `
-            <h3>Hoş Geldiniz!</h3>
-            <p>Sisteme kayıt olabilmek için doğrulama kodunuz:</p>
-            <h1 style="color: #4A90E2;">${code}</h1>
+        await sendMail(email.trim(), 'Doğrulama Kodunuz 🛡️', `
+            <h2 style="color: #4A90E2;">Merhaba!</h2>
+            <p>Hesabınızı doğrulamak için aşağıdaki kodu kullanın:</p>
+            <div style="background: #f4f7ff; padding: 20px; text-align: center; border-radius: 8px;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4A90E2;">${code}</span>
+            </div>
         `);
-        
-        console.log(`Kod ${email} için oluşturuldu ve gönderim denendi.`);
-        res.json({ message: "Kod gönderildi. Lütfen mailinizi kontrol edin." });
-    } catch (error) { 
-        console.error("Kod Gönderim Hatası:", error);
-        res.status(500).json({ message: "Mail gönderilemedi. Servis sağlayıcınızı kontrol edin." }); 
+        res.json({ message: "Kod gönderildi. Mailinizi kontrol edin." });
+    } catch (error) {
+        res.status(500).json({ message: "Hata oluştu." });
     }
 });
+
 app.post("/verify-code", async (req, res) => {
     const { email, code } = req.body;
     const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
@@ -84,8 +91,8 @@ app.post("/verify-code", async (req, res) => {
 
 app.post("/set-password", async (req, res) => {
     const { email, password, role } = req.body;
-    const result = await db.query("UPDATE users SET password=$1, role=$2 WHERE email=$3 AND verified=true", [password, role, email]);
-    res.json(result.rowCount > 0 ? { message: "Başarılı" } : { message: "Hata" });
+    await db.query("UPDATE users SET password=$1, role=$2 WHERE email=$3 AND verified=true", [password, role, email]);
+    res.json({ message: "Başarılı" });
 });
 
 app.post("/login", async (req, res) => {
@@ -94,7 +101,7 @@ app.post("/login", async (req, res) => {
     const user = result.rows[0];
     if (user && user.password === password && user.role.toLowerCase() === role.toLowerCase()) {
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
-        return res.json({ token, userId: user.id, role: user.role, message: "Giriş başarılı" });
+        return res.json({ token, userId: user.id, role: user.role });
     }
     res.status(401).json({ message: "Bilgiler hatalı" });
 });
@@ -136,7 +143,14 @@ app.post("/send-invite", auth, async (req, res) => {
     const token = crypto.randomBytes(32).toString("hex");
     await db.query("INSERT INTO invite (email, token, used) VALUES ($1, $2, false)", [email, token]);
     const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
-    await sendMail(email, "Davet", `Kayıt linkiniz: ${inviteLink}`);
+    
+    await sendMail(email, "Öğrenci Paneline Davetlisiniz 🎓", `
+        <h2 style="color: #4A90E2;">Harika Bir Haber!</h2>
+        <p>Veliniz sizi sisteme davet etti. Hemen kayıt olup görevlerinizi görün:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="${inviteLink}" style="background-color: #48bb78; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Hesabını Oluştur</a>
+        </div>
+    `);
     res.json({ message: "Gönderildi" });
 });
 
