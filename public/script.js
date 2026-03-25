@@ -79,17 +79,19 @@ function loadMyAssignedTasks() {
         if (overdueList) overdueList.innerHTML = "";
         let overdueCount = 0;
 
+        // Kolonları temizle
         columns.forEach(id => {
             const el = document.getElementById(`parent-list-${id}`);
             if (el) el.innerHTML = "";
         });
 
         tasks.forEach(task => {
-            // DÜZELTME BURADA: fixDate kullanıyoruz
+            // Tarih işlemleri
             const dateStr = fixDate(task.due_date);
             const dueDateObj = new Date(task.due_date);
             const isOverdue = dueDateObj < new Date() && task.status !== "Tamamlandı";
 
+            // Süresi geçenleri panele ekle
             if (isOverdue) {
                 overdueCount++;
                 const li = document.createElement("li");
@@ -97,39 +99,61 @@ function loadMyAssignedTasks() {
                 if (overdueList) overdueList.appendChild(li);
             }
 
+            // Statü anahtarlarını düzelt
             let statusKey = task.status;
-            if (statusKey === "Başlamadı") statusKey = "Baslamadi";
-            else if (statusKey === "Başlandı") statusKey = "Baslandi";
-            else if (statusKey === "Devam Ediyor") statusKey = "DevamEdiyor";
-            else if (statusKey === "Tamamlandı") statusKey = "Tamamlandi";
+            if (statusKey === "Başlamadı" || statusKey === "Baslamadi") statusKey = "Baslamadi";
+            else if (statusKey === "Başlandı" || statusKey === "Baslandi") statusKey = "Baslandi";
+            else if (statusKey === "Devam Ediyor" || statusKey === "DevamEdiyor") statusKey = "DevamEdiyor";
+            else if (statusKey === "Tamamlandı" || statusKey === "Tamamlandi") statusKey = "Tamamlandi";
 
             if (counts.hasOwnProperty(statusKey)) {
                 counts[statusKey]++;
                 const container = document.getElementById(`parent-list-${statusKey}`);
                 if (container) {
                     const card = document.createElement("div");
-                    card.style = `background:#fff; border:1px solid ${isOverdue ? '#fc8181' : '#eee'}; padding:12px; margin-bottom:10px; border-radius:8px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.05);`;
+                    card.style = `background:#fff; border:1px solid ${isOverdue ? '#fc8181' : '#eee'}; padding:15px; margin-bottom:12px; border-radius:10px; position:relative; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition: 0.3s;`;
                     
+                    // TAMAMLANDI sütunu için farklı buton (Arşiv), diğerleri için Sil butonu
+                    let actionButton = "";
+                    if (statusKey === "Tamamlandi") {
+                        actionButton = `
+                            <button onclick="archiveTask(${task.id})" title="Arşive Kaldır" 
+                                style="position:absolute; top:8px; right:8px; border:none; background:#f1f5f9; cursor:pointer; font-size:14px; padding:5px; border-radius:6px; transition:0.3s;"
+                                onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                📁
+                            </button>`;
+                    } else {
+                        actionButton = `
+                            <button onclick="deleteTask(${task.id})" title="Görevi Sil" 
+                                style="position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; font-size:16px;">
+                                🗑️
+                            </button>`;
+                    }
+
                     card.innerHTML = `
-                        <div style="padding-right:25px;">
-                            <b style="color:${isOverdue ? '#c53030' : '#333'}">${isOverdue ? '⏳ ' : ''}${task.title}</b>
-                            <span style="font-size:0.8em; color:#92400e; font-weight:bold;"> (🏆 ${task.points} Puan)</span><br>
-                            <p style="color: #666; font-size: 0.85em; margin: 5px 0; font-style: italic;">${task.description || ""}</p>
-                            <small style="display:block; margin-top:5px;">👤 Öğrenci: ${task.assigned_to}</small>
-                            <small style="color:#999;">📅 ${dateStr}</small>
+                        <div style="padding-right:30px;">
+                            <b style="color:${isOverdue ? '#c53030' : '#2d3748'}; font-size:1rem;">${isOverdue ? '⏳ ' : ''}${task.title}</b>
+                            <span style="font-size:0.85em; color:#4facfe; font-weight:bold;"> (+${task.points} GP)</span>
+                            <p style="color: #718096; font-size: 0.85em; margin: 8px 0;">${task.description || "Açıklama yok."}</p>
+                            <div style="border-top: 1px solid #f8fafc; padding-top: 8px; margin-top: 8px;">
+                                <small style="display:block; color:#4a5568;">👤 <b>Öğrenci:</b> ${task.assigned_to}</small>
+                                <small style="color:#a0aec0;">📅 <b>Bitiş:</b> ${dateStr}</small>
+                            </div>
                         </div>
-                        <button onclick="deleteTask(${task.id})" style="position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; font-size:16px;">🗑️</button>
+                        ${actionButton}
                     `;
                     container.appendChild(card);
                 }
             }
         });
 
+        // Sayıcıları güncelle
         columns.forEach(id => {
             const countEl = document.getElementById(`count-${id}`);
             if (countEl) countEl.innerText = counts[id];
         });
 
+        // Süresi geçen panelini göster/gizle
         const overduePanel = document.getElementById("overdue-panel");
         if (overduePanel) overduePanel.style.display = overdueCount > 0 ? "block" : "none";
     });
@@ -523,32 +547,34 @@ function showSection(section) {
     }
 }
 async function loadPendingPurchases() {
-    const userId = localStorage.getItem("userId");
-    const container = document.getElementById("pending-purchases-list");
-    if (!container) return;
-
-    const res = await fetch(`/pending-purchases/${userId}`, { headers: getAuthHeaders() });
+    const parentId = localStorage.getItem("userId");
+    const res = await fetch(`/pending-purchases/${parentId}`, { headers: getAuthHeaders() });
     const purchases = await res.json();
     
-    container.innerHTML = purchases.length === 0 ? "<p style='color: #a0aec0;'>Onay bekleyen ödül yok.</p>" : "";
+    const container = document.getElementById("pending-purchases-list");
+    if(!container) return;
+
+    container.innerHTML = purchases.length === 0 ? 
+        "<p style='color: #718096; text-align:center;'>Şu an onay bekleyen bir ödül yok. 😊</p>" : "";
 
     purchases.forEach(p => {
         const div = document.createElement("div");
-        div.style = "background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;";
+        div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
         div.innerHTML = `
             <div>
-                <strong style="color: #2d3748;">${p.reward_name}</strong> <br>
-                <small style="color: #718096;">👤 ${p.student_email} - 💰 ${p.cost} GP</small>
+                <strong style="color: #2d3748; font-size: 1rem;">🛒 ${p.reward_name}</strong>
+                <div style="font-size: 0.8rem; color: #718096; margin-top: 4px;">
+                    👤 ${p.student_email} | 💰 <b>${p.cost} GP</b>
+                </div>
             </div>
-            <div style="display: flex; gap: 5px;">
-                <button onclick="approvePurchase(${p.id}, 'Onaylandı')" style="background: #48bb78; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">✅</button>
-                <button onclick="approvePurchase(${p.id}, 'Reddedildi')" style="background: #f56565; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">❌</button>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="approvePurchase(${p.id}, 'Onaylandı')" style="background: #48bb78; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Onayla</button>
+                <button onclick="approvePurchase(${p.id}, 'Reddedildi')" style="background: #f56565; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Reddet</button>
             </div>
         `;
         container.appendChild(div);
     });
 }
-
 async function approvePurchase(purchaseId, status) {
     const res = await fetch("/update-purchase-status", {
         method: "POST",
@@ -572,5 +598,18 @@ function toggleLevelTable() {
         table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } else {
         table.style.display = "none";
+    }
+}
+async function archiveTask(taskId) {
+    if (!confirm("Bu görev listenizden kaldırılacak ama öğrencinin geçmişinde saklanmaya devam edecek. Onaylıyor musunuz?")) return;
+
+    const res = await fetch("/archive-task-parent", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ taskId })
+    });
+
+    if (res.ok) {
+        loadTasks(); // Veli listesini yenile
     }
 }

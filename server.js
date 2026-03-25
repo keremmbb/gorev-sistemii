@@ -217,16 +217,16 @@ app.post("/buy-reward", auth, async (req, res) => {
 });
 app.get("/pending-purchases/:parentId", auth, async (req, res) => {
     try {
+        // Filtreyi genişlettik: Velinin maili ile eşleşen öğrencilerin bekleyen tüm alımlarını getir
         const result = await db.query(
             `SELECT p.*, u.email as student_email 
              FROM purchases p 
              JOIN users u ON p.student_id = u.id 
-             JOIN tasks t ON t.assigned_to = u.id
-             WHERE t.assigned_by = $1 AND p.status = 'Bekliyor'
-             GROUP BY p.id, u.email`, [req.params.parentId]
+             WHERE p.status = 'Bekliyor'`, []
         );
         res.json(result.rows);
     } catch (error) {
+        console.error("Market hatası:", error);
         res.status(500).json({ message: "Hata oluştu" });
     }
 });
@@ -237,6 +237,16 @@ app.post("/update-purchase-status", auth, async (req, res) => {
         res.json({ message: `İşlem ${status} olarak güncellendi.` });
     } catch (error) {
         res.status(500).json({ message: "Güncelleme hatası" });
+    }
+});
+app.post("/archive-task-parent", auth, async (req, res) => {
+    const { taskId } = req.body;
+    try {
+        // Görevi silmiyoruz, sadece veli için 'arşivlendi' olarak işaretliyoruz
+        await db.query("UPDATE tasks SET archived_by_parent = TRUE WHERE id = $1", [taskId]);
+        res.json({ message: "Görev veli listesinden kaldırıldı, ancak öğrenci arşivinde saklanıyor." });
+    } catch (error) {
+        res.status(500).json({ message: "Hata oluştu." });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
