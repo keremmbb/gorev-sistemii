@@ -107,28 +107,36 @@ app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
 app.post("/update-task-status", auth, async (req, res) => {
     const { taskId, status } = req.body;
     try {
+        // 1. Görevi ve puanını bul
         const taskRes = await db.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
         const task = taskRes.rows[0];
+
         if (!task) return res.status(404).json({ message: "Görev bulunamadı" });
 
         const oldStatus = task.status;
+        const studentId = task.assigned_to;
+        const taskPoints = parseInt(task.points) || 0;
+
+        // 2. Durumu güncelle
         await db.query("UPDATE tasks SET status = $1 WHERE id = $2", [status, taskId]);
 
-        // Puan ve Para ekleme: Sadece "Tamamlandı" seçildiğinde ve önceden tamamlanmamışsa
+        // 3. Puan ekleme mantığı: Eğer "Tamamlandı" seçildiyse ve önceden tamamlanmamışsa
         if (status === "Tamamlandı" && oldStatus !== "Tamamlandı") {
-            const pointsToAdd = task.points || 10;
+            // users tablosundaki puanları güncelle (COALESCE kullanarak null hatalarını önle)
             await db.query(
                 `UPDATE users 
                  SET total_points = COALESCE(total_points, 0) + $1, 
                      current_balance = COALESCE(current_balance, 0) + $1 
                  WHERE id = $2`,
-                [pointsToAdd, task.assigned_to]
+                [taskPoints, studentId]
             );
+            console.log(`✅ ${studentId} ID'li öğrenciye ${taskPoints} puan eklendi.`);
         }
-        res.json({ message: "Güncellendi" });
+
+        res.json({ message: "Durum başarıyla güncellendi ve puanlar eklendi." });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Hata oluştu" });
+        console.error("🔴 Puan Güncelleme Hatası:", error);
+        res.status(500).json({ message: "Sunucu hatası oluştu." });
     }
 });
 
