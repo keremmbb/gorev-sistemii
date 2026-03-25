@@ -13,38 +13,52 @@ function getAuthHeaders() {
 
 // -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
 async function loadMyTasks() {
-    const userId = localStorage.getItem("userId"); // Bunu ekle
+    const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
-    // Fetch adresini /my-tasks/${userId} olarak güncelledik:
     const res = await fetch(`/my-tasks/${userId}`, {
         headers: { "Authorization": "Bearer " + token }
     });
     
     const tasks = await res.json();
     const taskList = document.getElementById("taskList");
-    if (!taskList) return; // Hata almamak için kontrol
+    if (!taskList) return;
     taskList.innerHTML = "";
 
     tasks.forEach(task => {
-        const tarihObjesi = new Date(task.due_date || task.task_date); // due_date kullandığın için güncelledim
+        const tarihObjesi = new Date(task.due_date || task.task_date);
         const temizSaat = tarihObjesi.toLocaleTimeString('tr-TR', { 
             timeZone: 'Europe/Istanbul', 
             hour: '2-digit', 
             minute: '2-digit' 
         });
 
+        // Durumlara göre renk belirleme
+        let borderColor = "#cbd5e0"; // Varsayılan Gri
+        if (task.status === "Başlamadı") borderColor = "#feb2b2"; // Kırmızımsı
+        if (task.status === "Başlandı") borderColor = "#90cdf4";   // Mavi
+        if (task.status === "Devam Ediyor") borderColor = "#faf089"; // Sarı
+        if (task.status === "Tamamlandı") borderColor = "#9ae6b4";   // Yeşil
+
         const li = document.createElement("li");
-        li.style = "background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50;";
+        li.style = `background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 10px solid ${borderColor};`;
+        
         li.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
+                <div style="flex: 1;">
                     <strong style="font-size: 1.1rem; color: #2c3e50;">${task.title}</strong><br>
                     <small style="color: #7f8c8d;">${task.description}</small><br>
                     <span style="color: #e67e22; font-weight: bold;">⏰ Saat: ${temizSaat}</span> | 
                     <span style="color: #27ae60; font-weight: bold;">💎 ${task.points} Puan</span>
                 </div>
-                <button onclick="completeTask(${task.id})" style="background: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">Tamamla</button>
+                <div style="margin-left: 10px;">
+                    <select onchange="updateStatus(${task.id}, this.value)" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-weight: bold;">
+                        <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>❌ Başlamadı</option>
+                        <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>🚀 Başlandı</option>
+                        <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>⏳ Devam Ediyor</option>
+                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>✅ Tamamlandı</option>
+                    </select>
+                </div>
             </div>
         `;
         taskList.appendChild(li);
