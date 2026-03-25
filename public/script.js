@@ -13,22 +13,26 @@ function getAuthHeaders() {
 
 // -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
 async function loadMyTasks() {
-    const res = await fetch("/tasks", {
-        headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+    const userId = localStorage.getItem("userId"); // Bunu ekle
+    const token = localStorage.getItem("token");
+
+    // Fetch adresini /my-tasks/${userId} olarak güncelledik:
+    const res = await fetch(`/my-tasks/${userId}`, {
+        headers: { "Authorization": "Bearer " + token }
     });
+    
     const tasks = await res.json();
     const taskList = document.getElementById("taskList");
+    if (!taskList) return; // Hata almamak için kontrol
     taskList.innerHTML = "";
 
     tasks.forEach(task => {
-        // --- SAAT DÜZELTME KODU BAŞLANGICI ---
-        const tarihObjesi = new Date(task.task_date);
+        const tarihObjesi = new Date(task.due_date || task.task_date); // due_date kullandığın için güncelledim
         const temizSaat = tarihObjesi.toLocaleTimeString('tr-TR', { 
             timeZone: 'Europe/Istanbul', 
             hour: '2-digit', 
             minute: '2-digit' 
         });
-        // --- SAAT DÜZELTME KODU BİTİŞİ ---
 
         const li = document.createElement("li");
         li.style = "background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50;";
@@ -376,4 +380,17 @@ function fixDate(dateSource) {
         hour: '2-digit',
         minute: '2-digit'
     });
+}
+async function completeTask(taskId) {
+    const res = await fetch("/update-task-status", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ taskId, status: "Tamamlandı" })
+    });
+
+    if (res.ok) {
+        alert("Görev tamamlandı! Puanın eklendi.");
+        loadMyTasks();
+        loadStudentPoints();
+    }
 }
