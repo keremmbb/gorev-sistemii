@@ -79,27 +79,25 @@ function loadMyAssignedTasks() {
         if (overdueList) overdueList.innerHTML = "";
         let overdueCount = 0;
 
-        // Kolonları temizle
+        // Kolon içeriklerini temizle
         columns.forEach(id => {
             const el = document.getElementById(`parent-list-${id}`);
             if (el) el.innerHTML = "";
         });
 
         tasks.forEach(task => {
-            // Tarih işlemleri
             const dateStr = fixDate(task.due_date);
             const dueDateObj = new Date(task.due_date);
             const isOverdue = dueDateObj < new Date() && task.status !== "Tamamlandı";
 
-            // Süresi geçenleri panele ekle
             if (isOverdue) {
                 overdueCount++;
                 const li = document.createElement("li");
-                li.innerHTML = `⚠️ <b>${task.title}</b> - <small>${task.assigned_to} (${dateStr})</small>`;
+                li.innerHTML = `⚠️ <b>${task.title}</b> - <small>${task.assigned_to}</small>`;
                 if (overdueList) overdueList.appendChild(li);
             }
 
-            // Statü anahtarlarını düzelt
+            // Statü eşleştirmesi
             let statusKey = task.status;
             if (statusKey === "Başlamadı" || statusKey === "Baslamadi") statusKey = "Baslamadi";
             else if (statusKey === "Başlandı" || statusKey === "Baslandi") statusKey = "Baslandi";
@@ -111,49 +109,38 @@ function loadMyAssignedTasks() {
                 const container = document.getElementById(`parent-list-${statusKey}`);
                 if (container) {
                     const card = document.createElement("div");
-                    card.style = `background:#fff; border:1px solid ${isOverdue ? '#fc8181' : '#eee'}; padding:15px; margin-bottom:12px; border-radius:10px; position:relative; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition: 0.3s;`;
+                    card.className = "task-card"; // CSS ile stil verebilirsin
+                    card.style = `background:#fff; border:1px solid ${isOverdue ? '#fc8181' : '#eee'}; padding:12px; margin-bottom:12px; border-radius:10px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.05);`;
                     
-                    // TAMAMLANDI sütunu için farklı buton (Arşiv), diğerleri için Sil butonu
-                    let actionButton = "";
+                    // Buton Mantığı: Tamamlandıysa Arşivle, değilse Sil
+                    let actionBtn = "";
                     if (statusKey === "Tamamlandi") {
-                        actionButton = `
-                            <button onclick="archiveTask(${task.id})" title="Arşive Kaldır" 
-                                style="position:absolute; top:8px; right:8px; border:none; background:#f1f5f9; cursor:pointer; font-size:14px; padding:5px; border-radius:6px; transition:0.3s;"
-                                onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                                📁
-                            </button>`;
+                        actionBtn = `<button onclick="archiveTask(${task.id})" title="Arşive Kaldır" style="position:absolute; top:8px; right:8px; border:none; background:#f1f5f9; cursor:pointer; font-size:14px; padding:4px; border-radius:5px;">📁</button>`;
                     } else {
-                        actionButton = `
-                            <button onclick="deleteTask(${task.id})" title="Görevi Sil" 
-                                style="position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; font-size:16px;">
-                                🗑️
-                            </button>`;
+                        actionBtn = `<button onclick="deleteTask(${task.id})" title="Görevi Sil" style="position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; font-size:16px;">🗑️</button>`;
                     }
 
                     card.innerHTML = `
-                        <div style="padding-right:30px;">
-                            <b style="color:${isOverdue ? '#c53030' : '#2d3748'}; font-size:1rem;">${isOverdue ? '⏳ ' : ''}${task.title}</b>
-                            <span style="font-size:0.85em; color:#4facfe; font-weight:bold;"> (+${task.points} GP)</span>
-                            <p style="color: #718096; font-size: 0.85em; margin: 8px 0;">${task.description || "Açıklama yok."}</p>
-                            <div style="border-top: 1px solid #f8fafc; padding-top: 8px; margin-top: 8px;">
-                                <small style="display:block; color:#4a5568;">👤 <b>Öğrenci:</b> ${task.assigned_to}</small>
-                                <small style="color:#a0aec0;">📅 <b>Bitiş:</b> ${dateStr}</small>
-                            </div>
+                        <div style="padding-right:25px;">
+                            <b style="color:#2d3748; font-size:0.95rem;">${task.title}</b>
+                            <span style="font-size:0.8rem; color:#4facfe; font-weight:bold;"> (+${task.points} GP)</span>
+                            <p style="color: #718096; font-size: 0.8rem; margin: 5px 0;">${task.description || ""}</p>
+                            <small style="display:block; color:#4a5568; margin-top:5px;">👤 ${task.assigned_to}</small>
+                            <small style="color:#a0aec0; font-size: 0.75rem;">📅 ${dateStr}</small>
                         </div>
-                        ${actionButton}
+                        ${actionBtn}
                     `;
                     container.appendChild(card);
                 }
             }
         });
 
-        // Sayıcıları güncelle
+        // Sayıları güncelle
         columns.forEach(id => {
             const countEl = document.getElementById(`count-${id}`);
             if (countEl) countEl.innerText = counts[id];
         });
 
-        // Süresi geçen panelini göster/gizle
         const overduePanel = document.getElementById("overdue-panel");
         if (overduePanel) overduePanel.style.display = overdueCount > 0 ? "block" : "none";
     });
