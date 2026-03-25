@@ -14,7 +14,6 @@ app.use(express.static("public"));
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
-// --- MIDDLEWARE ---
 function auth(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ message: "Token yok" });
@@ -28,28 +27,29 @@ function auth(req, res, next) {
     }
 }
 
-// --- MAIL HELPER ---
 async function sendMail(to, subject, htmlContent) {
     try {
         await resend.emails.send({
             from: 'Sistem <onboarding@resend.dev>',
             to: 'keremacar3754is@gmail.com', 
             subject: subject,
-            html: `<div style="font-family:sans-serif; max-width:600px; margin:0 auto; border:1px solid #eee; border-radius:10px; overflow:hidden;">
-                <div style="background-color:#4A90E2; padding:20px; text-align:center;"><h1 style="color:white; margin:0;">Görev Takip</h1></div>
-                <div style="padding:30px; line-height:1.6; color:#333;">${htmlContent}</div>
-            </div>`
+            html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
+                    <div style="background-color: #4A90E2; padding: 20px; text-align: center;"><h1 style="color: white; margin: 0; font-size: 24px;">Görev Takip Sistemi</h1></div>
+                    <div style="padding: 30px; line-height: 1.6; color: #333;">${htmlContent}</div>
+                   </div>`
         });
     } catch (error) { console.error("Mail Hatası:", error); }
 }
 
-// --- ROUTES ---
 app.post("/send-code", async (req, res) => {
     const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email gerekli" });
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    await db.query("INSERT INTO users (email, code, verified, password, role) VALUES ($1, $2, false, '', 'student') ON CONFLICT (email) DO UPDATE SET code = $2", [email.trim(), code]);
-    await sendMail(email, 'Doğrulama Kodunuz', `<h2>Kodunuz: ${code}</h2>`);
-    res.json({ message: "Kod gönderildi" });
+    try {
+        await db.query(`INSERT INTO users (email, code, verified, password, role) VALUES ($1, $2, false, '', 'student') ON CONFLICT (email) DO UPDATE SET code = $2, verified = false`, [email.trim(), code]);
+        await sendMail(email.trim(), 'Doğrulama Kodunuz', `Kodunuz: ${code}`);
+        res.json({ message: "Kod gönderildi" });
+    } catch (error) { res.status(500).json({ message: "Hata" }); }
 });
 
 app.post("/verify-code", async (req, res) => {
@@ -64,7 +64,7 @@ app.post("/verify-code", async (req, res) => {
 
 app.post("/set-password", async (req, res) => {
     const { email, password, role } = req.body;
-    await db.query("UPDATE users SET password=$1, role=$2 WHERE email=$3", [password, role, email]);
+    await db.query("UPDATE users SET password=$1, role=$2 WHERE email=$3 AND verified=true", [password, role, email]);
     res.json({ message: "Başarılı" });
 });
 
@@ -76,14 +76,15 @@ app.post("/login", async (req, res) => {
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
         return res.json({ token, userId: user.id, role: user.role });
     }
-    res.status(401).json({ message: "Hatalı giriş" });
+    res.status(401).json({ message: "Bilgiler hatalı" });
 });
 
 app.post("/add-task", auth, async (req, res) => {
     const { title, description, assignedTo, assignedBy, due_date } = req.body;
-    await db.query("INSERT INTO tasks (title, description, assigned_to, assigned_by, status, assigned_at, due_date) VALUES ($1, $2, $3, $4, 'Başlamadı', NOW(), $5)", 
-    [title, description, assignedTo, assignedBy, due_date]);
-    res.json({ message: "Atandı" });
+    try {
+        await db.query("INSERT INTO tasks (title, description, assigned_to, assigned_by, status, assigned_at, due_date) VALUES ($1, $2, $3, $4, 'Başlamadı', NOW(), $5)", [title, description, assignedTo, assignedBy, due_date]);
+        res.json({ message: "Görev atandı" });
+    } catch (error) { res.status(500).json({ message: "Hata" }); }
 });
 
 app.get("/my-tasks/:userId", auth, async (req, res) => {
@@ -109,11 +110,11 @@ app.delete("/delete-task/:id", auth, async (req, res) => {
 
 app.post("/send-invite", auth, async (req, res) => {
     const { email } = req.body;
-    const token = crypto.randomBytes(16).toString("hex");
+    const token = crypto.randomBytes(32).toString("hex");
     await db.query("INSERT INTO invite (email, token, used) VALUES ($1, $2, false)", [email, token]);
-    const link = `${FRONTEND_URL}/kayit.html?invite=${token}`;
-    await sendMail(email, "Davet Edildiniz", `<a href="${link}">Kayıt Olmak İçin Tıklayın</a>`);
-    res.json({ message: "Davet gönderildi" });
+    const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
+    await sendMail(email, "Davet", `<a href="${inviteLink}">Kayıt Ol</a>`);
+    res.json({ message: "Gönderildi" });
 });
 
 app.get("/check-invite", async (req, res) => {
@@ -126,4 +127,4 @@ app.get("/get-user-id", auth, async (req, res) => {
     res.json({ userId: result.rows[0]?.id || null });
 });
 
-app.listen(3000, () => console.log("Server 3000'de hazır."));
+app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

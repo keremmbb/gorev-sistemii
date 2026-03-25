@@ -1,34 +1,50 @@
-function getAuthHeaders() {
-    return { "Content-Type": "application/json", "Authorization": "Bearer " + localStorage.getItem("token") };
+// -------------------- GENEL AYARLAR & AUTH --------------------
+function logout() {
+    localStorage.clear();
+    window.location.href = "index.html";
 }
 
-function logout() { localStorage.clear(); window.location.href = "index.html"; }
+function getAuthHeaders() {
+    return {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + localStorage.getItem("token")
+    };
+}
 
-// --- ÖĞRENCİ PANELİ ---
+// -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
 function loadMyTasks() {
     const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
     fetch(`/my-tasks/${userId}`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(tasks => {
         const list = document.getElementById("taskList");
         if (!list) return;
-        list.innerHTML = "";
+        list.innerHTML = tasks.length === 0 ? "<li>Henüz görev atanmamış.</li>" : "";
+
         tasks.forEach(task => {
             const li = document.createElement("li");
-            const descHtml = task.description ? `<p style="color:#666; font-size:0.9em; margin:5px 0;">${task.description}</p>` : "";
-            li.style = "background:#fff; padding:15px; margin-bottom:10px; border-radius:8px; list-style:none; box-shadow:0 2px 4px rgba(0,0,0,0.05);";
+            const dueDate = task.due_date ? new Date(task.due_date) : null;
+            const isOverdue = dueDate && dueDate < new Date() && task.status !== 'Tamamlandı';
+            
+            li.style = `border-left: 5px solid ${isOverdue ? '#e53e3e' : '#48bb78'}; background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; list-style:none; box-shadow: 0 2px 4px rgba(0,0,0,0.05);`;
+            
+            const descHtml = task.description ? `<p style="color: #555; font-size: 0.9em; margin: 5px 0;">${task.description}</p>` : "";
+
             li.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <div>
-                        <b>${task.title}</b>
+                    <div style="flex: 1;">
+                        <b style="font-size: 1.1em;">${task.title}</b>
                         ${descHtml}
-                        <small style="display:block; color:#999;">Atayan: ${task.assigned_by}</small>
+                        <small style="display:block; margin-top:5px; color:#888;">Atayan: ${task.assigned_by}</small>
+                        <span style="color: ${isOverdue ? 'red' : '#666'}; font-size: 0.85em;">⏳ ${dueDate ? dueDate.toLocaleString("tr-TR") : 'Belirtilmedi'}</span>
                     </div>
-                    <select onchange="updateStatus(${task.id}, this.value)" style="padding:5px; border-radius:5px;">
-                        <option value="Başlamadı" ${task.status==='Başlamadı'?'selected':''}>🔴 Başlamadı</option>
-                        <option value="Başlandı" ${task.status==='Başlandı'?'selected':''}>🔵 Başlandı</option>
-                        <option value="Devam Ediyor" ${task.status==='Devam Ediyor'?'selected':''}>🟡 Devam Ediyor</option>
-                        <option value="Tamamlandı" ${task.status==='Tamamlandı'?'selected':''}>🟢 Tamamlandı</option>
+                    <select onchange="updateStatus(${task.id}, this.value)" style="margin-left: 10px; padding: 5px; border-radius: 5px;">
+                        <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>🔴 Başlamadı</option>
+                        <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>🔵 Başlandı</option>
+                        <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
+                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
                     </select>
                 </div>`;
             list.appendChild(li);
@@ -37,30 +53,85 @@ function loadMyTasks() {
 }
 
 function updateStatus(taskId, status) {
-    fetch("/update-task-status", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ taskId, status }) });
+    fetch("/update-task-status", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ taskId, status })
+    }).then(res => {
+        if (res.ok) {
+            loadMyTasks();
+        }
+    });
 }
 
-// --- VELİ PANELİ ---
+// -------------------- VELİ FONKSİYONLARI (KANBAN) --------------------
 function loadMyAssignedTasks() {
     const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
     fetch(`/my-assigned-tasks/${userId}`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(tasks => {
         const columns = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
-        columns.forEach(id => document.getElementById(`parent-list-${id}`).innerHTML = "");
+        const counts = { Baslamadi: 0, Baslandi: 0, DevamEdiyor: 0, Tamamlandi: 0 };
         
+        const overduePanel = document.getElementById("overdue-panel");
+        const overdueList = document.getElementById("overdue-list");
+        if (overdueList) overdueList.innerHTML = "";
+        let overdueCount = 0;
+
+        columns.forEach(id => {
+            const el = document.getElementById(`parent-list-${id}`);
+            if (el) el.innerHTML = "";
+        });
+
         tasks.forEach(task => {
-            let sk = task.status === "Başlamadı" ? "Baslamadi" : task.status === "Başlandı" ? "Baslandi" : task.status === "Devam Ediyor" ? "DevamEdiyor" : "Tamamlandi";
-            const container = document.getElementById(`parent-list-${sk}`);
-            if (container) {
-                const card = document.createElement("div");
-                const descHtml = task.description ? `<p style="color:#777; font-size:0.8em; font-style:italic;">${task.description}</p>` : "";
-                card.style = "background:#fff; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #eee;";
-                card.innerHTML = `<b>${task.title}</b>${descHtml}<br><small>👤 ${task.assigned_to}</small>
-                                  <button onclick="deleteTask(${task.id})" style="float:right; border:none; background:none; cursor:pointer;">🗑️</button>`;
-                container.appendChild(card);
+            const dueDate = task.due_date ? new Date(task.due_date) : null;
+            const isOverdue = dueDate && dueDate < new Date() && task.status !== "Tamamlandı";
+            const dateStr = dueDate ? dueDate.toLocaleString("tr-TR") : "Belirtilmedi";
+
+            if (isOverdue) {
+                overdueCount++;
+                const li = document.createElement("li");
+                li.innerHTML = `⚠️ <b>${task.title}</b> - <small>${task.assigned_to} (${dateStr})</small>`;
+                if (overdueList) overdueList.appendChild(li);
+            }
+
+            let statusKey = task.status;
+            if (statusKey === "Başlamadı") statusKey = "Baslamadi";
+            else if (statusKey === "Başlandı") statusKey = "Baslandi";
+            else if (statusKey === "Devam Ediyor") statusKey = "DevamEdiyor";
+            else if (statusKey === "Tamamlandı") statusKey = "Tamamlandi";
+
+            if (counts.hasOwnProperty(statusKey)) {
+                counts[statusKey]++;
+                const container = document.getElementById(`parent-list-${statusKey}`);
+                if (container) {
+                    const card = document.createElement("div");
+                    card.style = `background:#fff; border:1px solid ${isOverdue ? '#fc8181' : '#eee'}; padding:12px; margin-bottom:10px; border-radius:8px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.05);`;
+                    
+                    const descHtml = task.description ? `<p style="color: #666; font-size: 0.85em; margin: 5px 0; font-style: italic;">${task.description}</p>` : "";
+
+                    card.innerHTML = `
+                        <div style="padding-right:25px;">
+                            <b style="color:${isOverdue ? '#c53030' : '#333'}">${isOverdue ? '⏳ ' : ''}${task.title}</b><br>
+                            ${descHtml}
+                            <small style="display:block; margin-top:5px;">👤 Öğrenci: ${task.assigned_to}</small>
+                            <small style="color:#999;">📅 ${dateStr}</small>
+                        </div>
+                        <button onclick="deleteTask(${task.id})" style="position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; font-size:16px;">🗑️</button>
+                    `;
+                    container.appendChild(card);
+                }
             }
         });
+
+        columns.forEach(id => {
+            const countEl = document.getElementById(`count-${id}`);
+            if (countEl) countEl.innerText = counts[id];
+        });
+
+        if (overduePanel) overduePanel.style.display = overdueCount > 0 ? "block" : "none";
     });
 }
 
@@ -70,76 +141,135 @@ function addTask() {
     const email = document.getElementById("assignedToEmail").value;
     const dueDate = document.getElementById("dueDate").value;
 
+    if (!title || !email) return alert("Başlık ve Öğrenci Maili zorunludur!");
+
     fetch(`/get-user-id?email=${email}`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(data => {
-        if (!data.userId) return alert("Öğrenci bulunamadı");
+        if (!data.userId) return alert("Öğrenci bulunamadı!");
+        
         fetch("/add-task", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ title, description, assignedBy: localStorage.getItem("userId"), assignedTo: data.userId, due_date: dueDate })
-        }).then(() => location.reload());
+            body: JSON.stringify({ 
+                title, 
+                description,
+                assignedBy: localStorage.getItem("userId"), 
+                assignedTo: data.userId, 
+                due_date: dueDate 
+            })
+        }).then(res => {
+            if (res.ok) {
+                alert("Görev Atandı!");
+                location.reload();
+            }
+        });
     });
 }
 
-function deleteTask(id) { if(confirm("Silinsin mi?")) fetch(`/delete-task/${id}`, { method: "DELETE", headers: getAuthHeaders() }).then(loadMyAssignedTasks); }
-
-function sendInvite() {
-    const email = document.getElementById("inviteEmail").value;
-    fetch("/send-invite", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify({ email }) }).then(() => alert("Davet Gitti"));
+function deleteTask(taskId) {
+    if (!confirm("Bu görevi silmek istediğinize emin misiniz?")) return;
+    fetch(`/delete-task/${taskId}`, { method: "DELETE", headers: getAuthHeaders() })
+    .then(() => loadMyAssignedTasks());
 }
 
-// --- KAYIT & GİRİŞ ---
+// -------------------- KAYIT, GİRİŞ & DAVET --------------------
+function sendInvite() {
+    const email = document.getElementById("inviteEmail").value.trim();
+    if (!email) return alert("Mail adresi girin!");
+
+    fetch("/send-invite", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ email })
+    }).then(res => res.ok ? alert("Davet gönderildi!") : alert("Hata oluştu!"));
+}
+
 function sendCode() {
-    const email = document.getElementById("email").value;
-    fetch("/send-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }).then(() => alert("Kod yollandı"));
+    const emailInput = document.getElementById("email");
+    const email = emailInput ? emailInput.value.trim() : "";
+    if (!email) return alert("Lütfen geçerli bir mail adresi giriniz!");
+
+    fetch("/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message));
 }
 
 function verify() {
-    const email = document.getElementById("email").value;
-    const code = document.getElementById("code").value;
-    const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const code = document.getElementById("code").value.trim();
+    const password = document.getElementById("password").value.trim();
     const role = localStorage.getItem("registerRole") || "parent";
 
-    fetch("/verify-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code }) })
-    .then(res => res.json()).then(data => {
+    if (!email || !code || !password) return alert("Tüm alanları doldurun!");
+
+    fetch("/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code })
+    })
+    .then(res => res.json())
+    .then(data => {
         if (data.message === "Kod doğrulandı") {
-            fetch("/set-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, role }) })
-            .then(() => { alert("Başarılı!"); window.location.href="index.html"; });
-        }
-    });
+            return fetch("/set-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password, role })
+            });
+        } else throw new Error(data.message);
+    })
+    .then(res => res.json())
+    .then(() => {
+        alert("Kayıt tamamlandı!");
+        window.location.href = "index.html";
+    })
+    .catch(err => alert("Hata: " + err.message));
 }
 
 function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
     const role = localStorage.getItem("loginRole");
-    fetch("/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, role }) })
-    .then(res => res.json()).then(data => {
-        if(data.token) {
+
+    fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role })
+    }).then(res => res.json()).then(data => {
+        if (data.token) {
             localStorage.setItem("token", data.token);
             localStorage.setItem("userId", data.userId);
             localStorage.setItem("role", data.role);
-            window.location.href = data.role === "parent" ? "veli-dashboard.html" : "dashboard.html";
-        } else alert("Hata");
+            window.location.href = data.role.toLowerCase() === "parent" ? "veli-dashboard.html" : "dashboard.html";
+        } else alert(data.message);
     });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
-    const invite = params.get("invite");
-    if (invite) {
-        fetch(`/check-invite?invite=${invite}`).then(res => res.json()).then(data => {
+    const inviteToken = params.get("invite");
+    const emailInput = document.getElementById("email");
+    const roleText = document.getElementById("roleText");
+
+    if (!inviteToken) {
+        localStorage.setItem("registerRole", "parent");
+        if (roleText) roleText.innerText = "Veli";
+    }
+
+    if (inviteToken && emailInput) {
+        fetch(`/check-invite?invite=${inviteToken}`)
+        .then(res => res.json())
+        .then(data => {
             if (data.valid) {
-                document.getElementById("email").value = data.email;
+                emailInput.value = data.email;
                 localStorage.setItem("registerRole", "student");
-                document.getElementById("roleText").innerText = "Öğrenci";
+                if (roleText) roleText.innerText = "Öğrenci (Davetli)";
             }
         });
-    } else if (document.getElementById("roleText")) {
-        localStorage.setItem("registerRole", "parent");
-        document.getElementById("roleText").innerText = "Veli";
     }
     if (document.getElementById("taskList")) loadMyTasks();
-    if (document.getElementById("parent-list-Baslamadi")) loadMyAssignedTasks();
 });
