@@ -138,32 +138,32 @@ function loadMyAssignedTasks() {
 function addTask() {
     const title = document.getElementById("taskTitle").value;
     const description = document.getElementById("taskDescription").value;
-    const email = document.getElementById("assignedToEmail").value;
+    const assignedToEmail = document.getElementById("assignedToEmail").value;
     const dueDate = document.getElementById("dueDate").value;
+    const dueTime = document.getElementById("dueTime").value;
+    const points = document.getElementById("taskPoints").value; // Yeni eklenen satır
 
-    if (!title || !email) return alert("Başlık ve Öğrenci Maili zorunludur!");
+    if (!title || !assignedToEmail) {
+        alert("Lütfen başlık ve öğrenci mailini doldurun.");
+        return;
+    }
 
-    fetch(`/get-user-id?email=${email}`, { headers: getAuthHeaders() })
+    fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            title,
+            description,
+            assignedToEmail,
+            dueDate,
+            dueTime,
+            points: parseInt(points) // Puanı sayı olarak gönderiyoruz
+        })
+    })
     .then(res => res.json())
     .then(data => {
-        if (!data.userId) return alert("Öğrenci bulunamadı!");
-        
-        fetch("/add-task", {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ 
-                title, 
-                description,
-                assignedBy: localStorage.getItem("userId"), 
-                assignedTo: data.userId, 
-                due_date: dueDate 
-            })
-        }).then(res => {
-            if (res.ok) {
-                alert("Görev Atandı!");
-                location.reload();
-            }
-        });
+        alert("Görev başarıyla eklendi!");
+        location.reload();
     });
 }
 
