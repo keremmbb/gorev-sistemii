@@ -195,14 +195,29 @@ function sendInvite() {
     }).then(res => res.ok ? alert("Davet gönderildi!") : alert("Hata oluştu!"));
 }
 
+// script.js içindeki sendCode fonksiyonunu bununla değiştir
 function sendCode() {
     const email = document.getElementById("email").value.trim();
-    if (!email) return alert("Email gerekli!");
+    if (!email) return alert("Lütfen mail adresinizi kontrol edin!");
+
+    // Butonu geçici olarak devre dışı bırakalım (çok kez basılmasın)
+    const btn = document.querySelector("button[onclick='sendCode()']");
+    if(btn) btn.disabled = true;
+
     fetch("/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })
-    }).then(res => res.json()).then(data => alert(data.message));
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if(btn) btn.disabled = false;
+    })
+    .catch(err => {
+        console.error(err);
+        if(btn) btn.disabled = false;
+    });
 }
 
 function verify() {
