@@ -74,6 +74,14 @@
                     onmouseout="this.style.background='#3182ce'; this.style.transform='translateY(0)';"
                 >Satın Al</button>
             </div>
+            <div id="section-archive" style="margin-top: 30px; border-top: 2px dashed #e2e8f0; padding-top: 20px;">
+    <div onclick="toggleArchive()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f7fafc; padding: 12px; border-radius: 12px; transition: 0.3s;" onmouseover="this.style.background='#edf2f7'">
+        <h3 style="color: #718096; margin: 0; font-size: 1rem;">🏆 Tamamlanan Görevler (<span id="completed-count">0</span>)</h3>
+        <span id="archive-chevron">▼</span>
+    </div>
+    <ul id="completedTaskList" style="display: none; padding: 10px 0; list-style: none;">
+        </ul>
+</div>
 
             <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
                 <div style="font-size: 2.5rem; margin-bottom: 10px;">🍕</div>

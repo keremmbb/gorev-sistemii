@@ -14,47 +14,44 @@ function getAuthHeaders() {
 // -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
 async function loadMyTasks() {
     const userId = localStorage.getItem("userId");
-    try {
-        const res = await fetch(`/my-tasks/${userId}`, { headers: getAuthHeaders() });
-        const tasks = await res.json();
-        const taskList = document.getElementById("taskList");
-        if (!taskList) return;
-        taskList.innerHTML = "";
+    const res = await fetch(`/tasks/${userId}`, { headers: getAuthHeaders() });
+    const tasks = await res.json();
+    
+    const taskList = document.getElementById("taskList");
+    const completedTaskList = document.getElementById("completedTaskList");
+    const completedCount = document.getElementById("completedCount");
 
-        tasks.forEach(task => {
-            const tarihObjesi = new Date(task.due_date || task.task_date);
-            const temizSaat = tarihObjesi.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-            
-            let statusColor = "#cbd5e0"; 
-            if (task.status === "Başlamadı") statusColor = "#feb2b2"; 
-            if (task.status === "Başlandı") statusColor = "#90cdf4";   
-            if (task.status === "Devam Ediyor") statusColor = "#faf089"; 
-            if (task.status === "Tamamlandı") statusColor = "#9ae6b4";   
+    taskList.innerHTML = "";
+    completedTaskList.innerHTML = "";
+    let doneCounter = 0;
 
-            const isCompleted = task.status === "Tamamlandı";
-            const li = document.createElement("li");
-            li.style = `background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; border-left: 10px solid ${statusColor};`;
-            
+    tasks.forEach(task => {
+        const li = document.createElement("li");
+        
+        if (task.completed) {
+            // ARŞİVDE DURACAK ŞIK TASARIM
+            doneCounter++;
+            li.style = "background: #fdfdfd; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center;";
             li.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong>${task.title}</strong><br>
-                        <small>${task.description}</small><br>
-                        <span style="color: #e67e22;">⏰ ${temizSaat}</span> | <span style="color: #27ae60;">💎 ${task.points} XP</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <select id="select-${task.id}" ${isCompleted ? "disabled" : ""} style="padding: 5px;">
-                            <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>Başlamadı</option>
-                            <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>Başlandı</option>
-                            <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
-                            <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
-                        </select>
-                        ${!isCompleted ? `<button onclick="saveTaskStatus(${task.id})" style="padding: 5px 10px; background: #4A90E2; color: white; border: none; border-radius: 4px; cursor: pointer;">Kaydet</button>` : '✅'}
-                    </div>
-                </div>`;
+                <span style="color: #a0aec0; text-decoration: line-through; font-size: 0.9rem;">✅ ${task.title}</span>
+                <span style="color: #48bb78; font-weight: bold; font-size: 0.8rem;">+${task.points} GP</span>
+            `;
+            completedTaskList.appendChild(li);
+        } else {
+            // ANA LİSTEDE DURACAK AKTİF GÖREVLER
+            li.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border-left: 5px solid #4facfe;";
+            li.innerHTML = `
+                <div>
+                    <strong style="color: #2d3748; display: block;">${task.title}</strong>
+                    <div style="font-size: 0.8rem; color: #4facfe; font-weight: bold; margin-top: 4px;">✨ ${task.xp} XP | 💰 ${task.points} GP</div>
+                </div>
+                <button onclick="completeTask(${task.id})" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(72, 187, 120, 0.2);">Bitir</button>
+            `;
             taskList.appendChild(li);
-        });
-    } catch (e) { console.error(e); }
+        }
+    });
+
+    completedCount.innerText = doneCounter;
 }
 // --- VELİ TARAFI GÜNCELLEME ---
 function loadMyAssignedTasks() {
@@ -445,9 +442,16 @@ async function loadStudentPoints() {
         
     } catch (error) { console.error("Puan yükleme hatası:", error); }
 }
-function toggleLevelTable() {
-    const table = document.getElementById("levelTable");
-    table.style.display = table.style.display === "none" ? "block" : "none";
+function toggleArchive() {
+    const list = document.getElementById("completedTaskList");
+    const chevron = document.getElementById("archive-chevron");
+    if (list.style.display === "none") {
+        list.style.display = "block";
+        chevron.innerText = "▲";
+    } else {
+        list.style.display = "none";
+        chevron.innerText = "▼";
+    }
 }
 function getAuthHeaders() {
     return {
