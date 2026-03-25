@@ -29,49 +29,56 @@ function auth(req, res, next) {
 }
 
 // --- MAIL HELPER ---
+// ... (Dosyanın üst kısmı aynı kalacak)
+
+// 2. TAM DİNAMİC MAIL FONKSİYONU
 async function sendMail(to, subject, html) {
     try {
-        await resend.emails.send({
-            from: 'onboarding@resend.dev',
-            to: 'keremacar3754is@gmail.com', // Ücretsiz planda kendi mailinize gider
+        const response = await resend.emails.send({
+            from: 'onboarding@resend.dev', // Resend domainin yoksa burası sabit kalmalı
+            to: to, // ARTIK SABİT DEĞİL: Kimin maili gelirse ona gider
             subject: subject,
-            html: `<p><strong>Asıl Alıcı:</strong> ${to}</p><hr>${html}`
+            html: html
         });
+        console.log("Mail gönderildi:", to);
+        return response;
     } catch (error) {
-        console.error("Mail Hatası:", error);
+        console.error("Resend Hatası (Muhtemelen Domain Onaysız):", error);
+        throw error;
     }
 }
 
-// --- AUTH ROUTES ---
-
+// --- SEND CODE ROTASI ---
 app.post("/send-code", async (req, res) => {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ message: "Email gerekli" });
-
+    const cleanEmail = email.trim();
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     try {
-        // Kullanıcıyı 'pending' (beklemede) olarak kaydet veya varsa kodunu güncelle
+        // Veritabanı işlemi
         await db.query(`
             INSERT INTO users (email, code, verified, password, role) 
-            VALUES ($1, $2, false, '', 'student') 
+            VALUES ($1, $2, false, '', 'pending') 
             ON CONFLICT (email) DO UPDATE SET code = $2, verified = false
-        `, [email.trim(), code]);
-        
-        // Mail gönderme (Önemli: Resend ücretsiz planda sadece onaylı maillere gider)
-        await sendMail(email.trim(), 'Kayıt Doğrulama Kodunuz', `
-            <h3>Hoş Geldiniz!</h3>
-            <p>Sisteme kayıt olabilmek için doğrulama kodunuz:</p>
-            <h1 style="color: #4A90E2;">${code}</h1>
+        `, [cleanEmail, code]);
+
+        // Mail Gönderimi: Direkt kullanıcıdan gelen temiz maile gönderiyoruz
+        await sendMail(cleanEmail, 'Doğrulama Kodunuz', `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd;">
+                <h2>Doğrulama Kodunuz</h2>
+                <p>Kayıt işlemini tamamlamak için kodunuz aşağıdadır:</p>
+                <h1 style="color: #4CAF50; letter-spacing: 5px;">${code}</h1>
+            </div>
         `);
-        
-        console.log(`Kod ${email} için oluşturuldu ve gönderim denendi.`);
-        res.json({ message: "Kod gönderildi. Lütfen mailinizi kontrol edin." });
-    } catch (error) { 
-        console.error("Kod Gönderim Hatası:", error);
-        res.status(500).json({ message: "Mail gönderilemedi. Servis sağlayıcınızı kontrol edin." }); 
+
+        res.json({ message: "Kod gönderildi!" });
+    } catch (err) {
+        console.error("HATA:", err);
+        res.status(500).json({ message: "Mail gönderilemedi. Resend panelinden domaininizi onaylamış mısınız?" });
     }
 });
+
+// ... (Geri kalan rotalar /login, /set-password vb. aynı)
 app.post("/verify-code", async (req, res) => {
     const { email, code } = req.body;
     const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);

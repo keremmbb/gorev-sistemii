@@ -197,26 +197,35 @@ function sendInvite() {
 
 // script.js içindeki sendCode fonksiyonunu bununla değiştir
 function sendCode() {
-    const email = document.getElementById("email").value.trim();
-    if (!email) return alert("Lütfen mail adresinizi kontrol edin!");
+    const emailInput = document.getElementById("email");
+    const email = emailInput.value.trim();
 
-    // Butonu geçici olarak devre dışı bırakalım (çok kez basılmasın)
-    const btn = document.querySelector("button[onclick='sendCode()']");
-    if(btn) btn.disabled = true;
+    if (!email) {
+        alert("Lütfen önce bir mail adresi yazın!");
+        return;
+    }
+
+    // Kullanıcıya bilgi verelim
+    const originalText = event.target.innerText;
+    event.target.innerText = "Gönderiliyor...";
+    event.target.disabled = true;
 
     fetch("/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email: email })
     })
     .then(res => res.json())
     .then(data => {
         alert(data.message);
-        if(btn) btn.disabled = false;
+        event.target.innerText = originalText;
+        event.target.disabled = false;
     })
     .catch(err => {
-        console.error(err);
-        if(btn) btn.disabled = false;
+        console.error("Hata:", err);
+        alert("Kod gönderilirken bir hata oluştu.");
+        event.target.innerText = originalText;
+        event.target.disabled = false;
     });
 }
 
