@@ -12,47 +12,38 @@ function getAuthHeaders() {
 }
 
 // -------------------- ÖĞRENCİ FONKSİYONLARI --------------------
-function loadMyTasks() {
-    const userId = localStorage.getItem("userId");
-    if (!userId) return;
+async function loadMyTasks() {
+    const res = await fetch("/tasks", {
+        headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+    });
+    const tasks = await res.json();
+    const taskList = document.getElementById("taskList");
+    taskList.innerHTML = "";
 
-    fetch(`/my-tasks/${userId}`, { headers: getAuthHeaders() })
-    .then(res => res.json())
-    .then(tasks => {
-        const list = document.getElementById("taskList");
-        if (!list) return;
-        list.innerHTML = tasks.length === 0 ? "<li>Henüz görev atanmamış.</li>" : "";
-
-        tasks.forEach(task => {
-            const li = document.createElement("li");
-            
-            // DÜZELTME BURADA: fixDate kullanıyoruz
-            const dateStr = fixDate(task.due_date);
-            const dueDateObj = new Date(task.due_date);
-            const isOverdue = dueDateObj < new Date() && task.status !== 'Tamamlandı';
-            
-            li.style = `border-left: 5px solid ${isOverdue ? '#e53e3e' : '#48bb78'}; background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; list-style:none; box-shadow: 0 2px 4px rgba(0,0,0,0.05);`;
-            
-            const descHtml = task.description ? `<p style="color: #555; font-size: 0.9em; margin: 5px 0;">${task.description}</p>` : "";
-            const pointsHtml = `<span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:12px; font-size:0.8em; font-weight:bold; margin-left:10px;">🏆 ${task.points || 10} Puan</span>`;
-
-            li.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <div style="flex: 1;">
-                        <b style="font-size: 1.1em;">${task.title}</b> ${pointsHtml}
-                        ${descHtml}
-                        <small style="display:block; margin-top:5px; color:#888;">Atayan: ${task.assigned_by}</small>
-                        <span style="color: ${isOverdue ? 'red' : '#666'}; font-size: 0.85em;">⏳ ${dateStr}</span>
-                    </div>
-                    <select onchange="updateStatus(${task.id}, this.value)" style="margin-left: 10px; padding: 5px; border-radius: 5px;">
-                        <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>🔴 Başlamadı</option>
-                        <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>🔵 Başlandı</option>
-                        <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
-                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
-                    </select>
-                </div>`;
-            list.appendChild(li);
+    tasks.forEach(task => {
+        // --- SAAT DÜZELTME KODU BAŞLANGICI ---
+        const tarihObjesi = new Date(task.task_date);
+        const temizSaat = tarihObjesi.toLocaleTimeString('tr-TR', { 
+            timeZone: 'Europe/Istanbul', 
+            hour: '2-digit', 
+            minute: '2-digit' 
         });
+        // --- SAAT DÜZELTME KODU BİTİŞİ ---
+
+        const li = document.createElement("li");
+        li.style = "background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50;";
+        li.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="font-size: 1.1rem; color: #2c3e50;">${task.title}</strong><br>
+                    <small style="color: #7f8c8d;">${task.description}</small><br>
+                    <span style="color: #e67e22; font-weight: bold;">⏰ Saat: ${temizSaat}</span> | 
+                    <span style="color: #27ae60; font-weight: bold;">💎 ${task.points} Puan</span>
+                </div>
+                <button onclick="completeTask(${task.id})" style="background: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">Tamamla</button>
+            </div>
+        `;
+        taskList.appendChild(li);
     });
 }
 
