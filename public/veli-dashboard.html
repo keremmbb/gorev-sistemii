@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+  <style>
+    /* Tüm input, textarea ve select öğeleri için odaklanma efekti */
+    input:focus, textarea:focus, select:focus {
+        outline: none !important;      /* Varsayılan mavi çizgiyi kaldırır */
+        border-color: #000000 !important; /* Border'ı tam siyah yapar */
+        border-width: 1.5px;            /* Biraz daha belirgin olması için hafif kalınlaştırabilirsin */
+    }
+
+    /* Geçişlerin yumuşak olması için genel stil */
+    input, textarea {
+        transition: border-color 0.2s ease;
+    }
+</style>
     <meta charset="UTF-8">
     <title>Veli Dashboard</title>
     <link rel="stylesheet" href="style.css">
