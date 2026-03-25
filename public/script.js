@@ -22,39 +22,33 @@ function loadMyTasks() {
     .then(tasks => {
         const list = document.getElementById("taskList");
         if (!list) return;
-        list.innerHTML = "";
-
-        if (tasks.length === 0) {
-            list.innerHTML = "<li>Henüz görev atanmamış.</li>";
-            return;
-        }
+        list.innerHTML = tasks.length === 0 ? "<li>Henüz görev atanmamış.</li>" : "";
 
         tasks.forEach(task => {
             const li = document.createElement("li");
             const dueDate = task.due_date ? new Date(task.due_date) : null;
             const isOverdue = dueDate && dueDate < new Date() && task.status !== 'Tamamlandı';
             
-            li.style = `border-left: 5px solid ${isOverdue ? '#e53e3e' : '#48bb78'}; background: ${isOverdue ? '#fff5f5' : '#fff'}; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); list-style:none;`;
+            li.style = `border-left: 5px solid ${isOverdue ? '#e53e3e' : '#48bb78'}; background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; list-style:none; box-shadow: 0 2px 4px rgba(0,0,0,0.05);`;
             
+            // Açıklama varsa göster, yoksa boş bırak
+            const descHtml = task.description ? `<p style="color: #555; font-size: 0.9em; margin: 5px 0;">${task.description}</p>` : "";
+
             li.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <b style="font-size:1.1em;">${task.title}</b><br>
-                        <small>Atayan: ${task.assigned_by}</small><br>
-                        <span style="color: ${isOverdue ? 'red' : '#666'}; font-weight: ${isOverdue ? 'bold' : 'normal'}">
-                            ⏳ Son Teslim: ${dueDate ? dueDate.toLocaleString("tr-TR") : 'Belirtilmedi'}
-                        </span>
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <div style="flex: 1;">
+                        <b style="font-size: 1.1em;">${task.title}</b>
+                        ${descHtml}
+                        <small style="display:block; margin-top:5px; color:#888;">Atayan: ${task.assigned_by}</small>
+                        <span style="color: ${isOverdue ? 'red' : '#666'}; font-size: 0.85em;">⏳ ${dueDate ? dueDate.toLocaleString("tr-TR") : 'Belirtilmedi'}</span>
                     </div>
-                    <div>
-                        <select onchange="updateStatus(${task.id}, this.value)" style="padding:5px; border-radius:4px;">
-                            <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>🔴 Başlamadı</option>
-                            <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>🔵 Başlandı</option>
-                            <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
-                            <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
-                        </select>
-                    </div>
-                </div>
-            `;
+                    <select onchange="updateStatus(${task.id}, this.value)" style="margin-left: 10px;">
+                        <option value="Başlamadı" ${task.status === 'Başlamadı' ? 'selected' : ''}>🔴</option>
+                        <option value="Başlandı" ${task.status === 'Başlandı' ? 'selected' : ''}>🔵</option>
+                        <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡</option>
+                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢</option>
+                    </select>
+                </div>`;
             list.appendChild(li);
         });
     });
@@ -100,7 +94,7 @@ function loadMyAssignedTasks() {
             const isOverdue = dueDate && dueDate < new Date() && task.status !== "Tamamlandı";
             const dateStr = dueDate ? dueDate.toLocaleString("tr-TR") : "Belirtilmedi";
 
-            // Gecikenler paneli
+            // Gecikenler paneli kontrolü
             if (isOverdue) {
                 overdueCount++;
                 const li = document.createElement("li");
@@ -108,10 +102,11 @@ function loadMyAssignedTasks() {
                 if (overdueList) overdueList.appendChild(li);
             }
 
-            // Kanban kartı
+            // Kanban kartı hazırlama
             let statusKey = task.status.replace(/\s/g, ''); 
             if (statusKey === "Başlamadı") statusKey = "Baslamadi";
             if (statusKey === "Başlandı") statusKey = "Baslandi";
+            if (statusKey === "DevamEdiyor") statusKey = "DevamEdiyor";
 
             if (counts.hasOwnProperty(statusKey)) {
                 counts[statusKey]++;
@@ -119,11 +114,16 @@ function loadMyAssignedTasks() {
                 if (container) {
                     const card = document.createElement("div");
                     card.style = `background:#fff; border:1px solid ${isOverdue ? '#fc8181' : '#eee'}; padding:12px; margin-bottom:10px; border-radius:8px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.05);`;
+                    
+                    // YENİ: Açıklama varsa kartta göster
+                    const descHtml = task.description ? `<p style="color: #666; font-size: 0.85em; margin: 5px 0; font-style: italic;">${task.description}</p>` : "";
+
                     card.innerHTML = `
                         <div style="padding-right:25px;">
                             <b style="color:${isOverdue ? '#c53030' : '#333'}">${isOverdue ? '⏳ ' : ''}${task.title}</b><br>
-                            <small>👤 ${task.assigned_to}</small><br>
-                            <small>📅 ${dateStr}</small>
+                            ${descHtml}
+                            <small style="display:block; margin-top:5px;">👤 Öğrenci: ${task.assigned_to}</small>
+                            <small style="color:#999;">📅 ${dateStr}</small>
                         </div>
                         <button onclick="deleteTask(${task.id})" style="position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; font-size:16px;">🗑️</button>
                     `;
@@ -144,33 +144,30 @@ function loadMyAssignedTasks() {
 
 function addTask() {
     const title = document.getElementById("taskTitle").value;
+    const description = document.getElementById("taskDescription").value; // Yeni eklenen alan
     const email = document.getElementById("assignedToEmail").value;
     const dueDate = document.getElementById("dueDate").value;
-    const dueTime = document.getElementById("dueTime").value;
 
     if (!title || !email) return alert("Başlık ve Öğrenci Maili zorunludur!");
 
     fetch(`/get-user-id?email=${email}`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(data => {
-        if (!data.userId) return alert("Bu mail adresine sahip bir öğrenci bulunamadı!");
-
-        let finalDateTime = null;
-        if (dueDate && dueTime) finalDateTime = new Date(`${dueDate}T${dueTime}`).toISOString();
-        else if (dueDate) finalDateTime = dueDate;
-
+        if (!data.userId) return alert("Öğrenci bulunamadı!");
+        
         fetch("/add-task", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({
-                title: title,
-                assignedBy: localStorage.getItem("userId"),
-                assignedTo: data.userId,
-                due_date: finalDateTime
+            body: JSON.stringify({ 
+                title, 
+                description, // Sunucuya gönderiyoruz
+                assignedBy: localStorage.getItem("userId"), 
+                assignedTo: data.userId, 
+                due_date: dueDate 
             })
         }).then(res => {
             if (res.ok) {
-                alert("Görev başarıyla eklendi!");
+                alert("Görev Atandı!");
                 location.reload();
             }
         });

@@ -23,8 +23,11 @@
         <h3 style="margin-top:0; color: #333;">📝 Öğrenciye Görev Ata</h3>
         
         <div style="display: flex; flex-direction: column; gap: 15px;">
-            <input type="text" id="taskTitle" placeholder="Görev başlığı (Örn: Kitap Okuma)" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-            <input type="email" id="assignedToEmail" placeholder="Öğrencinin kayıtlı mail adresi" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+            <input type="text" id="taskTitle" placeholder="Görev başlığı (Örn: Kitap Okuma)" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+            
+            <textarea id="taskDescription" placeholder="Görev detayları ve notlar (Opsiyonel)" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-height: 80px; font-family: inherit; resize: vertical;"></textarea>
+            
+            <input type="email" id="assignedToEmail" placeholder="Öğrencinin kayıtlı mail adresi" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
             
             <div style="display: flex; gap: 10px;">
                 <div style="flex: 1;">
@@ -37,7 +40,7 @@
                 </div>
             </div>
             
-            <button onclick="addTask()" style="background: #667eea; color: white; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px;">
+            <button onclick="addTask()" style="background: #667eea; color: white; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s;">
                 🚀 Görevi Tanımla
             </button>
         </div>
@@ -101,7 +104,7 @@
 
     <br>
     <div style="text-align: center;">
-        <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Güvenli Çıkış</button>
+        <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">Güvenli Çıkış</button>
     </div>
 </div>
 

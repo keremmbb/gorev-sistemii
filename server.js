@@ -108,13 +108,20 @@ app.post("/login", async (req, res) => {
 
 // --- TASK ROUTES ---
 
+// server.js içindeki /add-task rotasının TAM HALİ
 app.post("/add-task", auth, async (req, res) => {
-    const { title, assignedTo, assignedBy, due_date } = req.body;
-    await db.query("INSERT INTO tasks (title, assigned_to, assigned_by, status, assigned_at, due_date) VALUES ($1, $2, $3, 'Başlamadı', NOW(), $4)", 
-    [title, assignedTo, assignedBy, due_date]);
-    res.json({ message: "Atandı" });
+    const { title, description, assignedTo, assignedBy, due_date } = req.body;
+    try {
+        await db.query(
+            "INSERT INTO tasks (title, description, assigned_to, assigned_by, status, assigned_at, due_date) VALUES ($1, $2, $3, $4, 'Başlamadı', NOW(), $5)", 
+            [title, description, assignedTo, assignedBy, due_date]
+        );
+        res.json({ message: "Görev başarıyla atandı" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Görev atanamadı" });
+    }
 });
-
 app.get("/my-tasks/:userId", auth, async (req, res) => {
     const result = await db.query("SELECT t.*, u.email as assigned_by FROM tasks t JOIN users u ON t.assigned_by = u.id WHERE t.assigned_to = $1", [req.params.userId]);
     res.json(result.rows);
