@@ -461,3 +461,18 @@ document.addEventListener("DOMContentLoaded", () => {
         loadStudentPoints();
     }
 });
+async function buyReward(name, cost) {
+    if (!confirm(`${name} ödülünü ${cost} GP karşılığında almak istiyor musun?`)) return;
+
+    const res = await fetch("/buy-reward", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ rewardName: name, cost })
+    });
+
+    const data = await res.json();
+    alert(data.message);
+    if (res.ok) {
+        loadStudentPoints(); // Bakiyeyi güncelle
+    }
+}
