@@ -959,8 +959,9 @@ async function checkout() {
     }
 }
 // -------------------- GÜNCEL MARKET & SEPET SİSTEMİ --------------------
-let cart = []; // Sadece tek bir yerde tanımlı
+let cart = []; // Sepet dizisi
 
+// Ürün Listesi
 const marketRewards = [
     { name: "+1 Saat Oyun", cost: 100, icon: "🎮" },
     { name: "Yemek Seçimi", cost: 250, icon: "🍕" },
@@ -968,36 +969,9 @@ const marketRewards = [
     { name: "Film Gecesi", cost: 500, icon: "🍿" }
 ];
 
-// Bölüm Değiştirme Fonksiyonu (TEK OLMALI)
-function showSection(section) {
-    const tasks = document.getElementById('section-tasks');
-    const market = document.getElementById('section-market');
-    const btnTasks = document.getElementById('btn-tasks');
-    const btnMarket = document.getElementById('btn-market');
-
-    if (section === 'tasks') {
-        if(tasks) tasks.style.display = 'block';
-        if(market) market.style.display = 'none';
-        if(btnTasks) btnTasks.style.background = '#4facfe';
-        if(btnMarket) btnMarket.style.background = '#e2e8f0';
-    } else {
-        if(tasks) tasks.style.display = 'none';
-        if(market) market.style.display = 'block';
-        if(btnMarket) btnMarket.style.background = '#4facfe';
-        if(btnTasks) btnTasks.style.background = '#e2e8f0';
-        
-        // Market açıldığında ürünleri yükle
-        loadMarketItems(); 
-    }
-}
-
-// Market Ürünlerini Ekrana Basan Fonksiyon
+// Marketi Yükle
 function loadMarketItems() {
     const grid = document.getElementById("market-items-grid");
-    const balanceDisplay = document.getElementById("market-balance");
-    const currentGP = parseInt(document.getElementById("total-points")?.innerText || "0");
-    
-    if (balanceDisplay) balanceDisplay.innerText = currentGP;
     if (!grid) return;
 
     grid.innerHTML = marketRewards.map(item => `
@@ -1006,78 +980,62 @@ function loadMarketItems() {
             <h4 style="margin: 5px 0; font-size: 1rem; color: #2d3748;">${item.name}</h4>
             <div style="color: #4facfe; font-weight: bold; margin-bottom: 10px;">${item.cost} GP</div>
             <button onclick="addToCart('${item.name}', ${item.cost}, '${item.icon}')" 
-                style="width: 100%; padding: 10px; border-radius: 10px; border: none; 
-                background: #4facfe; color: white; cursor: pointer; 
-                font-weight: bold; transition: 0.3s;">
+                style="width: 100%; padding: 10px; border-radius: 10px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold;">
                 ➕ Sepete Ekle
             </button>
         </div>
     `).join("");
-    
-    updateCartUI(); 
+    updateCartUI();
 }
 
+// Sepete Ekle
 function addToCart(name, cost, icon) {
     cart.push({ name, cost, icon });
     updateCartUI();
 }
 
+// Sepet Arayüzünü Güncelle
 function updateCartUI() {
-    const cartCount = document.getElementById("cart-count");
-    const checkoutBtn = document.getElementById("checkout-btn");
-    
-    if (cartCount) cartCount.innerText = cart.length;
-    
-    if (checkoutBtn) {
-        if (cart.length > 0) {
-            const total = cart.reduce((sum, item) => sum + item.cost, 0);
-            checkoutBtn.style.display = "block";
-            checkoutBtn.innerText = `✅ Sepeti Onayla (${total} GP)`;
-        } else {
-            checkoutBtn.style.display = "none";
-        }
-    }
+    const countLabel = document.getElementById("cart-count");
+    if (countLabel) countLabel.innerText = cart.length;
 }
 
+// Sepeti Aç ve İçini Göster
 function showCart() {
     const modal = document.getElementById("cart-modal");
     const list = document.getElementById("cart-items-list");
     const totalDisplay = document.getElementById("cart-total-amount");
     
-    if (!modal || !list) return;
-
     if (cart.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:#a0aec0; padding:20px;">Sepetin şu an boş.</p>';
-        if(totalDisplay) totalDisplay.innerText = "0 GP";
+        list.innerHTML = '<p style="text-align:center; color:#a0aec0; padding:20px;">Sepetin bomboş... 😔</p>';
     } else {
         list.innerHTML = cart.map((item, index) => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 10px; margin-bottom: 8px; border: 1px solid #edf2f7;">
-                <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8fafc; border-radius: 12px; margin-bottom: 10px; border: 1px solid #edf2f7;">
+                <div style="display: flex; align-items: center; gap: 12px;">
                     <span style="font-size: 1.5rem;">${item.icon}</span>
                     <div style="text-align: left;">
                         <div style="font-weight: bold; font-size: 0.9rem;">${item.name}</div>
                         <div style="font-size: 0.8rem; color: #4facfe;">${item.cost} GP</div>
                     </div>
                 </div>
-                <button onclick="removeFromCart(${index})" style="background: #fff5f5; border: none; color: #f56565; cursor: pointer; padding: 5px; border-radius: 5px;">❌</button>
+                <button onclick="removeFromCart(${index})" style="background: #fff5f5; border: none; color: #f56565; cursor: pointer; font-size: 1rem; padding: 5px; border-radius: 5px;">❌</button>
             </div>
         `).join("");
-        
-        const total = cart.reduce((sum, item) => sum + item.cost, 0);
-        if(totalDisplay) totalDisplay.innerText = `${total} GP`;
     }
+    
+    const total = cart.reduce((sum, item) => sum + item.cost, 0);
+    if (totalDisplay) totalDisplay.innerText = total + " GP";
     modal.style.display = "flex";
 }
 
 function closeCart() {
-    const modal = document.getElementById("cart-modal");
-    if(modal) modal.style.display = "none";
+    document.getElementById("cart-modal").style.display = "none";
 }
 
 function removeFromCart(index) {
     cart.splice(index, 1);
     updateCartUI();
-    showCart();
+    showCart(); // Listeyi anlık güncelle
 }
 
 async function checkout() {
@@ -1085,11 +1043,11 @@ async function checkout() {
     const currentGP = parseInt(document.getElementById("total-points")?.innerText || "0");
 
     if (totalCost > currentGP) {
-        alert("Puanın yetersiz! 💪");
+        alert("Bakiyen yetersiz! Biraz daha görev yapmalısın. 💪");
         return;
     }
 
-    if (!confirm(`Toplam ${totalCost} GP harcamayı onaylıyor musun?`)) return;
+    if (!confirm("Bu alışverişi onaylıyor musun?")) return;
 
     try {
         for (const item of cart) {
@@ -1099,10 +1057,10 @@ async function checkout() {
                 body: JSON.stringify({ rewardName: item.name, cost: item.cost })
             });
         }
-        alert("🎉 Ödüller alındı! Veli onayı bekleniyor.");
-        cart = [];
+        alert("🎉 Tebrikler! Satın aldığın ürünler veli onayına düştü.");
+        cart = []; // Sepeti temizle
         closeCart();
-        loadStudentPoints();
+        loadStudentPoints(); // Puanını güncelle
         loadMarketItems();
     } catch (error) {
         console.error("Hata:", error);
