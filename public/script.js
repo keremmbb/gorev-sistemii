@@ -140,37 +140,47 @@ async function loadMyAssignedTasks() {
         });
         const tasks = await response.json();
 
+        // Durum listesi (HTML'deki ID'ler ile birebir aynı olmalı)
         const statuses = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandı"];
         const counts = { "Baslamadi": 0, "Baslandi": 0, "DevamEdiyor": 0, "Tamamlandı": 0 };
 
-        // Önce temizle
+        // Önce tüm sütunları temizle ve sayaçları sıfırla
         statuses.forEach(s => {
-            document.getElementById(`parent-list-${s}`).innerHTML = "";
-            document.getElementById(`count-${s}`).innerText = "0";
+            const listEl = document.getElementById(`parent-list-${s}`);
+            const countEl = document.getElementById(`count-${s}`);
+            if (listEl) listEl.innerHTML = "";
+            if (countEl) countEl.innerText = "0";
         });
 
         tasks.forEach(task => {
-            const listEl = document.getElementById(`parent-list-${task.status}`);
+            // Backend'den gelen status ile HTML ID'sini eşleştir
+            const listId = `parent-list-${task.status}`;
+            const listEl = document.getElementById(listId);
+            
             if (listEl) {
                 counts[task.status]++;
                 const card = document.createElement("div");
-                card.style = "background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; position: relative;";
+                
+                // Senin tasarımına uygun stil
+                card.style = "background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;";
+                
+                // SİLME BUTONU KALDIRILDI: Sadece başlık ve öğrenci ismi görünecek
                 card.innerHTML = `
-                    <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 5px;">${task.title}</div>
+                    <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #2d3748;">${task.title}</div>
                     <div style="font-size: 0.75rem; color: #64748b;">👤 ${task.assigned_to || 'Öğrenci'}</div>
-                    <button onclick="deleteTask(${task.id})" style="position:absolute; top:5px; right:5px; border:none; background:none; color:#ef4444; cursor:pointer;">✕</button>
                 `;
                 listEl.appendChild(card);
             }
         });
 
-        // Sayıları güncelle
+        // Sayaçları güncelle
         statuses.forEach(s => {
-            document.getElementById(`count-${s}`).innerText = counts[s];
+            const countEl = document.getElementById(`count-${s}`);
+            if (countEl) countEl.innerText = counts[s];
         });
 
-    } catch (err) {
-        console.error("Hata:", err);
+    } catch (error) {
+        console.error("Veli görevleri yüklenirken hata:", error);
     }
 }
 
