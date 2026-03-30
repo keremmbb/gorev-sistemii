@@ -12,6 +12,22 @@
 <div class="card">
     <h2>Kayıt Ol</h2>
     <p>Kayıt Türü: <b id="roleText">Veli</b></p>
+    <div id="registration-form">
+    <input type="text" id="name" placeholder="Ad Soyad">
+    <input type="email" id="email" placeholder="E-posta">
+    <input type="password" id="password" placeholder="Şifre">
+    
+    <button onclick="sendCode()" style="background: #4facfe; color: white; padding: 10px; border: none; border-radius: 8px; cursor: pointer;">
+        Doğrulama Kodu Gönder
+    </button>
+</div>
+
+<div id="verification-section" style="display: none; margin-top: 20px;">
+    <input type="text" id="vCode" placeholder="6 Haneli Kod">
+    <button onclick="verifyAndRegister()" style="background: #2ecc71; color: white; padding: 10px; border: none; border-radius: 8px; cursor: pointer;">
+        Kaydı Tamamla
+    </button>
+</div>
 
     <div class="input-group">
         <input type="email" id="email" placeholder="E-posta Adresiniz">

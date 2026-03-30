@@ -713,3 +713,62 @@ async function loadStatsByEmail() {
         alert("Bir hata oluştu.");
     }
 }
+async function sendCode() {
+    const email = document.getElementById("email").value;
+    const name = document.getElementById("name").value;
+    const password = document.getElementById("password").value;
+    
+    // URL'den rolü al (student veya parent)
+    const urlParams = new URLSearchParams(window.location.search);
+    const role = urlParams.get('role') || 'student';
+
+    if (!email || !name || !password) {
+        alert("Lütfen tüm alanları doldurun.");
+        return;
+    }
+
+    try {
+        const res = await fetch("/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password, role })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert("Doğrulama kodu e-postanıza gönderildi!");
+            // Kod giriş alanını göster, kayıt alanını gizle (opsiyonel görsel düzenleme)
+            document.getElementById("registration-form").style.display = "none";
+            document.getElementById("verification-section").style.display = "block";
+        } else {
+            alert("Hata: " + data.message);
+        }
+    } catch (error) {
+        console.error("Kayıt hatası:", error);
+        alert("Sunucuya bağlanılamadı.");
+    }
+}
+async function verifyAndRegister() {
+    const email = document.getElementById("email").value;
+    const code = document.getElementById("vCode").value;
+
+    try {
+        const res = await fetch("/verify-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, code })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+            window.location.href = "index.html";
+        } else {
+            alert("Hata: " + data.message);
+        }
+    } catch (error) {
+        console.error("Doğrulama hatası:", error);
+    }
+}
