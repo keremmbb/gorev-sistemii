@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Veli Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js" defer></script>
     <style>
         /* Modern Input ve Genel Stiller */
@@ -29,8 +30,8 @@
             border-radius: 20px;
             width: 90%;
             max-width: 800px;
-            max-height: 90vh; /* Ekranın dışına taşmaması için */
-            overflow-y: auto; /* İçerik çoksa kaydırılabilir */
+            max-height: 90vh; 
+            overflow-y: auto; 
             position: relative;
         }
         .close-modal {
@@ -47,22 +48,13 @@
             border-top: 1px solid #eee;
             padding-top: 15px;
         }
-        .history-item {
-            background: #f8fafc;
-            padding: 10px 15px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid #2ecc71;
-        }
 
         /* KANBAN SÜTUNLARININ UZAMASINI ENGELLEYEN STİL */
         .kanban-column-content {
             max-height: 400px; 
             overflow-y: auto; 
             padding-right: 5px;
+            min-height: 50px; /* Boş olsa bile alan kaplasın */
         }
         .kanban-column-content::-webkit-scrollbar { width: 5px; }
         .kanban-column-content::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
@@ -73,6 +65,7 @@
 <script>
     const role = localStorage.getItem("role");
     const userId = localStorage.getItem("userId");
+    // Kullanıcı kontrolü
     if (!userId || (role && role.toLowerCase() !== "parent")) {
         window.location.href = "index.html";
     }
@@ -152,25 +145,27 @@
             <button onclick="loadStatsByEmail()" style="background: #4facfe; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Görüntüle</button>
         </div>
         
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        
         <div style="height: 300px; position: relative;">
             <canvas id="myChart"></canvas>
         </div>
 
         <div id="task-history-list">
             <h4 style="color: #4a5568; margin-bottom: 10px; font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 15px;">🕒 Son Tamamlanan Görevler</h4>
-            <div id="history-container"></div>
+            <div id="history-container">
+                 <p style="text-align:center; color:#999; font-size:13px;">Sorgulama yapıldığında burada listelenecek.</p>
+            </div>
         </div>
     </div>
-</div>
 </div>
 
 <script>
     function openChartModal() { document.getElementById('chart-modal').style.display = 'flex'; }
     function closeChartModal() { document.getElementById('chart-modal').style.display = 'none'; }
+    
+    // Modal dışına tıklayınca kapatma
     window.onclick = function(event) {
-        if (event.target == document.getElementById('chart-modal')) closeChartModal();
+        const modal = document.getElementById('chart-modal');
+        if (event.target == modal) closeChartModal();
     }
 </script>
 

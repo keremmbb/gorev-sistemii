@@ -202,61 +202,53 @@ async function loadMyAssignedTasks() {
 }
 
 async function addTask() {
-    const title = document.getElementById("taskTitle").value;
-    const description = document.getElementById("taskDescription").value;
-    const assignedTo = document.getElementById("assignedToEmail").value;
-    const dueDate = document.getElementById("dueDate").value;
-    const dueTime = document.getElementById("dueTime").value;
-    const points = document.getElementById("taskPoints").value;
+    // Elementleri değişkenlere ata
+    const titleEl = document.getElementById("taskTitle");
+    const descEl = document.getElementById("taskDescription");
+    const emailEl = document.getElementById("assignedToEmail");
+    const dateEl = document.getElementById("dueDate");
+    const timeEl = document.getElementById("dueTime");
 
-    if (!title || !assignedTo) {
-        alert("Lütfen en azından başlık ve öğrenci e-postasını doldurun.");
+    // Hata kontrolü: Eğer elementlerden biri sayfada yoksa (null ise) durdur
+    if (!titleEl || !descEl || !emailEl || !dateEl || !timeEl) {
+        console.error("HATA: Bazı form elemanları bulunamadı!");
         return;
     }
 
-    // Tarih ve saati birleştir
-    const fullDueDate = (dueDate && dueTime) ? `${dueDate}T${dueTime}` : null;
+    const title = titleEl.value;
+    const description = descEl.value;
+    const assignedToEmail = emailEl.value;
+    const dueDate = dateEl.value;
+    const dueTime = timeEl.value;
+
+    if (!title || !assignedToEmail) {
+        return alert("Lütfen başlık ve e-posta alanlarını doldurun.");
+    }
 
     try {
-        const res = await fetch("/add-task", {
+        const response = await fetch("/tasks", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ 
-                title, 
-                description, 
-                assignedTo, 
-                dueDate: fullDueDate,
-                points: points || 10
+            body: JSON.stringify({
+                title,
+                description,
+                assignedToEmail,
+                dueDate: `${dueDate}T${dueTime}` // Backend'in beklediği format
             })
         });
 
-        if (res.ok) {
-            const data = await res.json();
+        if (response.ok) {
             alert("Görev başarıyla eklendi!");
-
             // Formu temizle
-            document.getElementById("taskTitle").value = "";
-            document.getElementById("taskDescription").value = "";
-            document.getElementById("dueDate").value = "";
-            document.getElementById("dueTime").value = "";
-
-            // Grafiği güncellemek için öğrenci ID'sini kaydet ve çalıştır
-            if (data.studentId) {
-                localStorage.setItem("lastViewedStudentId", data.studentId);
-                loadStatistics(data.studentId);
-            }
-
-            // Listeyi yenile (Veli panelindeki kanban tahtası için)
-            if (typeof loadMyAssignedTasks === "function") {
-                loadMyAssignedTasks();
-            }
+            titleEl.value = "";
+            descEl.value = "";
+            loadMyAssignedTasks();
         } else {
-            const err = await res.json();
+            const err = await response.json();
             alert("Hata: " + err.message);
         }
     } catch (error) {
         console.error("Görev ekleme hatası:", error);
-        alert("Sunucuya bağlanılamadı.");
     }
 }
 
