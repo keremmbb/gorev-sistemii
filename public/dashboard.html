@@ -26,6 +26,7 @@
             min-width: 80px; 
             transition: transform 0.3s ease;
             box-shadow: 0 4px 10px rgba(79, 172, 254, 0.1);
+            position: relative;
         }
         .badge-item:hover { transform: scale(1.1); }
         .badge-icon { font-size: 2rem; display: block; margin-bottom: 5px; }
@@ -91,6 +92,7 @@
             btnMarket.style.color = 'white';
             btnTasks.style.background = '#e2e8f0';
             btnTasks.style.color = '#4a5568';
+            // Market açıldığında ürünleri yükle
             if(typeof loadMarketItems === 'function') loadMarketItems();
         }
     }
@@ -166,6 +168,9 @@
     </div>
 
     <div id="section-market" style="display: none;">
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: center;">
+            <span style="font-size: 0.9rem; color: #92400e; font-weight: bold;">💰 Mevcut Bakiyen: <span id="market-balance">0</span> GP</span>
+        </div>
         <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             </div>
     </div>

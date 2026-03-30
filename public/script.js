@@ -991,6 +991,33 @@ async function loadMyBadges() {
         console.error("Rozet yükleme hatası:", error);
     }
 }
+const marketRewards = [
+    { name: "1 Saat Oyun", cost: 100, icon: "🎮" },
+    { name: "En Sevilen Yemek", cost: 250, icon: "🍕" },
+    { name: "Sinema Gecesi", cost: 500, icon: "🍿" },
+    { name: "Dışarıda Dondurma", cost: 150, icon: "🍦" },
+    { name: "Yatış Saati +30dk", cost: 200, icon: "🌙" }
+];
 
-// Bunu dashboard.html'deki body onload kısmına ekle:
-// onload="loadMyTasks(); loadStudentPoints(); loadMyBadges();"
+function loadMarketItems() {
+    const grid = document.getElementById("market-items-grid");
+    const balanceDisplay = document.getElementById("market-balance");
+    const currentGP = document.getElementById("total-points")?.innerText || "0";
+    
+    if (balanceDisplay) balanceDisplay.innerText = currentGP;
+    if (!grid) return;
+
+    grid.innerHTML = marketRewards.map(item => `
+        <div class="market-card">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">${item.icon}</div>
+            <h4 style="margin: 5px 0; font-size: 0.9rem; color: #2d3748;">${item.name}</h4>
+            <div style="color: #4facfe; font-weight: bold; margin-bottom: 10px;">${item.cost} GP</div>
+            <button onclick="buyReward('${item.name}', ${item.cost})" 
+                style="width: 100%; padding: 10px; border-radius: 10px; border: none; 
+                background: ${parseInt(currentGP) >= item.cost ? '#4facfe' : '#e2e8f0'}; 
+                color: white; cursor: pointer; font-weight: bold; transition: 0.3s;">
+                ${parseInt(currentGP) >= item.cost ? 'Satın Al' : 'Yetersiz GP'}
+            </button>
+        </div>
+    `).join("");
+}
