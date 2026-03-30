@@ -387,27 +387,38 @@ async function loadPendingPurchases() {
         const container = document.getElementById("pending-purchases-list");
         if (!container) return;
 
-        // Listeyi temizle ve eğer boşsa mesajı göster
-        if (purchases.length === 0) {
-            container.innerHTML = `<p id="no-reward-msg" style="color: #718096; text-align:center; padding: 20px;">Şu an onay bekleyen bir ödül yok. 😊</p>`;
+        // Listeyi temizle ve eğer onay bekleyen ödül yoksa mesaj göster
+        if (!purchases || purchases.length === 0) {
+            container.innerHTML = `
+                <div id="no-reward-msg" style="text-align: center; padding: 20px; background: #fff; border-radius: 12px; border: 1px dashed #cbd5e0;">
+                    <p style="color: #718096; margin: 0; font-size: 0.9rem;">Şu an onay bekleyen bir ödül yok. 😊</p>
+                </div>`;
             return;
         }
 
-        container.innerHTML = ""; // Mesajı kaldır ve temizle
+        container.innerHTML = ""; // İçeriği temizle
 
         purchases.forEach(p => {
             const div = document.createElement("div");
-            div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
+            // Veli için kart tasarımı
+            div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
+            
             div.innerHTML = `
                 <div>
                     <strong style="color: #2d3748; font-size: 1rem;">🛒 ${p.reward_name}</strong>
                     <div style="font-size: 0.8rem; color: #718096; margin-top: 4px;">
-                        👤 ${p.student_email} | 💰 <b>${p.cost} GP</b>
+                        👤 ${p.student_email} | 💰 <b style="color: #4facfe;">${p.cost} GP</b>
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button onclick="approvePurchase(${p.id}, 'Onaylandı')" style="background: #48bb78; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Onayla</button>
-                    <button onclick="approvePurchase(${p.id}, 'Reddedildi')" style="background: #f56565; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Reddet</button>
+                    <button onclick="approvePurchase(${p.id}, 'Onaylandı')" 
+                        style="background: #48bb78; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                        Onayla
+                    </button>
+                    <button onclick="approvePurchase(${p.id}, 'Reddedildi')" 
+                        style="background: #ed8936; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                        İade Et
+                    </button>
                 </div>
             `;
             container.appendChild(div);
