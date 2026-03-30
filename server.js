@@ -233,6 +233,15 @@ app.get("/pending-purchases/:parentId", auth, async (req, res) => {
 app.post("/update-purchase-status", auth, async (req, res) => {
     const { purchaseId, status } = req.body;
     try {
+        // Eğer veli REDDETTİYSE puanı öğrenciye geri iade etmeliyiz
+        if (status === "Reddedildi") {
+            const purchaseRes = await db.query("SELECT student_id, cost FROM purchases WHERE id = $1", [purchaseId]);
+            if (purchaseRes.rows.length > 0) {
+                const { student_id, cost } = purchaseRes.rows[0];
+                await db.query("UPDATE users SET current_balance = current_balance + $1 WHERE id = $2", [cost, student_id]);
+            }
+        }
+        
         await db.query("UPDATE purchases SET status = $1 WHERE id = $2", [status, purchaseId]);
         res.json({ message: `İşlem ${status} olarak güncellendi.` });
     } catch (error) {
@@ -273,6 +282,28 @@ app.post("/checkout", auth, async (req, res) => {
         res.json({ message: "Başarılı" });
     } catch (error) {
         res.status(500).json({ message: "Hata" });
+    }
+});
+app.get("/rejected-purchases/:userId", auth, async (req, res) => {
+    try {
+        const result = await db.query(
+            "SELECT * FROM purchases WHERE student_id = $1 AND status = 'Reddedildi'", 
+            [req.params.userId]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: "Hata oluştu" });
+    }
+});
+app.post("/clear-rejected-purchase", auth, async (req, res) => {
+    const { purchaseId } = req.body;
+    try {
+        // Reddedilen kaydı tamamen silebiliriz veya durumunu 'Görüldü' yapabiliriz. 
+        // Burada siliyoruz ki liste kalabalıklaşmasın.
+        await db.query("DELETE FROM purchases WHERE id = $1 AND status = 'Reddedildi'", [purchaseId]);
+        res.json({ message: "Bildirim temizlendi." });
+    } catch (error) {
+        res.status(500).json({ message: "Temizleme hatası" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

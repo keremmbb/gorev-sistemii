@@ -449,3 +449,49 @@ async function approvePurchase(purchaseId, status) {
         console.error("Onay hatası:", error);
     }
 }
+async function loadRejectedPurchases() {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    try {
+        const res = await fetch(`/rejected-purchases/${userId}`, { headers: getAuthHeaders() });
+        const rejectedItems = await res.json();
+        
+        const container = document.getElementById("rejected-rewards-list");
+        const section = document.getElementById("section-rejected-rewards");
+
+        if (rejectedItems.length === 0) {
+            if (section) section.style.display = "none";
+            return;
+        }
+
+        if (section) section.style.display = "block";
+        container.innerHTML = ""; 
+
+        rejectedItems.forEach(item => {
+            const div = document.createElement("div");
+            div.style = "background: white; padding: 10px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid #f56565; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
+            div.innerHTML = `
+                <div>
+                    <span style="font-weight: bold; color: #2d3748;">${item.reward_name}</span>
+                    <span style="font-size: 0.8rem; color: #e53e3e; margin-left: 10px;">(Puan İade Edildi 💰)</span>
+                </div>
+                <button onclick="dismissRejected(${item.id})" style="background: #edf2f7; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; color: #718096;">✕</button>
+            `;
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error("Red listesi hatası:", error);
+    }
+}
+async function dismissRejected(purchaseId) {
+    try {
+        await fetch("/clear-rejected-purchase", {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ purchaseId })
+        });
+        loadRejectedPurchases(); // Listeyi tazele
+        loadStudentPoints();    // Puan iadesi yansıdı mı kontrol et
+    } catch (e) { console.error(e); }
+}
