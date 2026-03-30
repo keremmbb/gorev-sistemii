@@ -2,130 +2,177 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Veli Dashboard - Efsanevi Görevci</title>
+    <title>Veli Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
     <style>
-        /* Modern Input ve Genel Stiller */
+        /* Paylaştığın Modern Input ve Genel Stiller */
         input:focus, textarea:focus { outline: none !important; border-color: #4facfe !important; }
         input, textarea { transition: border-color 0.2s ease; box-sizing: border-box !important; }
-        .form-input { width: 100%; height: 42px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; display: block; margin-bottom: 10px; }
-        
-        .kanban-column {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-            min-height: 450px;
-            border: 1px solid #e2e8f0;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .form-input { width: 100%; height: 42px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; display: block; }
 
-        .kanban-column h4 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
+        /* GRAFİK MODAL (AÇILIR PENCERE) STİLLERİ */
+        #chart-modal {
+            display: none; 
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            justify-content: center;
             align-items: center;
-            font-size: 0.95rem;
-            color: #475569;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #666;
         }
 
-        .status-count {
-            background: #cbd5e1;
-            color: #1e293b;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: bold;
+        /* GÖREV GEÇMİŞİ LİSTESİ STİLİ */
+        #task-history-list {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
         }
+        
+        /* KANBAN SÜTUNLARININ UZAMASINI ENGELLEYEN STİL */
+        .kanban-column-content {
+            max-height: 400px; 
+            overflow-y: auto; 
+            padding-right: 5px;
+            min-height: 50px; /* Boşken bile alan kaplasın */
+        }
+        .kanban-column-content::-webkit-scrollbar { width: 5px; }
+        .kanban-column-content::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
 
-        .kanban-item {
+        /* Görev Kartı Tasarımı */
+        .task-card {
             background: white;
             padding: 12px;
             border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
             position: relative;
-            transition: transform 0.2s;
-        }
-
-        .kanban-item:hover {
-            transform: translateY(-2px);
-        }
-
-        .delete-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: none;
-            border: none;
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 14px;
         }
     </style>
 </head>
-<body onload="loadMyAssignedTasks()">
+<body onload="loadMyAssignedTasks(); loadPendingPurchases();">
 
-<div class="dashboard-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h2 style="color: #1a202c;">👨‍👩‍👧‍ boy Veli Paneli</h2>
-        <button onclick="logout()" style="background: #fc8181; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Çıkış Yap</button>
+<script>
+    const role = localStorage.getItem("role");
+    const userId = localStorage.getItem("userId");
+    if (!userId || (role && role.toLowerCase() !== "parent")) {
+        window.location.href = "index.html";
+    }
+</script>
+
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: white; text-align: center; margin-bottom: 25px; font-family: 'Segoe UI', sans-serif;">👨‍👩‍👧‍👦 Veli Kontrol Paneli</h2>
+
+    <div style="text-align: center; margin-bottom: 30px;">
+        <button onclick="openChartModal()" 
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 30px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            📊 Gelişim Tablosunu Görüntüle
+        </button>
     </div>
 
-    <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 30px;">
-        <h3 style="margin-bottom: 20px; color: #2d3748;">✨ Yeni Görev Ata</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <input type="text" id="taskTitle" placeholder="Görev Başlığı (Örn: Kitap Oku)" class="form-input">
-            <input type="email" id="assignedToEmail" placeholder="Öğrenci E-postası" class="form-input">
-            <textarea id="taskDescription" placeholder="Görev Açıklaması..." class="form-input" style="grid-column: span 2; height: 80px;"></textarea>
-            <input type="date" id="dueDate" class="form-input">
-            <input type="time" id="dueTime" class="form-input">
+    <div class="section" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto 30px auto;">
+        <h3 style="margin-top:0; color: #2d3748; text-align: center; margin-bottom: 15px;">📝 Yeni Görev Tanımla</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <input type="text" id="taskTitle" placeholder="Görev başlığı" class="form-input">
+            <textarea id="taskDescription" placeholder="Görev detayları..." class="form-input" style="height: 80px; resize: none;"></textarea>
+            <input type="email" id="assignedToEmail" placeholder="Öğrenci e-postası" class="form-input">
+            <div style="display: flex; gap: 10px;">
+                <input type="date" id="dueDate" class="form-input" style="flex: 1;">
+                <input type="time" id="dueTime" class="form-input" style="flex: 1;">
+            </div>
+            <button onclick="addTask()" style="background: #4facfe; color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">🚀 Görevi Gönder</button>
         </div>
-        <button onclick="addTask()" style="width: 100%; padding: 12px; background: #4facfe; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px;">Görevi Tanımla</button>
     </div>
 
-    <h3 style="margin-bottom: 20px; color: #2d3748;">📋 Görevlerin Durumu</h3>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+    <div id="purchase-panel" style="background: #edf2f7; padding: 20px; border-radius: 15px; margin-bottom: 25px; border-left: 6px solid #4a5568;">
+        <h3 style="margin: 0; color: #2d3748;">🛒 Market Onay Bekleyenler</h3>
+        <div id="pending-purchases-list"></div>
+    </div>
+
+    <div class="kanban-board" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 10px 0;">
         
-        <div class="kanban-column" style="border-top: 4px solid #94a3b8;">
-            <h4>⏳ Başlamadı <span id="count-Baslamadi" class="status-count">0</span></h4>
-            <div id="parent-list-Baslamadi"></div>
+        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #ed5e68;">
+            <h3 style="display: flex; justify-content: space-between; color: #b91c1c; font-size: 1rem; margin-bottom: 15px;">
+                🔴 Başlamadı <span id="count-Baslamadi" style="background: #ed5e68; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
+            </h3>
+            <div id="parent-list-Baslamadi" class="kanban-column-content"></div>
         </div>
 
-        <div class="kanban-column" style="border-top: 4px solid #3b82f6;">
-            <h4>🚀 Başlandı <span id="count-Baslandi" class="status-count">0</span></h4>
-            <div id="parent-list-Baslandi"></div>
+        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #3498db;">
+            <h3 style="display: flex; justify-content: space-between; color: #1e40af; font-size: 1rem; margin-bottom: 15px;">
+                🔵 Başlandı <span id="count-Baslandi" style="background: #3498db; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
+            </h3>
+            <div id="parent-list-Baslandi" class="kanban-column-content"></div>
         </div>
 
-        <div class="kanban-column" style="border-top: 4px solid #f59e0b;">
-            <h4>🔄 Devam Ediyor <span id="count-DevamEdiyor" class="status-count">0</span></h4>
-            <div id="parent-list-DevamEdiyor"></div>
+        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #f1c40f;">
+            <h3 style="display: flex; justify-content: space-between; color: #856404; font-size: 1rem; margin-bottom: 15px;">
+                🟡 Devam Ediyor <span id="count-DevamEdiyor" style="background: #f1c40f; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
+            </h3>
+            <div id="parent-list-DevamEdiyor" class="kanban-column-content"></div>
         </div>
 
-        <div class="kanban-column" style="border-top: 4px solid #22c55e;">
-            <h4>✅ Tamamlandı <span id="count-Tamamlandı" class="status-count">0</span></h4>
-            <div id="parent-list-Tamamlandı"></div>
+        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #2ecc71;">
+            <h3 style="display: flex; justify-content: space-between; color: #166534; font-size: 1rem; margin-bottom: 15px;">
+                🟢 Tamamlandı <span id="count-Tamamlandı" style="background: #2ecc71; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
+            </h3>
+            <div id="parent-list-Tamamlandı" class="kanban-column-content"></div>
         </div>
-
     </div>
 
-    <div style="margin-top: 40px; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+    <div style="text-align: center; margin-top: 50px; padding-bottom: 50px;">
+        <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 14px 40px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold;">🚪 Sistemden Güvenli Çıkış</button>
+    </div>
+</div>
+
+<div id="chart-modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeChartModal()">&times;</span>
         <h3 style="text-align: center; color: #2d3748; margin-bottom: 20px;">📊 Öğrenci Gelişim Analizi</h3>
         <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
-            <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." class="form-input" style="width: 250px; margin-bottom: 0;">
+            <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; width: 250px;">
             <button onclick="loadStatsByEmail()" style="background: #4facfe; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Görüntüle</button>
         </div>
         
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <canvas id="myChart" style="width:100%; max-height:300px;"></canvas>
-    </div>
 
+        <div id="task-history-list">
+            <h4 style="color: #4a5568; margin-bottom: 10px; font-size: 0.9rem;">🕒 Son Tamamlanan Görevler</h4>
+            <div id="history-container">
+                 <p style="color: #999; font-size: 13px; text-align: center;">Öğrenci sorgulandığında detaylar burada görünecek.</p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    function openChartModal() { document.getElementById('chart-modal').style.display = 'flex'; }
+    function closeChartModal() { document.getElementById('chart-modal').style.display = 'none'; }
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('chart-modal')) closeChartModal();
+    }
+</script>
 
 </body>
 </html>
