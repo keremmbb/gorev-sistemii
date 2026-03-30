@@ -32,13 +32,13 @@ async function sendMail(to, subject, htmlContent) {
     try {
         await resend.emails.send({
             from: 'Sistem <onboarding@resend.dev>',
-            to: to, // BURASI DÜZELTİLDİ: Artık kayıt olan kişinin mailine gidecek
+            to: to, 
             subject: subject,
             html: htmlContent
         });
-        console.log(`✅ E-posta başarıyla gönderildi: ${to}`);
+        console.log(`✅ Mail gönderildi: ${to}`);
     } catch (error) {
-        console.error("❌ E-posta gönderim hatası:", error);
+        console.error("❌ Mail hatası:", error);
     }
 }
 
@@ -66,13 +66,12 @@ app.post("/verify-code", async (req, res) => {
                 "UPDATE users SET is_verified = true, verification_code = NULL WHERE email = $1",
                 [email]
             );
-            res.json({ message: "Hesabınız başarıyla doğrulandı!" });
+            res.json({ message: "Hesabınız doğrulandı!" });
         } else {
-            res.status(400).json({ message: "Geçersiz doğrulama kodu." });
+            res.status(400).json({ message: "Kod yanlış veya geçersiz." });
         }
     } catch (error) {
-        console.error("Doğrulama Hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
+        res.status(500).json({ message: "Doğrulama hatası" });
     }
 });
 app.post("/set-password", async (req, res) => {
@@ -387,6 +386,7 @@ app.get("/get-student-id", auth, async (req, res) => {
 app.post("/register", async (req, res) => {
     const { name, email, password, role } = req.body;
     try {
+        // Kullanıcı var mı kontrolü
         const userExists = await db.query("SELECT * FROM users WHERE email = $1", [email]);
         if (userExists.rows.length > 0) {
             return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
@@ -394,21 +394,22 @@ app.post("/register", async (req, res) => {
 
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Şifreyi şimdilik düz metin kaydediyoruz (Senin mevcut yapın bu yönde)
+        // Kullanıcıyı veritabanına ekle
         await db.query(
             "INSERT INTO users (name, email, password, role, is_verified, verification_code) VALUES ($1, $2, $3, $4, false, $5)",
             [name, email, password, role, verificationCode]
         );
 
+        // Mail gönder
         await sendMail(
             email, 
-            "Efsanevi Görevci - Doğrulama Kodun", 
-            `<h1>Hoş geldin ${name}!</h1><p>Kayıt kodun: <b>${verificationCode}</b></p>`
+            "Doğrulama Kodun", 
+            `<h1>Hoş geldin ${name}!</h1><p>Kayıt işlemini tamamlamak için kodun: <b>${verificationCode}</b></p>`
         );
 
         res.json({ message: "Doğrulama kodu gönderildi!" });
     } catch (error) {
-        console.error("Kayıt Hatası:", error);
+        console.error("🔴 Register Hatası:", error.message);
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });

@@ -722,7 +722,7 @@ async function sendCode() {
     const role = urlParams.get('role') || 'student';
 
     if (!name || !email || !password) {
-        alert("Lütfen tüm alanları doldurun.");
+        alert("Lütfen alanları doldurun.");
         return;
     }
 
@@ -736,13 +736,14 @@ async function sendCode() {
         const data = await res.json();
         if (res.ok) {
             alert(data.message);
+            // Formu gizle, kod alanını göster
             document.getElementById("registration-form").style.display = "none";
             document.getElementById("verification-section").style.display = "block";
         } else {
             alert("Hata: " + data.message);
         }
     } catch (error) {
-        alert("Sunucuya bağlanılamadı.");
+        console.error("Hata:", error);
     }
 }
 async function verifyAndRegister() {
