@@ -714,16 +714,16 @@ async function loadStatsByEmail() {
     }
 }
 async function sendCode() {
-    const email = document.getElementById("email").value;
     const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     
-    // URL'den rolü al (student veya parent)
+    // URL'den rolü çek (student/parent)
     const urlParams = new URLSearchParams(window.location.search);
     const role = urlParams.get('role') || 'student';
 
-    if (!email || !name || !password) {
-        alert("Lütfen tüm alanları doldurun.");
+    if (!name || !email || !password) {
+        alert("Lütfen tüm alanları eksiksiz doldurun!");
         return;
     }
 
@@ -737,16 +737,16 @@ async function sendCode() {
         const data = await res.json();
 
         if (res.ok) {
-            alert("Doğrulama kodu e-postanıza gönderildi!");
-            // Kod giriş alanını göster, kayıt alanını gizle (opsiyonel görsel düzenleme)
+            alert(data.message);
+            // Formu gizle, kod alanını göster
             document.getElementById("registration-form").style.display = "none";
             document.getElementById("verification-section").style.display = "block";
         } else {
             alert("Hata: " + data.message);
         }
     } catch (error) {
-        console.error("Kayıt hatası:", error);
-        alert("Sunucuya bağlanılamadı.");
+        console.error("Bağlantı hatası:", error);
+        alert("Sunucuya ulaşılamadı!");
     }
 }
 async function verifyAndRegister() {

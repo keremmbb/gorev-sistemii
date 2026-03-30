@@ -374,33 +374,41 @@ app.get("/get-student-id", auth, async (req, res) => {
 });
 app.post("/register", async (req, res) => {
     const { name, email, password, role } = req.body;
+    
+    console.log(`--- Kayıt İşlemi Başladı: ${email} ---`);
+
     try {
-        // Kullanıcı var mı kontrol et
+        // 1. Kullanıcı zaten var mı?
         const userExists = await db.query("SELECT * FROM users WHERE email = $1", [email]);
         if (userExists.rows.length > 0) {
+            console.log("❌ HATA: Bu e-posta zaten kayıtlı.");
             return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
         }
 
-        // 6 haneli kod üret
+        // 2. 6 haneli kod üret
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Kullanıcıyı 'onaylanmamış' olarak kaydet
+        // 3. Kullanıcıyı kaydet (Önemli: password hash'lenmeli ama şu anki yapına sadık kalıyorum)
         await db.query(
             "INSERT INTO users (name, email, password, role, is_verified, verification_code) VALUES ($1, $2, $3, $4, false, $5)",
             [name, email, password, role, verificationCode]
         );
+        console.log("✅ Kullanıcı veritabanına eklendi.");
 
-        // Mail gönder
+        // 4. Mail gönder
+        // NOT: Resend free tier kullanıyorsan sadece KENDİ mailine gönderebilirsin!
+        // Test için: to kısmına kendi mailini yazabilirsin.
         await sendMail(
             email, 
             "Doğrulama Kodun", 
-            `<h1>Hoş geldin ${name}!</h1><p>Kayıt işlemini tamamlamak için kodun: <b>${verificationCode}</b></p>`
+            `<h1>Hoş geldin ${name}!</h1><p>Kayıt işlemini tamamlamak için kodun: <b style="font-size: 24px;">${verificationCode}</b></p>`
         );
 
         res.json({ message: "Doğrulama kodu e-postana gönderildi!" });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Kayıt hatası" });
+        console.error("🔴 KAYIT ROTASI HATASI:", error.message);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
