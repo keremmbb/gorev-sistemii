@@ -79,29 +79,48 @@ async function loadMyTasks() {
 
 async function updateTaskStatus(taskId, newStatus) {
     try {
-        const res = await fetch("/update-task-status", {
+        const response = await fetch("/update-task-status", {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify({ taskId, status: newStatus })
         });
 
-        if (res.ok) {
-            console.log(`Görev ${taskId} durumu ${newStatus} olarak güncellendi.`);
-            
-            // 1. Listeleri yenile (Öğrenci veya Veli panelindeysen ilgili listeyi çeker)
-            if (typeof loadMyTasks === "function") await loadMyTasks();
-            if (typeof loadMyAssignedTasks === "function") await loadMyAssignedTasks();
-            if (typeof loadStudentPoints === "function") await loadStudentPoints();
+        if (response.ok) {
+            // Eğer durum "Tamamlandı" ise özel kutlama akışını başlat
+            if (newStatus === "Tamamlandı") {
+                // Görev listesini yeniden yükle ki badge_reward bilgisini görebilelim
+                const res = await fetch(`/my-tasks/${localStorage.getItem("userId")}`, { headers: getAuthHeaders() });
+                const tasks = await res.json();
+                const completedTask = tasks.find(t => t.id === taskId);
 
-            // 2. GRAFİĞİ GÜNCELLE: 
-            // Veli panelindeysek ve bir öğrenci seçiliyse grafiği yenile
-            const lastStudentId = localStorage.getItem("lastViewedStudentId");
-            if (lastStudentId && typeof loadStatistics === "function") {
-                console.log("Grafik güncelleniyor...");
-                loadStatistics(lastStudentId);
+                // Eğer bu görevde bir rozet varsa tebrik mesajı göster
+                if (completedTask && completedTask.badge_reward) {
+                    const badgeName = completedTask.badge_reward;
+                    const badgeIcons = {
+                        "Kitap Kurdu": "📖",
+                        "Temizlik Ustası": "🧹",
+                        "Sabah Yıldızı": "☀️",
+                        "Matematik Dehası": "🔢",
+                        "Süper Evlat": "⭐"
+                    };
+                    const icon = badgeIcons[badgeName] || "🏅";
+
+                    // Tebrik Mesajı
+                    alert(`🎉 TEBRİKLER! 🎉\n\n"${completedTask.title}" görevini başarıyla tamamladın ve yeni bir rozet kazandın:\n\n✨ ${icon} ${badgeName} ✨\n\nTamam'a bastığında rozetin başarımlarına eklenecek!`);
+                    
+                    // Rozetleri sayfayı yenilemeden anında güncelle
+                    if (typeof loadMyBadges === "function") {
+                        await loadMyBadges();
+                    }
+                }
             }
+
+            // Genel listeleri yenile
+            loadMyTasks();
+            if (typeof loadStudentPoints === "function") loadStudentPoints();
+            
         } else {
-            const err = await res.json();
+            const err = await response.json();
             alert("Hata: " + err.message);
         }
     } catch (error) {
