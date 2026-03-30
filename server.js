@@ -231,29 +231,24 @@ app.get("/pending-purchases/:parentId", auth, async (req, res) => {
     }
 });
 app.post("/update-purchase-status", auth, async (req, res) => {
-    const { purchaseId, status } = req.body;
+    const { purchaseId, status, reason } = req.body; // 'reason' (açıklama) eklendi
     try {
+        // Durumu ve varsa reddetme nedenini güncelle
+        await db.query(
+            "UPDATE purchases SET status = $1, rejection_reason = $2 WHERE id = $3",
+            [status, reason || null, purchaseId]
+        );
+
+        // Eğer reddedildiyse parayı iade et (Senin mevcut mantığın)
         if (status === "Reddedildi") {
-            // Önce ödül bilgilerini alalım (Kim reddedildi, kaç para?)
-            const purchaseRes = await db.query("SELECT student_id, cost, reward_name FROM purchases WHERE id = $1", [purchaseId]);
-            
-            if (purchaseRes.rows.length > 0) {
-                const { student_id, cost } = purchaseRes.rows[0];
-                // 1. Parayı İADE ET
-                await db.query("UPDATE users SET current_balance = current_balance + $1 WHERE id = $2", [cost, student_id]);
-                // 2. Durumu 'Reddedildi' yap (Öğrenci panelinde görünecek)
-                await db.query("UPDATE purchases SET status = 'Reddedildi' WHERE id = $1", [purchaseId]);
-                
-                return res.json({ message: "Ödül reddedildi ve puan iade edildi!" });
-            }
+            const purchase = await db.query("SELECT student_id, cost FROM purchases WHERE id = $1", [purchaseId]);
+            const { student_id, cost } = purchase.rows[0];
+            await db.query("UPDATE users SET current_balance = current_balance + $1 WHERE id = $2", [cost, student_id]);
         }
-        
-        // Diğer durumlar (Onaylandı vs.)
-        await db.query("UPDATE purchases SET status = $1 WHERE id = $2", [status, purchaseId]);
-        res.json({ message: `İşlem ${status} olarak güncellendi.` });
+
+        res.json({ message: "Güncellendi" });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Güncelleme hatası" });
+        res.status(500).json({ message: "Hata oluştu" });
     }
 });
 app.post("/archive-task-parent", auth, async (req, res) => {

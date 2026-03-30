@@ -453,19 +453,24 @@ async function loadPendingPurchases() {
     }
 }
 async function approvePurchase(purchaseId, status) {
+    let reason = null;
+
+    // Eğer işlem reddetme ise nedenini soralım
+    if (status === "Reddedildi") {
+        reason = prompt("Reddetme nedenini yazar mısınız? (Örn: Önce ödevlerini bitirmelisin)");
+        if (reason === null) return; // İptal edilirse işlemi durdur
+    }
+
     try {
         const res = await fetch("/update-purchase-status", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ purchaseId, status })
+            body: JSON.stringify({ purchaseId, status, reason }) // Neden gönderiliyor
         });
         
         if (res.ok) {
-            alert(`Ödül talebi ${status}!`);
-            loadPendingPurchases(); // Listeyi anlık güncelle
-            if (typeof loadMyAssignedTasks === "function") loadMyAssignedTasks(); // Varsa puanları/tabloyu güncelle
-        } else {
-            alert("İşlem sırasında bir hata oluştu.");
+            alert(status === "Reddedildi" ? "Talep reddedildi ve mesajın iletildi." : "Talep onaylandı!");
+            loadPendingPurchases();
         }
     } catch (error) {
         console.error("Onay hatası:", error);
@@ -493,17 +498,24 @@ async function loadRejectedPurchases() {
         container.innerHTML = ""; 
 
         rejectedItems.forEach(item => {
-            const div = document.createElement("div");
-            div.style = "background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #feb2b2; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
-            div.innerHTML = `
-                <div>
-                    <strong style="color: #c53030;">❌ Reddedildi: ${item.reward_name}</strong>
-                    <div style="font-size: 0.75rem; color: #718096;">${item.cost} GP hesabınıza iade edildi.</div>
-                </div>
-                <button onclick="dismissRejected(${item.id})" style="background: #fed7d7; border: none; color: #c53030; cursor: pointer; border-radius: 6px; padding: 5px 8px; font-weight: bold;">Kapat</button>
-            `;
-            container.appendChild(div);
-        });
+            rejectedItems.forEach(item => {
+    const div = document.createElement("div");
+    div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #feb2b2; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
+    
+    // Eğer veli bir neden yazdıysa onu göster, yazmadıysa klasik mesajı göster
+    const reasonMsg = item.rejection_reason 
+        ? `<div style="margin-top: 5px; font-style: italic; color: #e53e3e;">💬 Mesaj: "${item.rejection_reason}"</div>` 
+        : `<div style="font-size: 0.75rem; color: #718096;">${item.cost} GP hesabınıza iade edildi.</div>`;
+
+    div.innerHTML = `
+        <div style="flex: 1;">
+            <strong style="color: #c53030;">❌ Reddedildi: ${item.reward_name}</strong>
+            ${reasonMsg}
+        </div>
+        <button onclick="dismissRejected(${item.id})" style="background: #fed7d7; border: none; color: #c53030; cursor: pointer; border-radius: 6px; padding: 8px 12px; font-weight: bold; margin-left: 10px;">Anladım</button>
+    `;
+    container.appendChild(div);
+});
     } catch (error) {
         console.error("Reddedilenler yüklenemedi:", error);
     }
