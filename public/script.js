@@ -1022,4 +1022,4 @@ async function checkout() {
     } catch (error) {
         console.error("Hata:", error);
     }
-}
+}}
