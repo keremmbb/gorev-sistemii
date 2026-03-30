@@ -109,9 +109,19 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div style="background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-    <h3 style="color: #2d3748; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-        📊 Haftalık Gelişim Raporu
+<div style="background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+    <h3 style="color: #2d3748; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            📊 <span id="active-student-name">Gelişim Raporu</span>
+        </div>
+        <div style="display: flex; gap: 5px;">
+            <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." 
+                   style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; width: 200px; outline: none;">
+            <button onclick="loadStatsByEmail()" 
+                    style="background: #4facfe; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px;">
+                Görüntüle
+            </button>
+        </div>
     </h3>
     <canvas id="myChart" style="width:100%; max-height:250px;"></canvas>
 </div>

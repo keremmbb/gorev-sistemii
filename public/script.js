@@ -685,3 +685,31 @@ async function checkAndLoadStats() {
         console.log("Grafik için henüz bir öğrenci ID'si seçilmedi.");
     }
 }
+async function loadStatsByEmail() {
+    const email = document.getElementById("statsSearchEmail").value;
+    if (!email) {
+        alert("Lütfen bir öğrenci e-postası girin.");
+        return;
+    }
+
+    try {
+        // Önce bu mail adresine sahip öğrencinin ID'sini bulalım
+        // Not: Mevcut /add-task rotasındaki mantığı kullanarak küçük bir sorgu yapıyoruz
+        // Ancak daha temiz olması için yeni bir 'get-user-by-email' rotası da yapabilirsin.
+        // Şimdilik addTask'taki gibi bir mantıkla çalıştıralım:
+        
+        const res = await fetch(`/get-student-id?email=${email}`, { headers: getAuthHeaders() });
+        const data = await res.json();
+
+        if (res.ok && data.studentId) {
+            // ID'yi bulduk, şimdi grafiği çizdirelim
+            localStorage.setItem("lastViewedStudentId", data.studentId);
+            loadStatistics(data.studentId);
+        } else {
+            alert("Öğrenci bulunamadı.");
+        }
+    } catch (error) {
+        console.error("E-posta ile istatistik getirme hatası:", error);
+        alert("Bir hata oluştu.");
+    }
+}

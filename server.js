@@ -359,4 +359,17 @@ app.get("/user-stats/:userId", auth, async (req, res) => {
         res.status(500).json({ message: "İstatistik hatası" });
     }
 });
+app.get("/get-student-id", auth, async (req, res) => {
+    const { email } = req.query;
+    try {
+        const result = await db.query("SELECT id FROM users WHERE email = $1 AND role = 'student'", [email]);
+        if (result.rows.length > 0) {
+            res.json({ studentId: result.rows[0].id });
+        } else {
+            res.status(404).json({ message: "Öğrenci bulunamadı" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
