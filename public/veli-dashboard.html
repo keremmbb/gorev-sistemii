@@ -8,10 +8,10 @@
     <style>
         /* Modern Input ve Genel Stiller */
         input:focus, textarea:focus { outline: none !important; border-color: #4facfe !important; }
-        input, textarea { transition: border-color 0.2s ease; box-sizing: border-box !important; }
-        .form-input { width: 100%; height: 42px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; display: block; }
+        input, textarea, select { transition: border-color 0.2s ease; box-sizing: border-box !important; }
+        .form-input { width: 100%; height: 42px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; display: block; margin-bottom: 10px; }
 
-        /* GRAFİK MODAL (AÇILIR PENCERE) STİLLERİ */
+        /* GRAFİK MODAL */
         #chart-modal {
             display: none; 
             position: fixed;
@@ -41,14 +41,8 @@
             color: #666;
         }
 
-        /* GÖREV GEÇMİŞİ LİSTESİ STİLİ */
-        #task-history-list {
-            margin-top: 20px;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-        }
+        #task-history-list { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
         
-        /* KANBAN SÜTUNLARININ UZAMASINI ENGELLEYEN STİL */
         .kanban-column-content {
             max-height: 400px; 
             overflow-y: auto; 
@@ -58,7 +52,6 @@
         .kanban-column-content::-webkit-scrollbar { width: 5px; }
         .kanban-column-content::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
 
-        /* Görev Kartı Tasarımı (Silme Butonsuz) */
         .task-card {
             background: white;
             padding: 12px;
@@ -91,16 +84,24 @@
 
     <div class="section" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto 30px auto;">
         <h3 style="margin-top:0; color: #2d3748; text-align: center; margin-bottom: 15px;">📝 Yeni Görev Tanımla</h3>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-            <input type="text" id="taskTitle" placeholder="Görev başlığı" class="form-input">
-            <textarea id="taskDescription" placeholder="Görev detayları..." class="form-input" style="height: 80px; resize: none;"></textarea>
-            <input type="email" id="assignedToEmail" placeholder="Öğrenci e-postası" class="form-input">
-            <div style="display: flex; gap: 10px;">
-                <input type="date" id="dueDate" class="form-input" style="flex: 1;">
-                <input type="time" id="dueTime" class="form-input" style="flex: 1;">
-            </div>
-            <button onclick="addTask()" style="background: #4facfe; color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">🚀 Görevi Gönder</button>
+        <input type="text" id="taskTitle" placeholder="Görev başlığı" class="form-input">
+        <textarea id="taskDescription" placeholder="Görev detayları..." class="form-input" style="height: 80px; resize: none;"></textarea>
+        <input type="email" id="assignedToEmail" placeholder="Öğrenci e-postası" class="form-input">
+        
+        <select id="taskBadge" class="form-input">
+            <option value="">🎁 Rozet Ödülü Yok (Normal Görev)</option>
+            <option value="🏆|Şampiyon">🏆 Şampiyon Rozeti</option>
+            <option value="📚|Kitap Kurdu">📚 Kitap Kurdu Rozeti</option>
+            <option value="⭐|Süper Evlat">⭐ Süper Evlat Rozeti</option>
+            <option value="🧹|Düzen Üstadı">🧹 Düzen Üstadı Rozeti</option>
+            <option value="💪|Azimli">💪 Azimli Rozeti</option>
+        </select>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="date" id="dueDate" class="form-input" style="flex: 1;">
+            <input type="time" id="dueTime" class="form-input" style="flex: 1;">
         </div>
+        <button onclick="addTask()" style="width:100%; background: #4facfe; color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">🚀 Görevi Gönder</button>
     </div>
 
     <div id="purchase-panel" style="background: #edf2f7; padding: 20px; border-radius: 15px; margin-bottom: 25px; border-left: 6px solid #4a5568;">
@@ -109,7 +110,6 @@
     </div>
 
     <div class="kanban-board" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 10px 0;">
-        
         <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #ed5e68;">
             <h3 style="display: flex; justify-content: space-between; color: #b91c1c; font-size: 1rem; margin-bottom: 15px;">
                 🔴 Başlamadı <span id="count-Baslamadi" style="background: #ed5e68; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
@@ -147,15 +147,13 @@
 <div id="chart-modal">
     <div class="modal-content">
         <span class="close-modal" onclick="closeChartModal()">&times;</span>
-        <h3 style="text-align: center; color: #2d3748; margin-bottom: 20px;">📊 Öğrenci Gelişim Analizi</h3>
+        <h3 style="text-align: center; color: #2d3748; margin-bottom: 20px;">📊 Gelişim Analizi</h3>
         <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
             <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; width: 250px;">
             <button onclick="loadStatsByEmail()" style="background: #4facfe; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Görüntüle</button>
         </div>
-        
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <canvas id="myChart" style="width:100%; max-height:300px;"></canvas>
-
         <div id="task-history-list">
             <h4 style="color: #4a5568; margin-bottom: 10px; font-size: 0.9rem;">🕒 Son Tamamlanan Görevler</h4>
             <div id="history-container">
@@ -168,10 +166,7 @@
 <script>
     function openChartModal() { document.getElementById('chart-modal').style.display = 'flex'; }
     function closeChartModal() { document.getElementById('chart-modal').style.display = 'none'; }
-    window.onclick = function(event) {
-        if (event.target == document.getElementById('chart-modal')) closeChartModal();
-    }
+    window.onclick = function(event) { if (event.target == document.getElementById('chart-modal')) closeChartModal(); }
 </script>
-
 </body>
 </html>

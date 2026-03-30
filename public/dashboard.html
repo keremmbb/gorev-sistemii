@@ -30,7 +30,7 @@
     function toggleLevelTable() {
         const table = document.getElementById("levelTable");
         const currentXp = document.getElementById("total-xp-display")?.innerText || "0";
-        document.getElementById("current-xp-info").innerText = currentXp;
+        if(document.getElementById("current-xp-info")) document.getElementById("current-xp-info").innerText = currentXp;
 
         if (table.style.display === "none" || table.style.display === "") {
             table.style.display = "block";
@@ -48,7 +48,6 @@
     .market-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8; transition: 0.3s; }
     .market-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
     
-    /* Yeni Rozet Stilleri */
     .badge-item {
         text-align: center; 
         background: #f0f7ff; 
@@ -79,19 +78,11 @@
                     <div style="font-size: 1.2rem; font-weight: bold;">💰 <span id="total-points">0</span> GP</div>
                 </div>
             </div>
-            <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; font-weight: bold; transition: 0.3s;">
-                📜 Rütbe Tablosunu Gör
-            </button>
+            <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; font-weight: bold;">📜 Rütbe Tablosunu Gör</button>
 
             <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; color: #333;">
                 <h4 style="margin-top: 0; color: #2d3748; border-bottom: 2px solid #f0f4f8; padding-bottom: 10px; text-align: center;">🏆 Rütbe Gereksinimleri</h4>
                 <table style="width: 100%; font-size: 0.95rem; text-align: left; border-collapse: collapse;">
-                    <thead>
-                        <tr style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">
-                            <th style="padding: 10px 5px;">Gereken XP</th>
-                            <th style="padding: 10px 5px; text-align: right;">Rütbe Adı</th>
-                        </tr>
-                    </thead>
                     <tbody>
                         <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">0 - 500 XP</td> <td style="text-align: right; font-weight: bold; color: #718096;">⚪ Çaylak</td> </tr>
                         <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">501 - 1500 XP</td> <td style="text-align: right; font-weight: bold; color: #3182ce;">🔵 Asistan</td> </tr>
@@ -100,85 +91,43 @@
                         <tr> <td style="padding: 12px 5px;">6000+ XP</td> <td style="text-align: right; font-weight: bold; color: #d69e2e;">👑 Efsane</td> </tr>
                     </tbody>
                 </table>
-                <div style="margin-top: 15px; padding: 10px; background: #f8fafc; border-radius: 10px; text-align: center; font-size: 0.85rem; color: #64748b;">
-                    Senin XP: <span id="current-xp-info" style="font-weight: bold; color: #4facfe;">0</span>
-                </div>
             </div>
         </div>
     </div>
 
     <div style="background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #edf2f7;">
-        <h3 style="margin-top: 0; color: #2d3748; font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">🏅 Başarımlarım</h3>
-        <div id="badge-container" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
-            <p style="color: #a0aec0; font-size: 0.8rem;">Rozetler yükleniyor veya henüz hiç kazanılmadı...</p>
-        </div>
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 1rem; margin-bottom: 15px;">🏅 Başarımlarım</h3>
+        <div id="badge-container" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;"></div>
     </div>
 
-    <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
-        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s;">📖 Görevlerim</button>
-        <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s;">🛒 Ödül Marketi</button>
-    </div>
-
-    <div id="section-rejected-rewards" style="display: none;">
-        <div id="rejected-rewards-list"></div>
+    <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold;">📖 Görevlerim</button>
+        <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold;">🛒 Market</button>
     </div>
 
     <div id="section-tasks">
+        <div id="legendary-tasks-section" style="margin-bottom: 25px; display: none; background: #fffcf0; padding: 15px; border-radius: 15px; border: 2px solid #f6ad55;">
+            <h3 style="color: #b7791f; font-size: 1rem; margin-top: 0;">✨ Efsanevi Görevler</h3>
+            <ul id="legendaryTaskList" style="padding: 0; list-style: none;"></ul>
+        </div>
+
+        <h3 style="color: #4a5568; font-size: 0.9rem;">📋 Günlük İşler</h3>
         <ul id="taskList" style="padding: 0; list-style: none;"></ul>
+
         <div id="section-archive" style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px;">
-            <div onclick="toggleArchive()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+            <div onclick="toggleArchive()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f8fafc; padding: 12px; border-radius: 10px;">
                 <span style="color: #64748b; font-size: 0.9rem; font-weight: 600;">🏆 Tamamlananlar (<span id="completed-count">0</span>)</span>
                 <span id="archive-chevron">▼</span>
             </div>
-            <ul id="completedTaskList" style="display: none; padding: 10px 0; list-style: none; margin-top: 10px;"></ul>
+            <ul id="completedTaskList" style="display: none; padding: 0; list-style: none; margin-top: 10px;"></ul>
         </div>
     </div>
 
     <div id="section-market" style="display: none;">
-        <div id="cart-panel" style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 25px; border: 2px dashed #4facfe;">
-            <h4 style="margin-top: 0; color: #2d3748; display: flex; align-items: center; gap: 10px;">🛒 Sepetim</h4>
-            <div id="cart-items" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px;">
-                <p style="color: #a0aec0; font-size: 0.85rem; text-align: center;">Sepetiniz şu an boş.</p>
-            </div>
-            <div style="border-top: 2px solid #f1f5f9; padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: bold; color: #4a5568;">Toplam: <span id="cart-total" style="color: #4facfe;">0</span> GP</span>
-                <button id="checkout-btn" onclick="checkout()" disabled style="background: #4facfe; color: white; border: none; padding: 8px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s;">💰 Satın Al</button>
-            </div>
         </div>
-
-        <h3 style="color: #2d3748; margin-bottom: 15px;">🛍️ Ürünleri Seç</h3>
-        <div id="market-items-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="market-card">
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">🎮</div>
-                <strong style="display: block; color: #2d3748;">+1 Saat Oyun</strong>
-                <div style="color: #3182ce; font-weight: bold; margin: 5px 0;">200 GP</div>
-                <button onclick="addToCart('+1 Saat Oyun', 200)" style="width: 100%; padding: 8px; border: none; background: #edf2f7; color: #2b6cb0; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Sepete Ekle</button>
-            </div>
-            <div class="market-card">
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍕</div>
-                <strong style="display: block; color: #2d3748;">Yemek Seçimi</strong>
-                <div style="color: #3182ce; font-weight: bold; margin: 5px 0;">300 GP</div>
-                <button onclick="addToCart('Yemek Seçimi', 300)" style="width: 100%; padding: 8px; border: none; background: #edf2f7; color: #2b6cb0; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Sepete Ekle</button>
-            </div>
-            <div class="market-card">
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍿</div>
-                <strong style="display: block; color: #2d3748;">Film Gecesi</strong>
-                <div style="color: #3182ce; font-weight: bold; margin: 5px 0;">500 GP</div>
-                <button onclick="addToCart('Film Gecesi', 500)" style="width: 100%; padding: 8px; border: none; background: #edf2f7; color: #2b6cb0; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Sepete Ekle</button>
-            </div>
-            <div class="market-card">
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍦</div>
-                <strong style="display: block; color: #2d3748;">Dondurma</strong>
-                <div style="color: #3182ce; font-weight: bold; margin: 5px 0;">150 GP</div>
-                <button onclick="addToCart('Dondurma', 150)" style="width: 100%; padding: 8px; border: none; background: #edf2f7; color: #2b6cb0; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Sepete Ekle</button>
-            </div>
-        </div>
-    </div>
 
     <div style="text-align: center; margin-top: 60px; padding-bottom: 40px;">
-        <button onclick="logout()" style="background-color: #ff4d4d; color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3); transition: 0.3s;">
-            🚪 Sistemden Çıkış Yap
-        </button>
+        <button onclick="logout()" style="background-color: #ff4d4d; color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: bold;">🚪 Çıkış Yap</button>
     </div>
 </div>
 </body>

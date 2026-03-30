@@ -22,25 +22,38 @@ async function loadMyTasks() {
         const tasks = await res.json();
         
         const taskList = document.getElementById("taskList");
+        const legendaryList = document.getElementById("legendaryTaskList");
+        const legendarySection = document.getElementById("legendary-tasks-section");
         const completedTaskList = document.getElementById("completedTaskList");
         
         if (taskList) taskList.innerHTML = "";
+        if (legendaryList) legendaryList.innerHTML = "";
         if (completedTaskList) completedTaskList.innerHTML = "";
+        if (legendarySection) legendarySection.style.display = "none";
+        
         let doneCounter = 0;
 
         tasks.forEach(task => {
             const li = document.createElement("li");
             li.style = "background: white; padding: 15px; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center;";
             
-            // Tarih ve Puan bilgisini hazırla
-            const dateStr = fixDate(task.due_date);
+            const dateStr = typeof fixDate === "function" ? fixDate(task.due_date) : task.due_date;
             
+            let badgeHtml = "";
+            if (task.badge_reward) {
+                const [icon, name] = task.badge_reward.split('|');
+                badgeHtml = `<div style="font-size: 0.7rem; color: #d69e2e; font-weight: bold; margin-top: 4px;">🎁 Ödül: ${icon} ${name} Rozeti</div>`;
+                li.style.border = "2px solid #f6ad55";
+                li.style.background = "#fffdf5";
+            }
+
             li.innerHTML = `
                 <div style="flex: 1;">
                     <div style="font-weight: bold; color: #2d3748; font-size: 1rem;">${task.title}</div>
                     <div style="font-size: 0.75rem; color: #718096; margin-top: 4px;">
                         📅 ${dateStr} | 💰 <span style="color: #4facfe; font-weight: bold;">${task.points} GP</span>
                     </div>
+                    ${badgeHtml}
                 </div>
                 <div>
                     <select class="status-select" onchange="updateTaskStatus(${task.id}, this.value)">
@@ -55,6 +68,9 @@ async function loadMyTasks() {
             if (task.status === "Tamamlandı") {
                 doneCounter++;
                 if (completedTaskList) completedTaskList.appendChild(li);
+            } else if (task.badge_reward) {
+                if (legendaryList) legendaryList.appendChild(li);
+                if (legendarySection) legendarySection.style.display = "block";
             } else {
                 if (taskList) taskList.appendChild(li);
             }
@@ -64,7 +80,7 @@ async function loadMyTasks() {
             document.getElementById("completed-count").innerText = doneCounter;
         }
 
-        loadRejectedPurchases(); 
+        if (typeof loadRejectedPurchases === "function") loadRejectedPurchases(); 
 
     } catch (error) {
         console.error("Görevler yüklenirken hata:", error);
@@ -190,7 +206,7 @@ async function addTask() {
     const emailEl = document.getElementById("assignedToEmail");
     const dateEl = document.getElementById("dueDate");
     const timeEl = document.getElementById("dueTime");
-    // Eğer HTML'de puan alanı eklediysen onu da al, yoksa manuel 100 gönderelim
+    const badgeEl = document.getElementById("taskBadge"); // Yeni
     const points = 100; 
 
     if (!titleEl.value || !emailEl.value) {
@@ -203,7 +219,6 @@ async function addTask() {
     }
 
     try {
-        // URL'yi "/add-task" olarak düzelttik
         const response = await fetch("/add-task", { 
             method: "POST",
             headers: getAuthHeaders(),
@@ -212,16 +227,17 @@ async function addTask() {
                 description: descEl.value,
                 assignedToEmail: emailEl.value,
                 dueDate: isoDate,
-                points: points // Puan bilgisini ekledik
+                points: points,
+                badge_reward: badgeEl ? badgeEl.value : "" // Rozet bilgisini ekledik
             })
         });
 
         if (response.ok) {
             alert("Görev başarıyla atandı!");
-            // Formu temizle
             titleEl.value = "";
             descEl.value = "";
             emailEl.value = "";
+            if (badgeEl) badgeEl.value = "";
             if(typeof loadMyAssignedTasks === "function") loadMyAssignedTasks(); 
         } else {
             const err = await response.json();
@@ -891,56 +907,64 @@ function renderChart(labels, values) {
         }
     });
 }
-async function checkAndGrantBadges(userId) {
+// server.js içine eklenecek yardımcı fonksiyon
+async function checkAndGrantBadges(userId, userEmail) {
     try {
-        // 1. Toplam tamamlanan görev sayısını al
-        const taskResult = await db.query("SELECT COUNT(*) FROM tasks WHERE assigned_to = (SELECT email FROM users WHERE id = $1) AND status = 'Tamamlandı'", [userId]);
-        const count = parseInt(taskResult.rows[0].count);
+        // Tamamlanan toplam görev sayısını say
+        const countRes = await db.query(
+            "SELECT COUNT(*) FROM tasks WHERE assigned_to = $1 AND status = 'Tamamlandı'",
+            [userEmail]
+        );
+        const totalDone = parseInt(countRes.rows[0].count);
 
-        const badgesToGrant = [];
+        // Rozet kriterleri
+        const milestones = [
+            { name: "İlk Adım", icon: "🌱", requirement: 1 },
+            { name: "Görev Ustası", icon: "⚔️", requirement: 10 },
+            { name: "Yarım Dalya", icon: "🔥", requirement: 50 },
+            { name: "Efsane", icon: "👑", requirement: 100 }
+        ];
 
-        if (count >= 1) badgesToGrant.push({ name: "İlk Adım", icon: "🌱" });
-        if (count >= 10) badgesToGrant.push({ name: "Görev Ustası", icon: "⚔️" });
-        if (count >= 50) badgesToGrant.push({ name: "Efsanevi Kahraman", icon: "👑" });
-
-        // Rozetleri veritabanına ekle (Eğer zaten yoksa)
-        for (const badge of badgesToGrant) {
-            await db.query(
-                "INSERT INTO user_badges (user_id, badge_name, badge_icon) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-                [userId, badge.name, badge.icon]
-            );
+        for (const m of milestones) {
+            if (totalDone >= m.requirement) {
+                // Eğer kullanıcıda bu rozet yoksa ekle (UNIQUE kısıtlaması sayesinde hata vermez)
+                await db.query(
+                    "INSERT INTO user_badges (user_id, badge_name, badge_icon) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+                    [userId, m.name, m.icon]
+                );
+            }
         }
     } catch (err) {
-        console.error("Rozet hatası:", err);
+        console.error("Rozet kontrol hatası:", err);
     }
 }
+
+// BU FONKSİYONU GÖREV TAMAMLANDIĞINDA ÇAĞIR:
+// app.put("/update-task-status/:id", ...) içinde status === 'Tamamlandı' olduğu satıra:
+// await checkAndGrantBadges(userId, userEmail);
 async function loadMyBadges() {
     const userId = localStorage.getItem("userId");
-    const badgeContainer = document.getElementById("badge-container");
-    if (!badgeContainer || !userId) return;
+    const container = document.getElementById("badge-container");
+    if (!container || !userId) return;
 
     try {
-        const res = await fetch(`/my-badges/${userId}`, { headers: getAuthHeaders() });
+        const res = await fetch(`http://localhost:3000/my-badges/${userId}`, {
+            headers: getAuthHeaders()
+        });
         const badges = await res.json();
-
         if (badges.length > 0) {
-            badgeContainer.innerHTML = "";
+            container.innerHTML = "";
             badges.forEach(badge => {
-                const div = document.createElement("div");
-                div.style = "text-align: center; background: #f0f7ff; padding: 10px; border-radius: 12px; border: 2px solid #4facfe; min-width: 80px; transition: transform 0.3s;";
-                div.onmouseover = () => div.style.transform = "scale(1.1)";
-                div.onmouseout = () => div.style.transform = "scale(1)";
-                
-                div.innerHTML = `
-                    <div style="font-size: 2rem;">${badge.badge_icon}</div>
-                    <div style="font-size: 11px; font-weight: bold; color: #2d3748; margin-top: 5px;">${badge.badge_name}</div>
+                const badgeDiv = document.createElement("div");
+                badgeDiv.className = "badge-item";
+                badgeDiv.innerHTML = `
+                    <div style="font-size: 1.8rem;">${badge.badge_icon}</div>
+                    <div style="font-size: 10px; font-weight: bold; color: #2d3748; margin-top: 5px;">${badge.badge_name}</div>
                 `;
-                badgeContainer.appendChild(div);
+                container.appendChild(badgeDiv);
             });
         }
-    } catch (err) {
-        console.error("Rozetler yüklenemedi:", err);
-    }
+    } catch (err) { console.error(err); }
 }
 
 // Bunu dashboard.html'deki body onload kısmına ekle:
