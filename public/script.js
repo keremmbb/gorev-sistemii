@@ -631,3 +631,11 @@ function showSection(section) {
         btnMarket.style.color = 'white';
     }
 }
+// Sayfa yüklendiğinde grafiği çizdir
+window.addEventListener('load', () => {
+    // Eğer bir öğrenci e-postası veya ID'si sabitse onu kullanın
+    // Örnek: İlk görevin atandığı öğrenciyi çekebiliriz veya velinin seçtiği öğrenciyi.
+    // Şimdilik test için manuel bir ID veya dinamik seçim yapmalısın.
+    const lastAssignedStudentId = localStorage.getItem("lastStudentId"); 
+    if(lastAssignedStudentId) loadStatistics(lastAssignedStudentId);
+});

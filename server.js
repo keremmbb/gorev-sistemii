@@ -110,49 +110,40 @@ app.post("/update-task-status", auth, async (req, res) => {
     console.log(`--- Güncelleme Başladı: Task ID: ${taskId}, Yeni Durum: ${status} ---`);
 
     try {
-        // 1. Görevi kontrol et
         const taskRes = await db.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
         const task = taskRes.rows[0];
 
-        if (!task) {
-            console.log("❌ HATA: Görev bulunamadı.");
-            return res.status(404).json({ message: "Görev bulunamadı" });
-        }
+        if (!task) return res.status(404).json({ message: "Görev bulunamadı" });
 
         const oldStatus = task.status;
         const studentId = task.assigned_to;
         const taskPoints = parseInt(task.points) || 0;
 
-        console.log(`Görev Sahibi: ${studentId}, Puan Değeri: ${taskPoints}, Eski Durum: ${oldStatus}`);
+        // --- DÜZELTME BURADA: updated_at ekledik ---
+        await db.query(
+            "UPDATE tasks SET status = $1, updated_at = NOW() WHERE id = $2", 
+            [status, taskId]
+        );
+        // ------------------------------------------
 
-        // 2. Durumu güncelle
-        await db.query("UPDATE tasks SET status = $1 WHERE id = $2", [status, taskId]);
-        console.log("✅ Görev durumu güncellendi.");
-
-        // 3. Puan ekleme (Sadece Tamamlandı ise ve daha önce tamamlanmamışsa)
         if (status === "Tamamlandı" && oldStatus !== "Tamamlandı") {
-            if (!studentId) {
-                console.log("⚠️ UYARI: Görev bir öğrenciye atanmamış, puan eklenemedi.");
-            } else {
-                const updateRes = await db.query(
+            if (studentId) {
+                await db.query(
                     `UPDATE users 
                      SET total_points = COALESCE(total_points, 0) + $1, 
                          current_balance = COALESCE(current_balance, 0) + $1 
                      WHERE id = $2`,
                     [taskPoints, studentId]
                 );
-                console.log(`✅ Puanlar eklendi. Etkilenen satır: ${updateRes.rowCount}`);
             }
         }
 
         res.json({ message: "Başarıyla güncellendi." });
-
     } catch (error) {
-        console.error("🔴 SUNUCU HATASI (500):", error.message);
-        res.status(500).json({ message: "Sunucu hatası: " + error.message });
+        console.error("🔴 HATA:", error.message);
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
-
 app.delete("/delete-task/:id", auth, async (req, res) => {
     await db.query("DELETE FROM tasks WHERE id = $1 AND assigned_by = $2", [req.params.id, req.user.id]);
     res.json({ message: "Silindi" });
@@ -333,23 +324,23 @@ app.delete("/clear-rejected-purchase/:id", auth, async (req, res) => {
 app.get("/user-stats/:userId", auth, async (req, res) => {
     try {
         const { userId } = req.params;
-        // Son 7 günün tamamlanan görev sayılarını gün bazlı getirir
         const result = await db.query(`
             SELECT 
                 TO_CHAR(updated_at, 'DD Mon') as gun, 
-                COUNT(*) as miktar
+                COUNT(*) as miktar,
+                DATE(updated_at) as gercek_tarih
             FROM tasks 
             WHERE assigned_to = $1 
               AND status = 'Tamamlandı' 
               AND updated_at >= NOW() - INTERVAL '7 days'
-            GROUP BY TO_CHAR(updated_at, 'DD Mon'), updated_at
-            ORDER BY updated_at ASC
+            GROUP BY gun, gercek_tarih
+            ORDER BY gercek_tarih ASC
         `, [userId]);
 
         res.json(result.rows);
     } catch (error) {
-        console.error("İstatistik hatası:", error);
-        res.status(500).json({ message: "Hata oluştu" });
+        console.error(error);
+        res.status(500).json({ message: "İstatistik hatası" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
