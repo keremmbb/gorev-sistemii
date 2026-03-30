@@ -135,17 +135,22 @@ async function loadMyAssignedTasks() {
         const response = await fetch("/tasks/assigned", {
             headers: getAuthHeaders()
         });
+        
         const tasks = await response.json();
 
-        // KRİTİK KONTROL: tasks bir liste değilse durdur
+        // Gelen verinin bir liste (Array) olup olmadığını kontrol et
         if (!Array.isArray(tasks)) {
-            console.error("Gelen veri bir liste değil:", tasks);
-            return;
+            console.error("Sunucudan liste yerine hata geldi:", tasks);
+            return; // Eğer liste değilse fonksiyonu burada durdur, aşağıya geçme
         }
 
-        // ... geri kalan forEach döngüsü kodların ...
+        // ... geri kalan sütunları temizleme ve forEach döngüsü ...
+        tasks.forEach(task => {
+            // Kodların buraya gelecek
+        });
+
     } catch (error) {
-        console.error("Görevler yüklenirken hata:", error);
+        console.error("Görevler listelenirken bir hata oluştu:", error);
     }
 }
 
