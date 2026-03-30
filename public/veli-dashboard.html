@@ -47,6 +47,11 @@
             background: #64748b;
             transform: translateY(-1px);
         }
+
+        /* Odaklanma Modu Animasyonu */
+        #graph-section {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
 <body onload="loadMyAssignedTasks(); loadPendingPurchases(); checkAndLoadStats();">
@@ -59,17 +64,15 @@
     }
 </script>
 
-<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-    <h2 style="color: white; text-align: center; margin-bottom: 25px; font-family: 'Segoe UI', sans-serif;">👨‍👩‍👧‍👦 Veli Kontrol Paneli</h2>
+<div class="container" id="main-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <h2 id="dashboard-title" style="color: white; text-align: center; margin-bottom: 25px; font-family: 'Segoe UI', sans-serif;">👨‍👩‍👧‍👦 Veli Kontrol Paneli</h2>
 
-    <div class="section" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto 30px auto;">
+    <div id="task-form-section" class="section" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto 30px auto;">
         <h3 style="margin-top:0; color: #2d3748; text-align: center; margin-bottom: 20px;">📝 Yeni Görev Tanımla</h3>
         
         <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
             <input type="text" id="taskTitle" placeholder="Görev başlığı (Örn: Kitap Okuma)" class="form-input">
-            
             <textarea id="taskDescription" placeholder="Görev detayları..." class="form-input" style="font-family: inherit; resize: none; height: 80px;"></textarea>
-            
             <input type="email" id="assignedToEmail" placeholder="Öğrencinin kayıtlı e-postası" class="form-input">
 
             <div style="display: flex; gap: 10px; width: 100%;">
@@ -99,64 +102,76 @@
 
     <div id="purchase-panel" style="background: #edf2f7; padding: 20px; border-radius: 15px; margin-bottom: 25px; border-left: 6px solid #4a5568;">
         <h3 style="margin-top: 0; color: #2d3748; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">🛒 Market Onay Bekleyenler</h3>
-        <div id="pending-purchases-list">
-            </div>
+        <div id="pending-purchases-list"></div>
     </div>
 
     <div id="overdue-panel" style="display: none; background: #fff5f5; border: 2px solid #fc8181; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
         <h3 style="color: #c53030; margin-top: 0;">⚠️ Süresi Dolan Görevler</h3>
         <ul id="overdue-list" style="margin: 0; color: #742a2a; font-weight: bold;"></ul>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div id="graph-section" style="background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; position: relative;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <h3 style="margin: 0; color: #2d3748; display: flex; align-items: center; gap: 10px;">
+                📊 <span id="active-student-name">Gelişim Analizi</span>
+            </h3>
 
-<div style="background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-    <h3 style="color: #2d3748; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            📊 <span id="active-student-name">Gelişim Raporu</span>
+            <div id="stats-controls" style="display: flex; gap: 5px;">
+                <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." 
+                       style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; width: 180px; outline: none;">
+                <button onclick="loadStatsByEmail()" 
+                        style="background: #4facfe; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px;">
+                    Görüntüle
+                </button>
+                <button onclick="toggleFocusMode(true)" id="open-focus-btn" 
+                        style="background: #667eea; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px;">
+                    🔍 Genişlet
+                </button>
+                <button onclick="toggleFocusMode(false)" id="close-focus-btn" 
+                        style="display: none; background: #ed5e68; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px;">
+                    ✖ Kapat
+                </button>
+            </div>
         </div>
-        <div style="display: flex; gap: 5px;">
-            <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." 
-                   style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; width: 200px; outline: none;">
-            <button onclick="loadStatsByEmail()" 
-                    style="background: #4facfe; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px;">
-                Görüntüle
-            </button>
+
+        <div id="chart-container" style="width: 100%; height: auto;">
+            <canvas id="myChart" style="width:100%; max-height:250px;"></canvas>
         </div>
-    </h3>
-    <canvas id="myChart" style="width:100%; max-height:250px;"></canvas>
-</div>
-    <div class="kanban-board" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 10px 0;">
-    
-    <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #ed5e68; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <h3 style="display: flex; justify-content: space-between; align-items: center; color: #b91c1c; font-size: 1rem; margin-bottom: 15px;">
-            🔴 Başlamadı <span id="count-Baslamadi" style="background: #ed5e68; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
-        </h3>
-        <div id="parent-list-Baslamadi"></div>
     </div>
 
-    <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #3498db; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <h3 style="display: flex; justify-content: space-between; align-items: center; color: #1e40af; font-size: 1rem; margin-bottom: 15px;">
-            🔵 Başlandı <span id="count-Baslandi" style="background: #3498db; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
-        </h3>
-        <div id="parent-list-Baslandi"></div>
+    <div id="kanban-section" class="kanban-board" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 10px 0;">
+        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #ed5e68; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h3 style="display: flex; justify-content: space-between; align-items: center; color: #b91c1c; font-size: 1rem; margin-bottom: 15px;">
+                🔴 Başlamadı <span id="count-Baslamadi" style="background: #ed5e68; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
+            </h3>
+            <div id="parent-list-Baslamadi"></div>
+        </div>
+
+        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #3498db; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h3 style="display: flex; justify-content: space-between; align-items: center; color: #1e40af; font-size: 1rem; margin-bottom: 15px;">
+                🔵 Başlandı <span id="count-Baslandi" style="background: #3498db; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
+            </h3>
+            <div id="parent-list-Baslandi"></div>
+        </div>
+
+        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #f1c40f; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h3 style="display: flex; justify-content: space-between; align-items: center; color: #856404; font-size: 1rem; margin-bottom: 15px;">
+                🟡 Devam Ediyor <span id="count-DevamEdiyor" style="background: #f1c40f; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
+            </h3>
+            <div id="parent-list-DevamEdiyor"></div>
+        </div>
+
+        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #2ecc71; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h3 style="display: flex; justify-content: space-between; align-items: center; color: #166534; font-size: 1rem; margin-bottom: 15px;">
+                🟢 Tamamlandı <span id="count-Tamamlandi" style="background: #2ecc71; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
+            </h3>
+            <div id="parent-list-Tamamlandi"></div>
+        </div>
     </div>
 
-    <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #f1c40f; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <h3 style="display: flex; justify-content: space-between; align-items: center; color: #856404; font-size: 1rem; margin-bottom: 15px;">
-            🟡 Devam Ediyor <span id="count-DevamEdiyor" style="background: #f1c40f; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
-        </h3>
-        <div id="parent-list-DevamEdiyor"></div>
-    </div>
-
-    <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #2ecc71; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <h3 style="display: flex; justify-content: space-between; align-items: center; color: #166534; font-size: 1rem; margin-bottom: 15px;">
-            🟢 Tamamlandı <span id="count-Tamamlandi" style="background: #2ecc71; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
-        </h3>
-        <div id="parent-list-Tamamlandi"></div>
-    </div>
-</div>
-
-    <div style="text-align: center; margin-top: 50px; padding-bottom: 50px;">
+    <div id="logout-section" style="text-align: center; margin-top: 50px; padding-bottom: 50px;">
         <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 14px 40px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3); transition: 0.3s;">
             🚪 Sistemden Güvenli Çıkış
         </button>

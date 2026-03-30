@@ -771,3 +771,46 @@ async function verifyAndRegister() {
         alert("Doğrulama sırasında bir hata oluştu.");
     }
 }
+function toggleFocusMode(isFocus) {
+    // Sayfadaki ana bölümleri seçelim (senin ID'lerine göre düzenleyebilirsin)
+    const header = document.querySelector('header') || document.querySelector('.header');
+    const mainContent = document.querySelectorAll('.card, .column, .form-section, h2, p');
+    const graphSection = document.getElementById('graph-section');
+    const chartContainer = document.getElementById('chart-container');
+    const openBtn = document.getElementById('open-focus-btn');
+    const closeBtn = document.getElementById('close-focus-btn');
+
+    if (isFocus) {
+        // ODAKLANMA MODU AÇIK
+        mainContent.forEach(el => {
+            if (el !== graphSection) el.style.display = 'none';
+        });
+        if(header) header.style.display = 'none';
+
+        graphSection.style.position = 'fixed';
+        graphSection.style.top = '0';
+        graphSection.style.left = '0';
+        graphSection.style.width = '100vw';
+        graphSection.style.height = '100vh';
+        graphSection.style.zIndex = '9999';
+        graphSection.style.borderRadius = '0';
+        
+        chartContainer.style.maxHeight = '80vh';
+        document.getElementById('myChart').style.maxHeight = '80vh';
+
+        openBtn.style.display = 'none';
+        closeBtn.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Kaydırmayı engelle
+    } else {
+        // NORMAL MODA DÖN
+        location.reload(); // En temiz yöntem sayfayı yenilemektir ama istersen manuel de açabilirsin:
+        /*
+        mainContent.forEach(el => el.style.display = '');
+        if(header) header.style.display = '';
+        graphSection.style = ''; 
+        openBtn.style.display = 'block';
+        closeBtn.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        */
+    }
+}
