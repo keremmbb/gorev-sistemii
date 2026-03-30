@@ -429,4 +429,19 @@ app.post("/register", async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
+// E-posta ile kullanıcı id'sini bulan endpoint
+app.get("/get-user-by-email", auth, async (req, res) => {
+    const { email } = req.query;
+    try {
+        const result = await db.query("SELECT id FROM users WHERE email = $1", [email]);
+        if (result.rows.length > 0) {
+            res.json({ id: result.rows[0].id });
+        } else {
+            res.status(404).json({ message: "Öğrenci bulunamadı" });
+        }
+    } catch (error) {
+        console.error("Sorgu hatası:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

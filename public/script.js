@@ -689,54 +689,71 @@ async function loadStatsByEmail() {
     const email = document.getElementById("statsSearchEmail").value;
     const historyContainer = document.getElementById("history-container");
     
-    if (!email) return alert("Lütfen bir e-posta girin");
+    if (!email) {
+        return alert("Lütfen bir e-posta adresi girin.");
+    }
 
     try {
-        // 1. Öğrenciyi Bul
-        const userRes = await fetch(`/get-user-by-email?email=${email}`, { headers: getAuthHeaders() });
-        if (!userRes.ok) throw new Error("Öğrenci bulunamadı");
+        // 1. ADIM: E-posta ile öğrencinin ID'sini bul
+        const userRes = await fetch(`/get-user-by-email?email=${email}`, { 
+            headers: getAuthHeaders() 
+        });
+
+        // Eğer sunucu 404 veya 500 dönerse hatayı yakala
+        if (!userRes.ok) {
+            const errorData = await userRes.json();
+            throw new Error(errorData.message || "Öğrenci bulunamadı.");
+        }
+
         const user = await userRes.json();
-        
-        // 2. İstatistikleri ve Detayları Getir
-        const statsRes = await fetch(`/user-stats/${user.id}`, { headers: getAuthHeaders() });
-        if (!statsRes.ok) throw new Error("İstatistik verisi alınamadı");
+        const studentId = user.id;
+
+        // 2. ADIM: Bu ID ile istatistikleri ve görev geçmişini getir
+        const statsRes = await fetch(`/user-stats/${studentId}`, { 
+            headers: getAuthHeaders() 
+        });
+
+        if (!statsRes.ok) {
+            throw new Error("İstatistik verileri alınamadı.");
+        }
+
         const data = await statsRes.json();
 
-        // 3. Grafiği Çiz
+        // 3. ADIM: Grafiği çiz (data.labels ve data.values kullanarak)
         renderChart(data.labels, data.values);
 
-        // 4. Görev Geçmişini Listele
+        // 4. ADIM: Görev geçmişini (details) listele
         if (historyContainer) {
-            historyContainer.innerHTML = ""; // Mevcut içeriği temizle
+            historyContainer.innerHTML = ""; // Önce içini temizle
             
             if (data.details && data.details.length > 0) {
                 data.details.forEach(task => {
+                    // Tarihi formatla (Örn: 25 Mart, 14:30)
                     const date = new Date(task.updated_at).toLocaleString('tr-TR', {
                         day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit'
                     });
 
                     const item = document.createElement("div");
-                    item.className = "history-item"; // CSS stillerini kullanır
-                    item.style = "background: #f8fafc; padding: 10px 15px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #2ecc71;";
+                    item.style = "background: #f8fafc; padding: 10px 15px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #2ecc71; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
                     item.innerHTML = `
                         <div>
-                            <strong style="display: block; color: #2d3748; font-size:14px;">${task.title}</strong>
-                            <span style="font-size: 11px; color: #718096;">${date}</span>
+                            <strong style="display: block; color: #2d3748; font-size: 14px;">${task.title}</strong>
+                            <span style="font-size: 11px; color: #718096;">${date} tarihinde tamamlandı</span>
                         </div>
-                        <div style="background: #eefdf3; color: #166534; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                        <div style="background: #eefdf3; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold;">
                             +${task.points || 0} Puan
                         </div>
                     `;
                     historyContainer.appendChild(item);
                 });
             } else {
-                historyContainer.innerHTML = `<p style="text-align:center; color:#999; font-size:13px;">Henüz tamamlanan görev yok.</p>`;
+                historyContainer.innerHTML = `<p style="text-align:center; color:#999; font-size:13px; margin-top:10px;">Henüz tamamlanan görev bulunamadı.</p>`;
             }
         }
 
     } catch (error) {
-        console.error("Hata Detayı:", error);
-        alert("Veriler alınırken bir hata oluştu. Lütfen endpoint'leri kontrol edin.");
+        console.error("İstatistik Yükleme Hatası:", error);
+        alert("Hata: " + error.message);
     }
 }
 async function sendCode() {
