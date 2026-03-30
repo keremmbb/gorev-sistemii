@@ -72,11 +72,6 @@ async function loadMyTasks() {
 }
 
 async function updateTaskStatus(taskId, newStatus) {
-    if (newStatus === "Tamamlandı" && !confirm("Puan kazanmak için görevi tamamladığınızı onaylıyor musunuz?")) {
-        loadMyTasks(); // Seçimi eski haline döndürmek için listeyi yenile
-        return;
-    }
-
     try {
         const res = await fetch("/update-task-status", {
             method: "POST",
@@ -85,13 +80,27 @@ async function updateTaskStatus(taskId, newStatus) {
         });
 
         if (res.ok) {
-            await loadMyTasks();
-            await loadStudentPoints(); 
+            console.log(`Görev ${taskId} durumu ${newStatus} olarak güncellendi.`);
+            
+            // 1. Listeleri yenile (Öğrenci veya Veli panelindeysen ilgili listeyi çeker)
+            if (typeof loadMyTasks === "function") await loadMyTasks();
+            if (typeof loadMyAssignedTasks === "function") await loadMyAssignedTasks();
+            if (typeof loadStudentPoints === "function") await loadStudentPoints();
+
+            // 2. GRAFİĞİ GÜNCELLE: 
+            // Veli panelindeysek ve bir öğrenci seçiliyse grafiği yenile
+            const lastStudentId = localStorage.getItem("lastViewedStudentId");
+            if (lastStudentId && typeof loadStatistics === "function") {
+                console.log("Grafik güncelleniyor...");
+                loadStatistics(lastStudentId);
+            }
         } else {
-            const errorData = await res.json();
-            alert("Hata: " + errorData.message);
+            const err = await res.json();
+            alert("Hata: " + err.message);
         }
-    } catch (error) { console.error("Güncelleme hatası:", error); }
+    } catch (error) {
+        console.error("Durum güncelleme hatası:", error);
+    }
 }
 
 async function loadStudentPoints() {
