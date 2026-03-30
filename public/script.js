@@ -23,48 +23,34 @@ async function loadMyTasks() {
         
         const taskList = document.getElementById("taskList");
         const completedTaskList = document.getElementById("completedTaskList");
-        const completedCountLabel = document.getElementById("completed-count");
-
+        
         if (taskList) taskList.innerHTML = "";
         if (completedTaskList) completedTaskList.innerHTML = "";
         let doneCounter = 0;
 
         tasks.forEach(task => {
             const li = document.createElement("li");
+            // ... (Buradaki mevcut li oluşturma kodların aynen kalıyor)
             
             if (task.status === "Tamamlandı") {
                 doneCounter++;
-                li.style = "background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; opacity: 0.8;";
-                li.innerHTML = `
-                    <div>
-                        <span style="color: #64748b; text-decoration: line-through; font-weight: 500;">✅ ${task.title}</span>
-                        <br><small style="color: #94a3b8;">Tamamlandı</small>
-                    </div>
-                    <span style="color: #38a169; font-weight: bold; background: #dcfce7; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem;">+${task.points} GP</span>
-                `;
                 if (completedTaskList) completedTaskList.appendChild(li);
             } else {
-                li.style = "background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 6px solid #4facfe; display: flex; flex-direction: column; gap: 12px;";
-                li.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <strong>${task.title}</strong>
-                        <span style="color: #4facfe; font-weight: bold;">💎 ${task.points} GP</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-                        <select onchange="updateTaskStatus(${task.id}, this.value)" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer;">
-                            <option value="Baslamadi" ${task.status === 'Baslamadi' ? 'selected' : ''}>🔴 Başlamadı</option>
-                            <option value="Baslandi" ${task.status === 'Baslandi' ? 'selected' : ''}>🔵 Başlandı</option>
-                            <option value="Devam Ediyor" ${task.status === 'Devam Ediyor' ? 'selected' : ''}>🟡 Devam Ediyor</option>
-                            <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
-                        </select>
-                    </div>
-                `;
                 if (taskList) taskList.appendChild(li);
             }
         });
 
-        if(completedCountLabel) completedCountLabel.innerText = doneCounter;
-    } catch (error) { console.error("Görevler yüklenemedi:", error); }
+        if (document.getElementById("completed-count")) {
+            document.getElementById("completed-count").innerText = doneCounter;
+        }
+
+        // --- İŞTE EKLEDİĞİMİZ KRİTİK SATIR ---
+        loadRejectedPurchases(); 
+        // -------------------------------------
+
+    } catch (error) {
+        console.error("Görevler yüklenirken hata:", error);
+    }
 }
 
 async function updateTaskStatus(taskId, newStatus) {
@@ -486,25 +472,19 @@ async function loadRejectedPurchases() {
         console.error("Reddedilenler yüklenemedi:", error);
     }
 }
-async function dismissRejected(purchaseId) {
-    try {
-        await fetch("/clear-rejected-purchase", {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ purchaseId })
-        });
-        loadRejectedPurchases(); // Listeyi tazele
-        loadStudentPoints();    // Puan iadesi yansıdı mı kontrol et
-    } catch (e) { console.error(e); }
-}
 async function dismissRejected(id) {
     try {
         const res = await fetch(`/clear-rejected-purchase/${id}`, { 
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem("token")}` }
+            headers: getAuthHeaders() 
         });
+        
         if (res.ok) {
-            loadRejectedPurchases(); // Listeyi yenile
+            // Başarılıysa hem listeyi hem puanları tazele
+            loadRejectedPurchases();
+            loadStudentPoints(); 
+        } else {
+            console.error("Silme işlemi başarısız oldu.");
         }
     } catch (error) {
         console.error("Silme hatası:", error);
