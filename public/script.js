@@ -714,15 +714,14 @@ async function loadStatsByEmail() {
     }
 }
 async function sendCode() {
-    const name = document.getElementById("name").value;
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     
     const urlParams = new URLSearchParams(window.location.search);
     const role = urlParams.get('role') || 'student';
 
-    if (!name || !email || !password) {
-        alert("Lütfen alanları doldurun.");
+    if (!email || !password) {
+        alert("Lütfen mail ve şifre alanlarını doldurun.");
         return;
     }
 
@@ -730,20 +729,19 @@ async function sendCode() {
         const res = await fetch("/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password, role })
+            body: JSON.stringify({ email, password, role }) // name çıkarıldı
         });
 
         const data = await res.json();
         if (res.ok) {
             alert(data.message);
-            // Formu gizle, kod alanını göster
             document.getElementById("registration-form").style.display = "none";
             document.getElementById("verification-section").style.display = "block";
         } else {
             alert("Hata: " + data.message);
         }
     } catch (error) {
-        console.error("Hata:", error);
+        alert("Sunucuya bağlanılamadı.");
     }
 }
 async function verifyAndRegister() {

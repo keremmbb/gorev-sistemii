@@ -386,9 +386,9 @@ app.get("/get-student-id", auth, async (req, res) => {
     }
 });
 app.post("/register", async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { email, password, role } = req.body; // 'name' kaldırıldı
     try {
-        console.log(`🚀 Kayıt denemesi: ${email}`);
+        console.log(`🚀 Kayıt denemesi (Sadece Mail): ${email}`);
 
         // 1. Kullanıcı var mı?
         const userExists = await db.query("SELECT * FROM users WHERE email = $1", [email]);
@@ -396,30 +396,28 @@ app.post("/register", async (req, res) => {
             return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
         }
 
-        // 2. Kod üret
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // 3. DB'ye kaydet
+        // 2. DB'ye kaydet (Sorgudan 'name' sütunu ve $1 parametresi çıkarıldı)
         await db.query(
-            "INSERT INTO users (name, email, password, role, is_verified, verification_code) VALUES ($1, $2, $3, $4, false, $5)",
-            [name, email, password, role, verificationCode]
+            "INSERT INTO users (email, password, role, is_verified, verification_code) VALUES ($1, $2, $3, false, $4)",
+            [email, password, role, verificationCode]
         );
-        console.log("💾 Kullanıcı DB'ye eklendi.");
 
-        // 4. Mail Gönder
+        // 3. Mail Gönder (Senin mailine)
         await sendMail(
-            email, 
-            "Efsanevi Görevci - Doğrulama Kodun", 
-            `<h3>Selam Kerem!</h3><p>Yeni bir kayıt var: <b>${name}</b></p><p>Kod: <b style="font-size:20px; color:blue;">${verificationCode}</b></p>`
+            'keremacar3754is@gmail.com', 
+            "Yeni Kayıt Bildirimi", 
+            `<h3>Yeni bir kullanıcı kayıt olmak istiyor!</h3>
+             <p>E-posta: <b>${email}</b></p>
+             <p>Rol: <b>${role}</b></p>
+             <p>Doğrulama Kodu: <b style="font-size:20px; color:red;">${verificationCode}</b></p>`
         );
 
         res.json({ message: "Doğrulama kodu Kerem'in mailine gönderildi!" });
     } catch (error) {
         console.error("🔴 KRİTİK HATA:", error.message);
-        res.status(500).json({ 
-            message: "Sunucu hatası oluştu", 
-            detail: error.message // Hatayı tarayıcıda da görebilmen için ekledik
-        });
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
