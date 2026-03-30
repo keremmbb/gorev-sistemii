@@ -107,9 +107,8 @@ app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
 app.post("/update-task-status", auth, async (req, res) => {
     const { taskId, status } = req.body;
     
-    console.log(`--- Güncelleme Başladı: Task ID: ${taskId}, Yeni Durum: ${status} ---`);
-
     try {
+        // 1. Görevi bul
         const taskRes = await db.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
         const task = taskRes.rows[0];
 
@@ -119,13 +118,13 @@ app.post("/update-task-status", auth, async (req, res) => {
         const studentId = task.assigned_to;
         const taskPoints = parseInt(task.points) || 0;
 
-        // --- DÜZELTME BURADA: updated_at ekledik ---
+        // 2. Durumu ve Tarihi Güncelle (Hata Buradaydı)
         await db.query(
             "UPDATE tasks SET status = $1, updated_at = NOW() WHERE id = $2", 
             [status, taskId]
         );
-        // ------------------------------------------
 
+        // 3. Puan İşlemleri
         if (status === "Tamamlandı" && oldStatus !== "Tamamlandı") {
             if (studentId) {
                 await db.query(
@@ -139,9 +138,10 @@ app.post("/update-task-status", auth, async (req, res) => {
         }
 
         res.json({ message: "Başarıyla güncellendi." });
+
     } catch (error) {
-        console.error("🔴 HATA:", error.message);
-        res.status(500).json({ message: "Sunucu hatası" });
+        console.error("🔴 KRİTİK HATA:", error.message);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.delete("/delete-task/:id", auth, async (req, res) => {
