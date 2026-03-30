@@ -718,12 +718,11 @@ async function sendCode() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     
-    // URL'den rolü çek (student/parent)
     const urlParams = new URLSearchParams(window.location.search);
     const role = urlParams.get('role') || 'student';
 
     if (!name || !email || !password) {
-        alert("Lütfen tüm alanları eksiksiz doldurun!");
+        alert("Lütfen tüm alanları doldurun.");
         return;
     }
 
@@ -735,23 +734,25 @@ async function sendCode() {
         });
 
         const data = await res.json();
-
         if (res.ok) {
             alert(data.message);
-            // Formu gizle, kod alanını göster
             document.getElementById("registration-form").style.display = "none";
             document.getElementById("verification-section").style.display = "block";
         } else {
             alert("Hata: " + data.message);
         }
     } catch (error) {
-        console.error("Bağlantı hatası:", error);
-        alert("Sunucuya ulaşılamadı!");
+        alert("Sunucuya bağlanılamadı.");
     }
 }
 async function verifyAndRegister() {
     const email = document.getElementById("email").value;
     const code = document.getElementById("vCode").value;
+
+    if (!code) {
+        alert("Lütfen kodu girin.");
+        return;
+    }
 
     try {
         const res = await fetch("/verify-code", {
@@ -761,14 +762,13 @@ async function verifyAndRegister() {
         });
 
         const data = await res.json();
-
         if (res.ok) {
-            alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+            alert("Kayıt tamamlandı! Giriş yapabilirsiniz.");
             window.location.href = "index.html";
         } else {
             alert("Hata: " + data.message);
         }
     } catch (error) {
-        console.error("Doğrulama hatası:", error);
+        alert("Doğrulama sırasında bir hata oluştu.");
     }
 }

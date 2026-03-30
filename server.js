@@ -55,14 +55,26 @@ app.post("/send-code", async (req, res) => {
 
 app.post("/verify-code", async (req, res) => {
     const { email, code } = req.body;
-    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (result.rows.length && result.rows[0].code === code) {
-        await db.query("UPDATE users SET verified = true, code = NULL WHERE email = $1", [email]);
-        return res.json({ message: "Kod doğrulandı" });
-    }
-    res.status(400).json({ message: "Kod hatalı" });
-});
+    try {
+        const result = await db.query(
+            "SELECT * FROM users WHERE email = $1 AND verification_code = $2",
+            [email, code]
+        );
 
+        if (result.rows.length > 0) {
+            await db.query(
+                "UPDATE users SET is_verified = true, verification_code = NULL WHERE email = $1",
+                [email]
+            );
+            res.json({ message: "Hesabınız başarıyla doğrulandı!" });
+        } else {
+            res.status(400).json({ message: "Geçersiz doğrulama kodu." });
+        }
+    } catch (error) {
+        console.error("Doğrulama Hatası:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
+});
 app.post("/set-password", async (req, res) => {
     const { email, password, role } = req.body;
     await db.query("UPDATE users SET password=$1, role=$2 WHERE email=$3 AND verified=true", [password, role, email]);
@@ -374,40 +386,29 @@ app.get("/get-student-id", auth, async (req, res) => {
 });
 app.post("/register", async (req, res) => {
     const { name, email, password, role } = req.body;
-    
-    console.log(`--- Kayıt İşlemi Başladı: ${email} ---`);
-
     try {
-        // 1. Kullanıcı zaten var mı?
         const userExists = await db.query("SELECT * FROM users WHERE email = $1", [email]);
         if (userExists.rows.length > 0) {
-            console.log("❌ HATA: Bu e-posta zaten kayıtlı.");
             return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
         }
 
-        // 2. 6 haneli kod üret
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // 3. Kullanıcıyı kaydet (Önemli: password hash'lenmeli ama şu anki yapına sadık kalıyorum)
+        // Şifreyi şimdilik düz metin kaydediyoruz (Senin mevcut yapın bu yönde)
         await db.query(
             "INSERT INTO users (name, email, password, role, is_verified, verification_code) VALUES ($1, $2, $3, $4, false, $5)",
             [name, email, password, role, verificationCode]
         );
-        console.log("✅ Kullanıcı veritabanına eklendi.");
 
-        // 4. Mail gönder
-        // NOT: Resend free tier kullanıyorsan sadece KENDİ mailine gönderebilirsin!
-        // Test için: to kısmına kendi mailini yazabilirsin.
         await sendMail(
             email, 
-            "Doğrulama Kodun", 
-            `<h1>Hoş geldin ${name}!</h1><p>Kayıt işlemini tamamlamak için kodun: <b style="font-size: 24px;">${verificationCode}</b></p>`
+            "Efsanevi Görevci - Doğrulama Kodun", 
+            `<h1>Hoş geldin ${name}!</h1><p>Kayıt kodun: <b>${verificationCode}</b></p>`
         );
 
-        res.json({ message: "Doğrulama kodu e-postana gönderildi!" });
-
+        res.json({ message: "Doğrulama kodu gönderildi!" });
     } catch (error) {
-        console.error("🔴 KAYIT ROTASI HATASI:", error.message);
+        console.error("Kayıt Hatası:", error);
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
