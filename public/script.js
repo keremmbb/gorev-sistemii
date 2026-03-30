@@ -687,30 +687,52 @@ async function checkAndLoadStats() {
 }
 async function loadStatsByEmail() {
     const email = document.getElementById("statsSearchEmail").value;
-    if (!email) {
-        alert("Lütfen bir öğrenci e-postası girin.");
-        return;
-    }
+    const historyList = document.getElementById("task-history-list");
+    
+    if (!email) return alert("Lütfen bir e-posta girin");
 
     try {
-        // Önce bu mail adresine sahip öğrencinin ID'sini bulalım
-        // Not: Mevcut /add-task rotasındaki mantığı kullanarak küçük bir sorgu yapıyoruz
-        // Ancak daha temiz olması için yeni bir 'get-user-by-email' rotası da yapabilirsin.
-        // Şimdilik addTask'taki gibi bir mantıkla çalıştıralım:
+        // Önce öğrenciyi bul
+        const userRes = await fetch(`/get-user-by-email?email=${email}`, { headers: getAuthHeaders() });
+        const user = await userRes.json();
         
-        const res = await fetch(`/get-student-id?email=${email}`, { headers: getAuthHeaders() });
-        const data = await res.json();
+        if (!user.id) return alert("Öğrenci bulunamadı");
 
-        if (res.ok && data.studentId) {
-            // ID'yi bulduk, şimdi grafiği çizdirelim
-            localStorage.setItem("lastViewedStudentId", data.studentId);
-            loadStatistics(data.studentId);
+        // İstatistikleri ve görev detaylarını getir
+        const statsRes = await fetch(`/user-stats/${user.id}`, { headers: getAuthHeaders() });
+        const data = await statsRes.json(); // data.history içerisinde görev listesi olduğunu varsayıyoruz
+
+        // 1. GRAFİĞİ ÇİZ (Mevcut kodun)
+        renderChart(data.labels, data.values);
+
+        // 2. GÖREV LİSTESİNİ DOLDUR
+        historyList.innerHTML = ""; // Temizle
+        
+        if (data.details && data.details.length > 0) {
+            data.details.forEach(task => {
+                const date = new Date(task.updated_at).toLocaleString('tr-TR', {
+                    day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit'
+                });
+
+                const item = document.createElement("div");
+                item.style = "background: #f8fafc; padding: 12px; border-radius: 10px; border-left: 4px solid #2ecc71; display: flex; justify-content: space-between; align-items: center;";
+                item.innerHTML = `
+                    <div>
+                        <strong style="display: block; color: #2d3748;">${task.title}</strong>
+                        <span style="font-size: 12px; color: #718096;">${date} tarihinde tamamladı</span>
+                    </div>
+                    <div style="background: #eefdf3; color: #166534; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold;">
+                        +${task.points || 0} Puan
+                    </div>
+                `;
+                historyList.appendChild(item);
+            });
         } else {
-            alert("Öğrenci bulunamadı.");
+            historyList.innerHTML = `<p style="text-align:center; color:#94a3b8;">Son 7 günde tamamlanan görev bulunamadı.</p>`;
         }
+
     } catch (error) {
-        console.error("E-posta ile istatistik getirme hatası:", error);
-        alert("Bir hata oluştu.");
+        console.error("Hata:", error);
     }
 }
 async function sendCode() {

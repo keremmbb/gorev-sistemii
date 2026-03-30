@@ -353,23 +353,30 @@ app.delete("/clear-rejected-purchase/:id", auth, async (req, res) => {
 app.get("/user-stats/:userId", auth, async (req, res) => {
     try {
         const { userId } = req.params;
-        const result = await db.query(`
-            SELECT 
-                TO_CHAR(updated_at, 'DD Mon') as gun, 
-                COUNT(*) as miktar,
-                DATE(updated_at) as gercek_tarih
+        
+        // Grafik için veriler (Son 7 gün)
+        const chartData = await db.query(`
+            SELECT TO_CHAR(updated_at, 'DD Mon') as gun, COUNT(*) as miktar
             FROM tasks 
-            WHERE assigned_to = $1 
-              AND status = 'Tamamlandı' 
-              AND updated_at >= NOW() - INTERVAL '7 days'
-            GROUP BY gun, gercek_tarih
-            ORDER BY gercek_tarih ASC
+            WHERE assigned_to = $1 AND status = 'Tamamlandı' AND updated_at >= NOW() - INTERVAL '7 days'
+            GROUP BY gun, DATE(updated_at) ORDER BY DATE(updated_at) ASC
         `, [userId]);
 
-        res.json(result.rows);
+        // Detaylı görev listesi
+        const taskDetails = await db.query(`
+            SELECT title, updated_at, points
+            FROM tasks 
+            WHERE assigned_to = $1 AND status = 'Tamamlandı'
+            ORDER BY updated_at DESC LIMIT 10
+        `, [userId]);
+
+        res.json({
+            labels: chartData.rows.map(r => r.gun),
+            values: chartData.rows.map(r => r.miktar),
+            details: taskDetails.rows // Görev isimleri ve tarihleri
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "İstatistik hatası" });
+        res.status(500).json({ message: "Hata oluştu" });
     }
 });
 app.get("/get-student-id", auth, async (req, res) => {

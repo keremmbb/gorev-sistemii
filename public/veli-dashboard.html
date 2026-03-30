@@ -29,6 +29,8 @@
             border-radius: 20px;
             width: 90%;
             max-width: 800px;
+            max-height: 90vh; /* Ekranın dışına taşmaması için */
+            overflow-y: auto; /* İçerik çoksa kaydırılabilir */
             position: relative;
         }
         .close-modal {
@@ -39,13 +41,29 @@
             color: #666;
         }
 
+        /* GÖREV GEÇMİŞİ LİSTESİ STİLİ */
+        #task-history-list {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .history-item {
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #2ecc71;
+        }
+
         /* KANBAN SÜTUNLARININ UZAMASINI ENGELLEYEN STİL */
         .kanban-column-content {
-            max-height: 400px; /* Sütunlar çok aşağı uzamasın diye sınır koyduk */
-            overflow-y: auto;  /* Çok görev olduğunda kendi içinde kaydırılabilir */
+            max-height: 400px; 
+            overflow-y: auto; 
             padding-right: 5px;
         }
-        /* İnce kaydırma çubuğu tasarımı */
         .kanban-column-content::-webkit-scrollbar { width: 5px; }
         .kanban-column-content::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
     </style>
@@ -90,7 +108,6 @@
     </div>
 
     <div class="kanban-board" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 10px 0;">
-        
         <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #ed5e68;">
             <h3 style="display: flex; justify-content: space-between; color: #b91c1c; font-size: 1rem; margin-bottom: 15px;">
                 🔴 Başlamadı <span id="count-Baslamadi" style="background: #ed5e68; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px;">0</span>
@@ -133,8 +150,16 @@
             <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; width: 250px;">
             <button onclick="loadStatsByEmail()" style="background: #4facfe; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Görüntüle</button>
         </div>
+        
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <canvas id="myChart" style="width:100%; max-height:400px;"></canvas>
+        <canvas id="myChart" style="width:100%; max-height:300px;"></canvas>
+
+        <div id="task-history-list">
+            <h4 style="color: #4a5568; margin-bottom: 10px; font-size: 0.9rem;">🕒 Son Tamamlanan Görevler</h4>
+            <div id="history-container">
+                 <p style="color: #999; font-size: 13px; text-align: center;">Öğrenci sorgulandığında detaylar burada görünecek.</p>
+            </div>
+        </div>
     </div>
 </div>
 
