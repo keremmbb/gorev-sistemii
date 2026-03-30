@@ -22,34 +22,29 @@ async function loadMyTasks() {
         const tasks = await res.json();
         
         const taskList = document.getElementById("taskList");
-        const legendaryList = document.getElementById("legendaryTaskList");
-        const legendarySection = document.getElementById("legendary-tasks-section");
         const completedTaskList = document.getElementById("completedTaskList");
         
         if (taskList) taskList.innerHTML = "";
-        if (legendaryList) legendaryList.innerHTML = "";
         if (completedTaskList) completedTaskList.innerHTML = "";
-        if (legendarySection) legendarySection.style.display = "none";
-        
         let doneCounter = 0;
 
         tasks.forEach(task => {
             const li = document.createElement("li");
-            li.style = "background: white; padding: 15px; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center;";
+            
+            // Rozet varsa kutu stilini değiştir
+            const isBadgeTask = task.badge_reward && task.badge_reward !== "";
+            const badgeStyle = isBadgeTask ? "border: 2px solid #f6ad55; background: #fffcf0;" : "border: 1px solid #edf2f7; background: white;";
+
+            li.style = `padding: 15px; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; ${badgeStyle}`;
             
             const dateStr = typeof fixDate === "function" ? fixDate(task.due_date) : task.due_date;
             
-            let badgeHtml = "";
-            if (task.badge_reward) {
-                const [icon, name] = task.badge_reward.split('|');
-                badgeHtml = `<div style="font-size: 0.7rem; color: #d69e2e; font-weight: bold; margin-top: 4px;">🎁 Ödül: ${icon} ${name} Rozeti</div>`;
-                li.style.border = "2px solid #f6ad55";
-                li.style.background = "#fffdf5";
-            }
+            // Rozetli görevse ek simge göster
+            const badgeHtml = isBadgeTask ? `<div style="font-size: 0.7rem; color: #b7791f; font-weight: bold; margin-top: 4px;">🎁 Rozet Ödülü: ${task.badge_reward}</div>` : "";
 
             li.innerHTML = `
                 <div style="flex: 1;">
-                    <div style="font-weight: bold; color: #2d3748; font-size: 1rem;">${task.title}</div>
+                    <div style="font-weight: bold; color: #2d3748; font-size: 1rem;">${task.title} ${isBadgeTask ? "✨" : ""}</div>
                     <div style="font-size: 0.75rem; color: #718096; margin-top: 4px;">
                         📅 ${dateStr} | 💰 <span style="color: #4facfe; font-weight: bold;">${task.points} GP</span>
                     </div>
@@ -68,9 +63,6 @@ async function loadMyTasks() {
             if (task.status === "Tamamlandı") {
                 doneCounter++;
                 if (completedTaskList) completedTaskList.appendChild(li);
-            } else if (task.badge_reward) {
-                if (legendaryList) legendaryList.appendChild(li);
-                if (legendarySection) legendarySection.style.display = "block";
             } else {
                 if (taskList) taskList.appendChild(li);
             }
@@ -79,8 +71,6 @@ async function loadMyTasks() {
         if (document.getElementById("completed-count")) {
             document.getElementById("completed-count").innerText = doneCounter;
         }
-
-        if (typeof loadRejectedPurchases === "function") loadRejectedPurchases(); 
 
     } catch (error) {
         console.error("Görevler yüklenirken hata:", error);
@@ -206,7 +196,7 @@ async function addTask() {
     const emailEl = document.getElementById("assignedToEmail");
     const dateEl = document.getElementById("dueDate");
     const timeEl = document.getElementById("dueTime");
-    const badgeEl = document.getElementById("taskBadge"); // Yeni
+    const badgeEl = document.getElementById("taskBadge"); // Rozet öğesini al
     const points = 100; 
 
     if (!titleEl.value || !emailEl.value) {
@@ -228,7 +218,7 @@ async function addTask() {
                 assignedToEmail: emailEl.value,
                 dueDate: isoDate,
                 points: points,
-                badge_reward: badgeEl ? badgeEl.value : "" // Rozet bilgisini ekledik
+                badge_reward: badgeEl ? badgeEl.value : "" // Rozet bilgisini gönder
             })
         });
 
@@ -237,7 +227,7 @@ async function addTask() {
             titleEl.value = "";
             descEl.value = "";
             emailEl.value = "";
-            if (badgeEl) badgeEl.value = "";
+            if(badgeEl) badgeEl.value = "";
             if(typeof loadMyAssignedTasks === "function") loadMyAssignedTasks(); 
         } else {
             const err = await response.json();

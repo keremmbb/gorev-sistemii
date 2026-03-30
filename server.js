@@ -93,31 +93,45 @@ app.post("/login", async (req, res) => {
     res.status(401).json({ message: "Bilgiler hatalı" });
 });
 
+// server.js içindeki /add-task kısmını bulup bununla değiştirin
 app.post("/add-task", auth, async (req, res) => {
-    // Frontend'den gelen 'assignedToEmail' ismini 'assignedTo' ile eşleştiriyoruz
-    const { title, description, assignedToEmail, dueDate, points } = req.body; 
+    // Frontend'den gelen veri isimleriyle eşitledik: assignedToEmail
+    const { title, description, assignedToEmail, dueDate, points, badge_reward } = req.body;
 
     try {
-        // 1. E-posta adresi verilen öğrenciyi bul
-        const studentRes = await db.query("SELECT id FROM users WHERE email = $1 AND role = 'student'", [assignedToEmail]);
+        // 1. Öğrenciyi email ile buluyoruz
+        const studentRes = await db.query(
+            "SELECT id FROM users WHERE email = $1 AND role = 'student'", 
+            [assignedToEmail]
+        );
         const student = studentRes.rows[0];
 
         if (!student) {
-            return res.status(404).json({ message: "Bu e-posta adresine sahip bir öğrenci bulunamadı." });
+            return res.status(404).json({ message: "Öğrenci bulunamadı. Lütfen e-posta adresini kontrol edin." });
         }
 
-        // Puan boş gelirse varsayılan 100 yapalım (hata almamak için)
-        const taskPoints = points || 100;
-
-        // 2. Görevi veritabanına ekle
+        // 2. Görevi veritabanına kaydediyoruz
+        // NOT: badge_reward'ın boş gelme ihtimaline karşı null kontrolü eklemek iyidir
         const newTask = await db.query(
-            "INSERT INTO tasks (title, description, assigned_to, assigned_by, due_date, points, status, updated_at) VALUES ($1, $2, $3, $4, $5, $6, 'Baslamadi', NOW()) RETURNING *",
-            [title, description, student.id, req.user.id, dueDate, taskPoints]
+            `INSERT INTO tasks 
+            (title, description, assigned_to, assigned_by, due_date, points, badge_reward, status, updated_at) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Baslamadi', NOW()) 
+            RETURNING *`,
+            [
+                title, 
+                description, 
+                student.id, 
+                req.user.id, 
+                dueDate || null, 
+                points || 0, 
+                badge_reward || null
+            ]
         );
 
         res.json({ 
-            message: "Görev başarıyla eklendi", 
-            task: newTask.rows[0]
+            success: true,
+            message: "Görev ve rozet başarıyla tanımlandı!", 
+            task: newTask.rows[0] 
         });
 
     } catch (error) {
