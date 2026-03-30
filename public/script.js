@@ -991,6 +991,7 @@ async function loadMyBadges() {
         console.error("Rozet yükleme hatası:", error);
     }
 }
+// Ödül Listesi (Senin istediğin o özel 4 ödül)
 const marketRewards = [
     { name: "+1 Saat Oyun", cost: 100, icon: "🎮" },
     { name: "Yemek Seçimi", cost: 250, icon: "🍕" },
@@ -998,16 +999,22 @@ const marketRewards = [
     { name: "Film Gecesi", cost: 500, icon: "🍿" }
 ];
 
-function loadMarketItems() {
+async function loadMarketItems() {
     const grid = document.getElementById("market-items-grid");
     const balanceDisplay = document.getElementById("market-balance");
+    
+    // Puanı ekrandaki total-points elementinden alıyoruz
     const currentGP = document.getElementById("total-points")?.innerText || "0";
     
     if (balanceDisplay) balanceDisplay.innerText = currentGP;
-    if (!grid) return;
+    if (!grid) {
+        console.error("Hata: market-items-grid bulunamadı!");
+        return;
+    }
 
+    // Grid içeriğini temizle ve 4 ödülü bas
     grid.innerHTML = marketRewards.map(item => `
-        <div class="market-card">
+        <div class="market-card" style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8;">
             <div style="font-size: 2.5rem; margin-bottom: 10px;">${item.icon}</div>
             <h4 style="margin: 5px 0; font-size: 1rem; color: #2d3748;">${item.name}</h4>
             <div style="color: #4facfe; font-weight: bold; margin-bottom: 10px;">${item.cost} GP</div>
@@ -1042,5 +1049,26 @@ async function buyReward(name, cost) {
         }
     } catch (error) {
         console.error("Satın alma hatası:", error);
+    }
+}
+function showSection(section) {
+    const tasks = document.getElementById('section-tasks');
+    const market = document.getElementById('section-market');
+    const btnTasks = document.getElementById('btn-tasks');
+    const btnMarket = document.getElementById('btn-market');
+
+    if (section === 'tasks') {
+        tasks.style.display = 'block';
+        market.style.display = 'none';
+        btnTasks.style.background = '#4facfe';
+        btnMarket.style.background = '#e2e8f0';
+    } else {
+        tasks.style.display = 'none';
+        market.style.display = 'block';
+        btnMarket.style.background = '#4facfe';
+        btnTasks.style.background = '#e2e8f0';
+        
+        // KRİTİK NOKTA: Market açıldığında ödülleri yükle diyoruz
+        loadMarketItems(); 
     }
 }
