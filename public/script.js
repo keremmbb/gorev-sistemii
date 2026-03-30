@@ -957,14 +957,11 @@ async function loadMyBadges() {
     if (!container || !userId) return;
 
     try {
-        // Backend'den rozetleri çek
         const res = await fetch(`/my-badges/${userId}`, { headers: getAuthHeaders() });
         const badges = await res.json();
 
-        console.log("Kazanılan Rozetler:", badges); // Tarayıcı konsolunda veriyi kontrol etmek için
-
         if (!badges || badges.length === 0) {
-            container.innerHTML = '<p style="color: #a0aec0; font-size: 0.8rem; width:100%; text-align:center;">Henüz rozet kazanılmadı. Görevleri tamamla!</p>';
+            container.innerHTML = '<p style="color: #a0aec0; font-size: 0.8rem; width:100%; text-align:center;">Henüz rozet kazanılmadı.</p>';
             return;
         }
 
@@ -976,12 +973,19 @@ async function loadMyBadges() {
             "Süper Evlat": "⭐"
         };
 
-        container.innerHTML = badges.map(badgeName => `
-            <div class="badge-item">
-                <span style="font-size: 2rem; display:block;">${badgeIcons[badgeName] || "🏅"}</span>
-                <span style="font-size: 0.7rem; font-weight: bold; color: #2d3748;">${badgeName}</span>
-            </div>
-        `).join("");
+        container.innerHTML = badges.map(badge => {
+            const icon = badgeIcons[badge.badge_reward] || "🏅";
+            // Eğer sayı 1'den büyükse yanına x2, x3 gibi yazdır
+            const countBadge = badge.count > 1 ? `<span style="position:absolute; top:-5px; right:-5px; background:#ff4d4d; color:white; border-radius:50%; padding:2px 6px; font-size:10px; font-weight:bold; border:2px solid white;">x${badge.count}</span>` : "";
+
+            return `
+                <div class="badge-item" style="position:relative; display: flex; flex-direction: column; align-items: center;">
+                    ${countBadge}
+                    <span style="font-size: 2rem;">${icon}</span>
+                    <span style="font-size: 0.7rem; font-weight: bold; color: #2d3748; margin-top:5px; text-align:center;">${badge.badge_reward}</span>
+                </div>
+            `;
+        }).join("");
 
     } catch (error) {
         console.error("Rozet yükleme hatası:", error);

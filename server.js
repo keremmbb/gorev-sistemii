@@ -462,12 +462,17 @@ app.get("/get-user-by-email", auth, async (req, res) => {
 app.get("/my-badges/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
+        // DISTINCT yerine COUNT ve GROUP BY kullanarak her rozetten kaç tane olduğunu buluyoruz
         const result = await db.query(
-            "SELECT DISTINCT badge_reward FROM tasks WHERE assigned_to = $1 AND status = 'Tamamlandı' AND badge_reward IS NOT NULL AND badge_reward != ''",
+            `SELECT badge_reward, COUNT(*) as count 
+             FROM tasks 
+             WHERE assigned_to = $1 AND status = 'Tamamlandı' 
+             AND badge_reward IS NOT NULL AND badge_reward != ''
+             GROUP BY badge_reward`,
             [userId]
         );
-        const badges = result.rows.map(row => row.badge_reward);
-        res.json(badges);
+        
+        res.json(result.rows); // Artık [{badge_reward: 'Kitap Kurdu', count: 3}, ...] dönecek
     } catch (error) {
         console.error("Rozetler getirilirken hata:", error);
         res.status(500).json({ message: "Sunucu hatası" });
