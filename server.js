@@ -445,4 +445,13 @@ app.get("/get-user-by-email", auth, async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
+app.get("/my-badges/:userId", auth, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const result = await db.query("SELECT * FROM user_badges WHERE user_id = $1 ORDER BY earned_at DESC", [userId]);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

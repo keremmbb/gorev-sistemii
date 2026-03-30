@@ -891,3 +891,57 @@ function renderChart(labels, values) {
         }
     });
 }
+async function checkAndGrantBadges(userId) {
+    try {
+        // 1. Toplam tamamlanan görev sayısını al
+        const taskResult = await db.query("SELECT COUNT(*) FROM tasks WHERE assigned_to = (SELECT email FROM users WHERE id = $1) AND status = 'Tamamlandı'", [userId]);
+        const count = parseInt(taskResult.rows[0].count);
+
+        const badgesToGrant = [];
+
+        if (count >= 1) badgesToGrant.push({ name: "İlk Adım", icon: "🌱" });
+        if (count >= 10) badgesToGrant.push({ name: "Görev Ustası", icon: "⚔️" });
+        if (count >= 50) badgesToGrant.push({ name: "Efsanevi Kahraman", icon: "👑" });
+
+        // Rozetleri veritabanına ekle (Eğer zaten yoksa)
+        for (const badge of badgesToGrant) {
+            await db.query(
+                "INSERT INTO user_badges (user_id, badge_name, badge_icon) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+                [userId, badge.name, badge.icon]
+            );
+        }
+    } catch (err) {
+        console.error("Rozet hatası:", err);
+    }
+}
+async function loadMyBadges() {
+    const userId = localStorage.getItem("userId");
+    const badgeContainer = document.getElementById("badge-container");
+    if (!badgeContainer || !userId) return;
+
+    try {
+        const res = await fetch(`/my-badges/${userId}`, { headers: getAuthHeaders() });
+        const badges = await res.json();
+
+        if (badges.length > 0) {
+            badgeContainer.innerHTML = "";
+            badges.forEach(badge => {
+                const div = document.createElement("div");
+                div.style = "text-align: center; background: #f0f7ff; padding: 10px; border-radius: 12px; border: 2px solid #4facfe; min-width: 80px; transition: transform 0.3s;";
+                div.onmouseover = () => div.style.transform = "scale(1.1)";
+                div.onmouseout = () => div.style.transform = "scale(1)";
+                
+                div.innerHTML = `
+                    <div style="font-size: 2rem;">${badge.badge_icon}</div>
+                    <div style="font-size: 11px; font-weight: bold; color: #2d3748; margin-top: 5px;">${badge.badge_name}</div>
+                `;
+                badgeContainer.appendChild(div);
+            });
+        }
+    } catch (err) {
+        console.error("Rozetler yüklenemedi:", err);
+    }
+}
+
+// Bunu dashboard.html'deki body onload kısmına ekle:
+// onload="loadMyTasks(); loadStudentPoints(); loadMyBadges();"

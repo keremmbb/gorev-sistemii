@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
-<body onload="loadMyTasks(); loadStudentPoints(); loadRejectedPurchases();">
+<body onload="loadMyTasks(); loadStudentPoints(); loadRejectedPurchases(); loadMyBadges();">
 <script>
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
@@ -47,6 +47,18 @@
     .status-select:hover { border-color: #4facfe; }
     .market-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8; transition: 0.3s; }
     .market-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+    
+    /* Yeni Rozet Stilleri */
+    .badge-item {
+        text-align: center; 
+        background: #f0f7ff; 
+        padding: 10px; 
+        border-radius: 12px; 
+        border: 2px solid #4facfe; 
+        min-width: 80px; 
+        transition: transform 0.3s ease;
+    }
+    .badge-item:hover { transform: scale(1.1); }
 </style>
 
 <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', sans-serif;">
@@ -95,13 +107,22 @@
         </div>
     </div>
 
+    <div style="background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #edf2f7;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">🏅 Başarımlarım</h3>
+        <div id="badge-container" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+            <p style="color: #a0aec0; font-size: 0.8rem;">Rozetler yükleniyor veya henüz hiç kazanılmadı...</p>
+        </div>
+    </div>
+
     <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
         <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s;">📖 Görevlerim</button>
         <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s;">🛒 Ödül Marketi</button>
     </div>
+
     <div id="section-rejected-rewards" style="display: none;">
-    <div id="rejected-rewards-list"></div>
-</div>
+        <div id="rejected-rewards-list"></div>
+    </div>
+
     <div id="section-tasks">
         <ul id="taskList" style="padding: 0; list-style: none;"></ul>
         <div id="section-archive" style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px;">
