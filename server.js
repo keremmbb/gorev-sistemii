@@ -447,11 +447,13 @@ app.get("/get-user-by-email", auth, async (req, res) => {
 app.get("/tasks/assigned", auth, async (req, res) => {
     try {
         const result = await db.query(
-            "SELECT * FROM tasks WHERE created_by = $1 ORDER BY created_at DESC",
-            [req.user.email]
+            // created_by yerine senin veritabanındaki sütun adını (örn: assigned_by) kontrol et
+            "SELECT * FROM tasks WHERE assigned_by = $1 ORDER BY created_at DESC",
+            [req.user.id] 
         );
         res.json(result.rows);
     } catch (error) {
+        console.error("Hata detay:", error);
         res.status(500).json({ message: "Görevler yüklenemedi" });
     }
 });

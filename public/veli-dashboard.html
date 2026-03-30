@@ -145,17 +145,18 @@
             <button onclick="loadStatsByEmail()" style="background: #4facfe; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Görüntüle</button>
         </div>
         
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        
         <div style="height: 300px; position: relative;">
             <canvas id="myChart"></canvas>
         </div>
 
         <div id="task-history-list">
             <h4 style="color: #4a5568; margin-bottom: 10px; font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 15px;">🕒 Son Tamamlanan Görevler</h4>
-            <div id="history-container">
-                 <p style="text-align:center; color:#999; font-size:13px;">Sorgulama yapıldığında burada listelenecek.</p>
-            </div>
+            <div id="history-container"></div>
         </div>
     </div>
+</div>
 </div>
 
 <script>
