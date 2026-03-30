@@ -460,23 +460,12 @@ app.get("/get-user-by-email", auth, async (req, res) => {
     }
 });
 app.get("/my-badges/:userId", auth, async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const result = await db.query("SELECT * FROM user_badges WHERE user_id = $1 ORDER BY earned_at DESC", [userId]);
-        res.json(result.rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.get("/my-badges/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
-        // Sadece durumu 'Tamamlandı' olan ve rozet ödülü boş olmayan görevleri getir
         const result = await db.query(
             "SELECT DISTINCT badge_reward FROM tasks WHERE assigned_to = $1 AND status = 'Tamamlandı' AND badge_reward IS NOT NULL AND badge_reward != ''",
             [userId]
         );
-        
         const badges = result.rows.map(row => row.badge_reward);
         res.json(badges);
     } catch (error) {
