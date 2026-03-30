@@ -32,14 +32,14 @@ async function sendMail(to, subject, htmlContent) {
     try {
         await resend.emails.send({
             from: 'Sistem <onboarding@resend.dev>',
-            to: 'keremacar3754is@gmail.com', 
+            to: to, // BURASI DÜZELTİLDİ: Artık kayıt olan kişinin mailine gidecek
             subject: subject,
-            html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-                    <div style="background-color: #4A90E2; padding: 20px; text-align: center;"><h1 style="color: white; margin: 0; font-size: 24px;">Görev Takip Sistemi</h1></div>
-                    <div style="padding: 30px; line-height: 1.6; color: #333;">${htmlContent}</div>
-                   </div>`
+            html: htmlContent
         });
-    } catch (error) { console.error("Mail Hatası:", error); }
+        console.log(`✅ E-posta başarıyla gönderildi: ${to}`);
+    } catch (error) {
+        console.error("❌ E-posta gönderim hatası:", error);
+    }
 }
 
 app.post("/send-code", async (req, res) => {
@@ -370,6 +370,37 @@ app.get("/get-student-id", auth, async (req, res) => {
         }
     } catch (error) {
         res.status(500).json({ message: "Sunucu hatası" });
+    }
+});
+app.post("/register", async (req, res) => {
+    const { name, email, password, role } = req.body;
+    try {
+        // Kullanıcı var mı kontrol et
+        const userExists = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+        if (userExists.rows.length > 0) {
+            return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
+        }
+
+        // 6 haneli kod üret
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Kullanıcıyı 'onaylanmamış' olarak kaydet
+        await db.query(
+            "INSERT INTO users (name, email, password, role, is_verified, verification_code) VALUES ($1, $2, $3, $4, false, $5)",
+            [name, email, password, role, verificationCode]
+        );
+
+        // Mail gönder
+        await sendMail(
+            email, 
+            "Doğrulama Kodun", 
+            `<h1>Hoş geldin ${name}!</h1><p>Kayıt işlemini tamamlamak için kodun: <b>${verificationCode}</b></p>`
+        );
+
+        res.json({ message: "Doğrulama kodu e-postana gönderildi!" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Kayıt hatası" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
