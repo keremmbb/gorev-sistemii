@@ -131,46 +131,46 @@ async function loadStudentPoints() {
 
 // -------------------- VELİ FONKSİYONLARI (KANBAN & YÖNETİM) --------------------
 async function loadMyAssignedTasks() {
-    const parentId = localStorage.getItem("userId"); // Veli ID'sini al
+    const parentId = localStorage.getItem("userId");
     if (!parentId) return;
 
     try {
-        // Sunucuya hangi velinin görevlerini istediğimizi söylemeliyiz
-        // Eğer API endpoint'in /tasks/assigned/:parentId şeklindeyse URL'yi güncelle
-        const response = await fetch(`/tasks/assigned/${parentId}`, { 
+        const response = await fetch(`/my-assigned-tasks/${parentId}`, { 
             headers: getAuthHeaders() 
         });
-        
         const tasks = await response.json();
 
-        if (!Array.isArray(tasks)) {
-            console.error("Sunucudan liste yerine hata geldi:", tasks);
-            return;
-        }
+        const statuses = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandı"];
+        const counts = { "Baslamadi": 0, "Baslandi": 0, "DevamEdiyor": 0, "Tamamlandı": 0 };
 
-        // Listeleri temizle (Bunlar eksik olabilir)
-        const columns = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandı"];
-        columns.forEach(col => {
-            const el = document.getElementById(`parent-list-${col}`);
-            if (el) el.innerHTML = "";
-            const countEl = document.getElementById(`count-${col}`);
-            if (countEl) countEl.innerText = "0";
+        // Önce temizle
+        statuses.forEach(s => {
+            document.getElementById(`parent-list-${s}`).innerHTML = "";
+            document.getElementById(`count-${s}`).innerText = "0";
         });
 
-        // Görevleri sütunlara dağıt
         tasks.forEach(task => {
-            const listId = `parent-list-${task.status}`;
-            const listEl = document.getElementById(listId);
+            const listEl = document.getElementById(`parent-list-${task.status}`);
             if (listEl) {
-                const li = document.createElement("div");
-                li.className = "kanban-item";
-                li.innerHTML = `<b>${task.title}</b><br><small>${task.assigned_to_email}</small>`;
-                listEl.appendChild(li);
+                counts[task.status]++;
+                const card = document.createElement("div");
+                card.style = "background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; position: relative;";
+                card.innerHTML = `
+                    <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 5px;">${task.title}</div>
+                    <div style="font-size: 0.75rem; color: #64748b;">👤 ${task.assigned_to || 'Öğrenci'}</div>
+                    <button onclick="deleteTask(${task.id})" style="position:absolute; top:5px; right:5px; border:none; background:none; color:#ef4444; cursor:pointer;">✕</button>
+                `;
+                listEl.appendChild(card);
             }
         });
 
-    } catch (error) {
-        console.error("Görevler listelenirken bir hata oluştu:", error);
+        // Sayıları güncelle
+        statuses.forEach(s => {
+            document.getElementById(`count-${s}`).innerText = counts[s];
+        });
+
+    } catch (err) {
+        console.error("Hata:", err);
     }
 }
 
