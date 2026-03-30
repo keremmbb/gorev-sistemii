@@ -857,3 +857,50 @@ function toggleFocusMode(isFocus) {
         */
     }
 }
+let myChartInstance = null; // Eski grafiği silip yenisini yapmak için
+
+function renderChart(labels, values) {
+    const ctx = document.getElementById('myChart');
+    if (!ctx) return; // Canvas yoksa çık
+
+    // Eğer zaten bir grafik çizilmişse, onu yok et (çakışma olmaması için)
+    if (myChartInstance) {
+        myChartInstance.destroy();
+    }
+
+    myChartInstance = new Chart(ctx, {
+        type: 'line', // Çizgi grafiği
+        data: {
+            labels: labels, // Günler (Örn: 25 Mar, 26 Mar)
+            datasets: [{
+                label: 'Tamamlanan Görevler',
+                data: values, // Görev sayıları
+                borderColor: '#4facfe',
+                backgroundColor: 'rgba(79, 172, 254, 0.2)',
+                borderWidth: 3,
+                tension: 0.4, // Çizgiyi yumuşatır
+                fill: true,
+                pointBackgroundColor: '#4facfe',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1 // Sadece tam sayıları göster
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        }
+    });
+}
