@@ -413,7 +413,6 @@ async function loadPendingPurchases() {
         const container = document.getElementById("pending-purchases-list");
         if (!container) return;
 
-        // Listeyi temizle ve eğer onay bekleyen ödül yoksa mesaj göster
         if (!purchases || purchases.length === 0) {
             container.innerHTML = `
                 <div id="no-reward-msg" style="text-align: center; padding: 20px; background: #fff; border-radius: 12px; border: 1px dashed #cbd5e0;">
@@ -422,11 +421,10 @@ async function loadPendingPurchases() {
             return;
         }
 
-        container.innerHTML = ""; // İçeriği temizle
+        container.innerHTML = ""; 
 
         purchases.forEach(p => {
             const div = document.createElement("div");
-            // Veli için kart tasarımı
             div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
             
             div.innerHTML = `
@@ -438,12 +436,12 @@ async function loadPendingPurchases() {
                 </div>
                 <div style="display: flex; gap: 8px;">
                     <button onclick="approvePurchase(${p.id}, 'Onaylandı')" 
-                        style="background: #48bb78; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                        style="background: #48bb78; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold;">
                         Onayla
                     </button>
                     <button onclick="approvePurchase(${p.id}, 'Reddedildi')" 
-                        style="background: #ed8936; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;">
-                        İade Et
+                        style="background: #f56565; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                        Reddet
                     </button>
                 </div>
             `;
