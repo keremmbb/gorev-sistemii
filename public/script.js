@@ -871,71 +871,6 @@ async function buyReward(name, cost) {
         console.error("Satın alma hatası:", error);
     }
 }
-function showSection(section) {
-    const tasks = document.getElementById('section-tasks');
-    const market = document.getElementById('section-market');
-    const btnTasks = document.getElementById('btn-tasks');
-    const btnMarket = document.getElementById('btn-market');
-
-    if (section === 'tasks') {
-        tasks.style.display = 'block';
-        market.style.display = 'none';
-        btnTasks.style.background = '#4facfe';
-        btnMarket.style.background = '#e2e8f0';
-    } else {
-        tasks.style.display = 'none';
-        market.style.display = 'block';
-        btnMarket.style.background = '#4facfe';
-        btnTasks.style.background = '#e2e8f0';
-        
-        // KRİTİK NOKTA: Market açıldığında ödülleri yükle diyoruz
-        loadMarketItems(); 
-    }
-
-
-
-let cart = []; // SADECE BİR KEZ BURADA TANIMLIYORUZ
-
-const marketRewards = [
-    { name: "+1 Saat Oyun", cost: 100, icon: "🎮" },
-    { name: "Yemek Seçimi", cost: 250, icon: "🍕" },
-    { name: "Dondurma", cost: 150, icon: "🍦" },
-    { name: "Film Gecesi", cost: 500, icon: "🍿" }
-];
-
-// Marketi ve Bakiyeyi Yükleyen Tek Fonksiyon
-function loadMarketItems() {
-    const grid = document.getElementById("market-items-grid");
-    const balanceDisplay = document.getElementById("market-balance");
-    const currentGP = parseInt(document.getElementById("total-points")?.innerText || "0");
-    
-    if (balanceDisplay) balanceDisplay.innerText = currentGP;
-    if (!grid) return;
-
-    grid.innerHTML = marketRewards.map(item => `
-        <div class="market-card">
-            <div style="font-size: 2.5rem; margin-bottom: 10px;">${item.icon}</div>
-            <h4 style="margin: 5px 0; font-size: 1rem; color: #2d3748;">${item.name}</h4>
-            <div style="color: #4facfe; font-weight: bold; margin-bottom: 10px;">${item.cost} GP</div>
-            <button onclick="addToCart('${item.name}', ${item.cost}, '${item.icon}')" 
-                style="width: 100%; padding: 10px; border-radius: 10px; border: none; 
-                background: #4facfe; color: white; cursor: pointer; 
-                font-weight: bold; transition: 0.3s;">
-                ➕ Sepete Ekle
-            </button>
-        </div>
-    `).join("");
-    
-    updateCartUI(); 
-}
-
-// Sepete Ekleme
-function addToCart(name, cost, icon) {
-    cart.push({ name, cost, icon });
-    updateCartUI();
-    // İsteğe bağlı: Eklendiğinde küçük bir bildirim verebilirsin
-}
-
 // Sepet Arayüzünü Güncelleme
 function updateCartUI() {
     const cartCount = document.getElementById("cart-count");
@@ -1022,4 +957,154 @@ async function checkout() {
     } catch (error) {
         console.error("Hata:", error);
     }
-}}
+}
+// -------------------- GÜNCEL MARKET & SEPET SİSTEMİ --------------------
+let cart = []; // Sadece tek bir yerde tanımlı
+
+const marketRewards = [
+    { name: "+1 Saat Oyun", cost: 100, icon: "🎮" },
+    { name: "Yemek Seçimi", cost: 250, icon: "🍕" },
+    { name: "Dondurma", cost: 150, icon: "🍦" },
+    { name: "Film Gecesi", cost: 500, icon: "🍿" }
+];
+
+// Bölüm Değiştirme Fonksiyonu (TEK OLMALI)
+function showSection(section) {
+    const tasks = document.getElementById('section-tasks');
+    const market = document.getElementById('section-market');
+    const btnTasks = document.getElementById('btn-tasks');
+    const btnMarket = document.getElementById('btn-market');
+
+    if (section === 'tasks') {
+        if(tasks) tasks.style.display = 'block';
+        if(market) market.style.display = 'none';
+        if(btnTasks) btnTasks.style.background = '#4facfe';
+        if(btnMarket) btnMarket.style.background = '#e2e8f0';
+    } else {
+        if(tasks) tasks.style.display = 'none';
+        if(market) market.style.display = 'block';
+        if(btnMarket) btnMarket.style.background = '#4facfe';
+        if(btnTasks) btnTasks.style.background = '#e2e8f0';
+        
+        // Market açıldığında ürünleri yükle
+        loadMarketItems(); 
+    }
+}
+
+// Market Ürünlerini Ekrana Basan Fonksiyon
+function loadMarketItems() {
+    const grid = document.getElementById("market-items-grid");
+    const balanceDisplay = document.getElementById("market-balance");
+    const currentGP = parseInt(document.getElementById("total-points")?.innerText || "0");
+    
+    if (balanceDisplay) balanceDisplay.innerText = currentGP;
+    if (!grid) return;
+
+    grid.innerHTML = marketRewards.map(item => `
+        <div class="market-card">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">${item.icon}</div>
+            <h4 style="margin: 5px 0; font-size: 1rem; color: #2d3748;">${item.name}</h4>
+            <div style="color: #4facfe; font-weight: bold; margin-bottom: 10px;">${item.cost} GP</div>
+            <button onclick="addToCart('${item.name}', ${item.cost}, '${item.icon}')" 
+                style="width: 100%; padding: 10px; border-radius: 10px; border: none; 
+                background: #4facfe; color: white; cursor: pointer; 
+                font-weight: bold; transition: 0.3s;">
+                ➕ Sepete Ekle
+            </button>
+        </div>
+    `).join("");
+    
+    updateCartUI(); 
+}
+
+function addToCart(name, cost, icon) {
+    cart.push({ name, cost, icon });
+    updateCartUI();
+}
+
+function updateCartUI() {
+    const cartCount = document.getElementById("cart-count");
+    const checkoutBtn = document.getElementById("checkout-btn");
+    
+    if (cartCount) cartCount.innerText = cart.length;
+    
+    if (checkoutBtn) {
+        if (cart.length > 0) {
+            const total = cart.reduce((sum, item) => sum + item.cost, 0);
+            checkoutBtn.style.display = "block";
+            checkoutBtn.innerText = `✅ Sepeti Onayla (${total} GP)`;
+        } else {
+            checkoutBtn.style.display = "none";
+        }
+    }
+}
+
+function showCart() {
+    const modal = document.getElementById("cart-modal");
+    const list = document.getElementById("cart-items-list");
+    const totalDisplay = document.getElementById("cart-total-amount");
+    
+    if (!modal || !list) return;
+
+    if (cart.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:#a0aec0; padding:20px;">Sepetin şu an boş.</p>';
+        if(totalDisplay) totalDisplay.innerText = "0 GP";
+    } else {
+        list.innerHTML = cart.map((item, index) => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 10px; margin-bottom: 8px; border: 1px solid #edf2f7;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">${item.icon}</span>
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold; font-size: 0.9rem;">${item.name}</div>
+                        <div style="font-size: 0.8rem; color: #4facfe;">${item.cost} GP</div>
+                    </div>
+                </div>
+                <button onclick="removeFromCart(${index})" style="background: #fff5f5; border: none; color: #f56565; cursor: pointer; padding: 5px; border-radius: 5px;">❌</button>
+            </div>
+        `).join("");
+        
+        const total = cart.reduce((sum, item) => sum + item.cost, 0);
+        if(totalDisplay) totalDisplay.innerText = `${total} GP`;
+    }
+    modal.style.display = "flex";
+}
+
+function closeCart() {
+    const modal = document.getElementById("cart-modal");
+    if(modal) modal.style.display = "none";
+}
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCartUI();
+    showCart();
+}
+
+async function checkout() {
+    const totalCost = cart.reduce((sum, item) => sum + item.cost, 0);
+    const currentGP = parseInt(document.getElementById("total-points")?.innerText || "0");
+
+    if (totalCost > currentGP) {
+        alert("Puanın yetersiz! 💪");
+        return;
+    }
+
+    if (!confirm(`Toplam ${totalCost} GP harcamayı onaylıyor musun?`)) return;
+
+    try {
+        for (const item of cart) {
+            await fetch("/buy-reward", {
+                method: "POST",
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ rewardName: item.name, cost: item.cost })
+            });
+        }
+        alert("🎉 Ödüller alındı! Veli onayı bekleniyor.");
+        cart = [];
+        closeCart();
+        loadStudentPoints();
+        loadMarketItems();
+    } catch (error) {
+        console.error("Hata:", error);
+    }
+}
