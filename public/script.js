@@ -453,27 +453,39 @@ async function loadPendingPurchases() {
     }
 }
 async function approvePurchase(purchaseId, status) {
-    let reason = null;
+    let reason = ""; // Varsayılan boş açıklama
 
-    // Eğer işlem reddetme ise nedenini soralım
     if (status === "Reddedildi") {
-        reason = prompt("Reddetme nedenini yazar mısınız? (Örn: Önce ödevlerini bitirmelisin)");
-        if (reason === null) return; // İptal edilirse işlemi durdur
+        const userInput = prompt("Reddetme nedenini yazar mısınız? (İsteğe bağlı)");
+        
+        // Eğer kullanıcı 'İptal'e basarsa (userInput === null) işlemi durdur
+        if (userInput === null) return; 
+        
+        reason = userInput; // Kullanıcı bir şey yazdıysa veya boş bırakıp 'Tamam' dediyse ata
     }
 
     try {
         const res = await fetch("/update-purchase-status", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ purchaseId, status, reason }) // Neden gönderiliyor
+            body: JSON.stringify({ 
+                purchaseId: purchaseId, 
+                status: status, 
+                reason: reason // Boş da olsa gönderiyoruz
+            })
         });
         
         if (res.ok) {
-            alert(status === "Reddedildi" ? "Talep reddedildi ve mesajın iletildi." : "Talep onaylandı!");
-            loadPendingPurchases();
+            alert(status === "Reddedildi" ? "Ödül reddedildi." : "Ödül onaylandı!");
+            loadPendingPurchases(); // Listeyi yenile
+            if (typeof loadStudentPoints === "function") loadStudentPoints();
+        } else {
+            const err = await res.json();
+            alert("Hata: " + err.message);
         }
     } catch (error) {
-        console.error("Onay hatası:", error);
+        console.error("Onaylama/Reddetme Hatası:", error);
+        alert("Sunucuya bağlanılamadı.");
     }
 }
 async function loadRejectedPurchases() {

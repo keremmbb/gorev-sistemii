@@ -231,24 +231,32 @@ app.get("/pending-purchases/:parentId", auth, async (req, res) => {
     }
 });
 app.post("/update-purchase-status", auth, async (req, res) => {
-    const { purchaseId, status, reason } = req.body; // 'reason' (açıklama) eklendi
+    const { purchaseId, status, reason } = req.body;
+
     try {
-        // Durumu ve varsa reddetme nedenini güncelle
+        // 1. Durumu ve (varsa) açıklamayı güncelle
+        // COALESCE(rejection_reason, $2) gibi karmaşık yapılar yerine direkt güncelleme:
         await db.query(
             "UPDATE purchases SET status = $1, rejection_reason = $2 WHERE id = $3",
             [status, reason || null, purchaseId]
         );
 
-        // Eğer reddedildiyse parayı iade et (Senin mevcut mantığın)
+        // 2. Eğer reddedildiyse GP iadesi yap
         if (status === "Reddedildi") {
-            const purchase = await db.query("SELECT student_id, cost FROM purchases WHERE id = $1", [purchaseId]);
-            const { student_id, cost } = purchase.rows[0];
-            await db.query("UPDATE users SET current_balance = current_balance + $1 WHERE id = $2", [cost, student_id]);
+            const purchaseRes = await db.query("SELECT student_id, cost FROM purchases WHERE id = $1", [purchaseId]);
+            if (purchaseRes.rows.length > 0) {
+                const { student_id, cost } = purchaseRes.rows[0];
+                await db.query(
+                    "UPDATE users SET current_balance = current_balance + $1 WHERE id = $2",
+                    [cost, student_id]
+                );
+            }
         }
 
-        res.json({ message: "Güncellendi" });
+        res.json({ message: "İşlem başarılı" });
     } catch (error) {
-        res.status(500).json({ message: "Hata oluştu" });
+        console.error("Update Purchase Status Error:", error);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.post("/archive-task-parent", auth, async (req, res) => {
