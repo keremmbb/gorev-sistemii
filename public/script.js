@@ -493,9 +493,7 @@ async function loadRejectedPurchases() {
     if (!userId) return;
 
     try {
-        const res = await fetch(`/rejected-purchases/${userId}`, { 
-            headers: { 'Authorization': `Bearer ${localStorage.getItem("token")}` } 
-        });
+        const res = await fetch(`/rejected-purchases/${userId}`, { headers: getAuthHeaders() });
         const rejectedItems = await res.json();
         
         const container = document.getElementById("rejected-rewards-list");
@@ -509,24 +507,26 @@ async function loadRejectedPurchases() {
         if (section) section.style.display = "block";
         container.innerHTML = ""; 
 
-       rejectedItems.forEach(item => {
-    const div = document.createElement("div");
-    div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #feb2b2; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
-    
-    // Eğer veli bir neden yazdıysa onu göster, yazmadıysa klasik mesajı göster
-    const reasonMsg = item.rejection_reason 
-        ? `<div style="margin-top: 5px; font-style: italic; color: #e53e3e;">💬 Mesaj: "${item.rejection_reason}"</div>` 
-        : `<div style="font-size: 0.75rem; color: #718096;">${item.cost} GP hesabınıza iade edildi.</div>`;
+        rejectedItems.forEach(item => {
+            const div = document.createElement("div");
+            div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #feb2b2; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
+            
+            // Eğer veli bir neden yazdıysa onu göster, yazmadıysa varsayılan metni göster
+            const reasonHTML = item.rejection_reason 
+                ? `<div style="background: #fff5f5; padding: 8px; border-left: 4px solid #f56565; color: #c53030; font-size: 0.85rem; border-radius: 4px;">
+                    <strong>Veli Notu:</strong> ${item.rejection_reason}
+                   </div>`
+                : `<div style="font-size: 0.75rem; color: #718096;">${item.cost} GP hesabınıza iade edildi.</div>`;
 
-    div.innerHTML = `
-        <div style="flex: 1;">
-            <strong style="color: #c53030;">❌ Reddedildi: ${item.reward_name}</strong>
-            ${reasonMsg}
-        </div>
-        <button onclick="dismissRejected(${item.id})" style="background: #fed7d7; border: none; color: #c53030; cursor: pointer; border-radius: 6px; padding: 8px 12px; font-weight: bold; margin-left: 10px;">Anladım</button>
-    `;
-    container.appendChild(div);
-});
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: #c53030; font-size: 1rem;">❌ Reddedildi: ${item.reward_name}</strong>
+                    <button onclick="dismissRejected(${item.id})" style="background: #fed7d7; border: none; color: #c53030; cursor: pointer; border-radius: 6px; padding: 5px 10px; font-weight: bold; font-size: 0.8rem;">Anladım</button>
+                </div>
+                ${reasonHTML}
+            `;
+            container.appendChild(div);
+        });
     } catch (error) {
         console.error("Reddedilenler yüklenemedi:", error);
     }

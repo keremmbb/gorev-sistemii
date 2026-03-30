@@ -301,13 +301,14 @@ app.post("/checkout", auth, async (req, res) => {
 });
 app.get("/rejected-purchases/:userId", auth, async (req, res) => {
     try {
-        // Sadece durumu 'Reddedildi' olanları getir
+        // rejection_reason sütununu da sorguya ekledik
         const result = await db.query(
-            "SELECT id, reward_name, cost FROM purchases WHERE student_id = $1 AND status = 'Reddedildi' ORDER BY id DESC", 
+            "SELECT id, reward_name, cost, rejection_reason FROM purchases WHERE student_id = $1 AND status = 'Reddedildi' ORDER BY id DESC", 
             [req.params.userId]
         );
         res.json(result.rows);
     } catch (error) {
+        console.error("Reddedilenler çekilirken hata:", error);
         res.status(500).json({ message: "Hata" });
     }
 });
