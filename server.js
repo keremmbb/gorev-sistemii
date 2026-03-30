@@ -429,7 +429,6 @@ app.post("/register", async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
-// E-posta ile kullanıcı id'sini bulan endpoint
 app.get("/get-user-by-email", auth, async (req, res) => {
     const { email } = req.query;
     try {
@@ -442,38 +441,6 @@ app.get("/get-user-by-email", auth, async (req, res) => {
     } catch (error) {
         console.error("Sorgu hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
-    }
-});
-app.get("/tasks/assigned", auth, async (req, res) => {
-    try {
-        const result = await db.query(
-            // created_by yerine senin veritabanındaki sütun adını (örn: assigned_by) kontrol et
-            "SELECT * FROM tasks WHERE assigned_by = $1 ORDER BY created_at DESC",
-            [req.user.id] 
-        );
-        res.json(result.rows);
-    } catch (error) {
-        console.error("Hata detay:", error);
-        res.status(500).json({ message: "Görevler yüklenemedi" });
-    }
-});
-app.post("/tasks", auth, async (req, res) => {
-    const { title, description, assignedToEmail, dueDate } = req.body;
-    
-    // Log atarak hatayı terminalde gör
-    console.log("Gelen Görev Verisi:", req.body);
-    console.log("Görevi Atayan (Veli):", req.user.email);
-
-    try {
-        await db.query(
-            // Sütun isimlerinin DB ile aynı olduğundan emin ol (küçük/büyük harf duyarlı olabilir)
-            'INSERT INTO tasks (title, description, assigned_to_email, created_by, status, due_date) VALUES ($1, $2, $3, $4, $5, $6)',
-            [title, description, assignedToEmail, req.user.email, 'Başlamadı', dueDate || null]
-        );
-        res.json({ message: "Görev başarıyla eklendi" });
-    } catch (error) {
-        console.error("VERİTABANI HATASI:", error.message); // Hatayı terminale yazdırır
-        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
