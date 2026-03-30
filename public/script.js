@@ -284,26 +284,39 @@ function updateCartUI() {
 }
 
 async function checkout() {
-    const totalCost = cart.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
-    const currentPoints = parseInt(document.getElementById("total-points")?.innerText || 0);
+    const userId = localStorage.getItem("userId");
+    // Sepetteki ürünleri alıyoruz (cart dizisi sende tanımlı olmalı)
+    if (cart.length === 0) return;
 
-    if (totalCost > currentPoints) return alert("Yetersiz GP! Daha fazla görev yapmalısın. 💪");
-    if (!confirm(`Toplam ${totalCost} GP tutarındaki sepeti onaylıyor musunuz?`)) return;
+    const totalCost = cart.reduce((sum, item) => sum + item.cost, 0);
 
     try {
         const res = await fetch("/checkout", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ userId: localStorage.getItem("userId"), items: cart, totalCost })
+            body: JSON.stringify({
+                userId: userId,
+                items: cart.map(item => ({
+                    rewardName: item.name,
+                    cost: item.cost,
+                    quantity: 1 // Veya item.quantity
+                })),
+                totalCost: totalCost
+            })
         });
 
         if (res.ok) {
-            alert("Talebiniz velinize iletildi! 🚀");
-            cart = [];
-            updateCartUI();
-            loadStudentPoints();
+            alert("Satın alma başarılı! Veli onayı bekleniyor.");
+            cart = []; // Sepeti temizle
+            updateCartUI(); // Sepet arayüzünü güncelle
+            loadStudentPoints(); // Puanları güncelle
+        } else {
+            const err = await res.json();
+            alert("Hata: " + err.message);
         }
-    } catch (error) { alert("Bir hata oluştu."); }
+    } catch (error) {
+        console.error("Checkout hatası:", error);
+    }
 }
 
 // -------------------- KAYIT & GİRİŞ --------------------
