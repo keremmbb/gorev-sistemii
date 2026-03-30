@@ -285,19 +285,14 @@ function updateCartUI() {
 
 async function checkout() {
     const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token"); // Token'ı al
+    const token = localStorage.getItem("token");
 
-    if (!userId || !token) {
-        alert("Oturum süreniz dolmuş, lütfen tekrar giriş yapın.");
-        window.location.href = "index.html";
-        return;
-    }
-
-    if (cart.length === 0) {
+    if (!cart || cart.length === 0) {
         alert("Sepetiniz boş!");
         return;
     }
 
+    // Toplam maliyeti sepetteki her bir ürünün fiyatını toplayarak bul
     const totalCost = cart.reduce((sum, item) => sum + item.cost, 0);
 
     try {
@@ -305,10 +300,11 @@ async function checkout() {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer " + token // 401 hatasını bu satır çözer!
+                "Authorization": "Bearer " + token
             },
             body: JSON.stringify({
                 userId: userId,
+                // ÖNEMLİ: Her bir ürünü ayrı bir kayıt olarak gönderiyoruz
                 items: cart.map(item => ({
                     rewardName: item.name,
                     cost: item.cost
@@ -318,8 +314,8 @@ async function checkout() {
         });
 
         if (res.ok) {
-            alert("Satın alma başarılı! Veli onayı bekleniyor.");
-            cart = [];
+            alert(`Satın alma başarılı! ${cart.length} adet ödül veli onayına gönderildi.`);
+            cart = []; 
             updateCartUI();
             loadStudentPoints(); 
         } else {
@@ -328,7 +324,6 @@ async function checkout() {
         }
     } catch (error) {
         console.error("Checkout hatası:", error);
-        alert("Bir ağ hatası oluştu.");
     }
 }
 
@@ -427,24 +422,23 @@ async function loadPendingPurchases() {
             const div = document.createElement("div");
             div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
             
-            div.innerHTML = `
-                <div>
-                    <strong style="color: #2d3748; font-size: 1rem;">🛒 ${p.reward_name}</strong>
-                    <div style="font-size: 0.8rem; color: #718096; margin-top: 4px;">
-                        👤 ${p.student_email} | 💰 <b style="color: #4facfe;">${p.cost} GP</b>
-                    </div>
+            // ... (loadPendingPurchases içindeki döngü kısmı)
+                          div.innerHTML = `
+                      <div>
+                        <strong style="color: #2d3748;">🛒 ${p.reward_name}</strong>
+                       <div style="font-size: 0.8rem; color: #718096;">💰 <b>${p.cost} GP</b></div>
                 </div>
-                <div style="display: flex; gap: 8px;">
+                     <div style="display: flex; gap: 8px;">
                     <button onclick="approvePurchase(${p.id}, 'Onaylandı')" 
-                        style="background: #48bb78; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                        Onayla
+                         style="background: #48bb78; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;">
+                       Onayla
+                        </button>
+                      <button onclick="approvePurchase(${p.id}, 'Reddedildi')" 
+                       style="background: #f56565; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;">
+                      Reddet
                     </button>
-                    <button onclick="approvePurchase(${p.id}, 'Reddedildi')" 
-                        style="background: #f56565; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                        Reddet
-                    </button>
-                </div>
-            `;
+                  </div>
+                    `;
             container.appendChild(div);
         });
     } catch (error) {

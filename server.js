@@ -270,16 +270,19 @@ app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
     
     try {
-        // 1. Kullanıcının bakiyesini kontrol et
+        // 1. Kullanıcının gerçek bakiyesini kontrol et
         const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
-        if (!userRes.rows[0] || userRes.rows[0].current_balance < totalCost) {
-            return res.status(400).json({ message: "Yetersiz bakiye!" });
+        const currentBalance = userRes.rows[0].current_balance;
+
+        if (currentBalance < totalCost) {
+            return res.status(400).json({ message: "Yetersiz GP! Daha fazla görev yapmalısın. 😊" });
         }
 
-        // 2. Bakiyeyi düş
+        // 2. Toplam tutarı hesaptan düş
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [totalCost, userId]);
         
-        // 3. Her ürünü 'purchases' tablosuna 'Bekliyor' olarak ekle
+        // 3. Her bir ürünü veritabanına tek tek 'Bekliyor' olarak kaydet
+        // Bu sayede veli 5 tane "+1 Saat Oyun" görür.
         for (const item of items) {
             await db.query(
                 "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
@@ -287,10 +290,10 @@ app.post("/checkout", auth, async (req, res) => {
             );
         }
 
-        res.json({ message: "Satın alma işlemi başarıyla tamamlandı." });
+        res.json({ message: "Satın alma işlemi tamamlandı." });
     } catch (error) {
-        console.error("Checkout Server Hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası oluştu." });
+        console.error(error);
+        res.status(500).json({ message: "Sunucu hatası." });
     }
 });
 app.get("/rejected-purchases/:userId", auth, async (req, res) => {
