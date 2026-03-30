@@ -196,36 +196,62 @@ async function loadMyAssignedTasks() {
 }
 
 async function addTask() {
-    const title = document.getElementById("taskTitle").value.trim();
-    const description = document.getElementById("taskDescription").value.trim();
-    const assignedToEmail = document.getElementById("assignedToEmail").value.trim();
+    const title = document.getElementById("taskTitle").value;
+    const description = document.getElementById("taskDescription").value;
+    const assignedTo = document.getElementById("assignedToEmail").value;
     const dueDate = document.getElementById("dueDate").value;
     const dueTime = document.getElementById("dueTime").value;
-    const points = document.getElementById("taskPoints")?.value || 10;
+    const points = document.getElementById("taskPoints").value;
 
-    if (!title || !assignedToEmail || !dueDate || !dueTime) return alert("Lütfen tüm alanları doldurun.");
+    if (!title || !assignedTo) {
+        alert("Lütfen en azından başlık ve öğrenci e-postasını doldurun.");
+        return;
+    }
+
+    // Tarih ve saati birleştir
+    const fullDueDate = (dueDate && dueTime) ? `${dueDate}T${dueTime}` : null;
 
     try {
-        const userRes = await fetch(`/get-user-id?email=${assignedToEmail}`, { headers: getAuthHeaders() });
-        const userData = await userRes.json();
-        if (!userData.userId) return alert("Bu mail adresine sahip bir öğrenci bulunamadı!");
-
-        const fullIsoDate = `${dueDate}T${dueTime}:00`;
-
-        const response = await fetch("/add-task", {
+        const res = await fetch("/add-task", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({
-                title, description, assignedTo: userData.userId, assignedBy: localStorage.getItem("userId"),
-                due_date: fullIsoDate, points: parseInt(points)
+            body: JSON.stringify({ 
+                title, 
+                description, 
+                assignedTo, 
+                dueDate: fullDueDate,
+                points: points || 10
             })
         });
 
-        if (response.ok) {
+        if (res.ok) {
+            const data = await res.json();
             alert("Görev başarıyla eklendi!");
-            location.reload();
+
+            // Formu temizle
+            document.getElementById("taskTitle").value = "";
+            document.getElementById("taskDescription").value = "";
+            document.getElementById("dueDate").value = "";
+            document.getElementById("dueTime").value = "";
+
+            // Grafiği güncellemek için öğrenci ID'sini kaydet ve çalıştır
+            if (data.studentId) {
+                localStorage.setItem("lastViewedStudentId", data.studentId);
+                loadStatistics(data.studentId);
+            }
+
+            // Listeyi yenile (Veli panelindeki kanban tahtası için)
+            if (typeof loadMyAssignedTasks === "function") {
+                loadMyAssignedTasks();
+            }
+        } else {
+            const err = await res.json();
+            alert("Hata: " + err.message);
         }
-    } catch (error) { console.error("Hata:", error); }
+    } catch (error) {
+        console.error("Görev ekleme hatası:", error);
+        alert("Sunucuya bağlanılamadı.");
+    }
 }
 
 function deleteTask(taskId) {
@@ -639,3 +665,14 @@ window.addEventListener('load', () => {
     const lastAssignedStudentId = localStorage.getItem("lastStudentId"); 
     if(lastAssignedStudentId) loadStatistics(lastAssignedStudentId);
 });
+// script.js dosyasının en sonuna ekle
+async function checkAndLoadStats() {
+    // Veli panelinde atanan görevlerden birinden öğrenci ID'sini kapalım
+    // veya yerel depolamada saklanan bir ID varsa onu kullanalım
+    const studentId = localStorage.getItem("lastViewedStudentId"); 
+    if (studentId) {
+        loadStatistics(studentId);
+    } else {
+        console.log("Grafik için henüz bir öğrenci ID'si seçilmedi.");
+    }
+}

@@ -81,17 +81,33 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/add-task", auth, async (req, res) => {
-    const { title, description, assignedTo, assignedBy, due_date, points } = req.body;
+    const { title, description, assignedTo, dueDate, points } = req.body;
+
     try {
-        // Puanı ve Tarihi veritabanına kaydediyoruz
-        await db.query(
-            "INSERT INTO tasks (title, description, assigned_to, assigned_by, status, assigned_at, due_date, points) VALUES ($1, $2, $3, $4, 'Başlamadı', NOW(), $5, $6)", 
-            [title, description, assignedTo, assignedBy, due_date, points || 10]
+        // 1. E-posta adresi verilen öğrenciyi bul
+        const studentRes = await db.query("SELECT id FROM users WHERE email = $1 AND role = 'student'", [assignedTo]);
+        const student = studentRes.rows[0];
+
+        if (!student) {
+            return res.status(404).json({ message: "Bu e-posta adresine sahip bir öğrenci bulunamadı." });
+        }
+
+        // 2. Görevi veritabanına ekle (updated_at varsayılan olarak NOW() gelir)
+        const newTask = await db.query(
+            "INSERT INTO tasks (title, description, assigned_to, assigned_by, due_date, points, status, updated_at) VALUES ($1, $2, $3, $4, $5, $6, 'Baslamadi', NOW()) RETURNING *",
+            [title, description, student.id, req.user.id, dueDate, points]
         );
-        res.json({ message: "Görev atandı" });
-    } catch (error) { 
-        console.error(error);
-        res.status(500).json({ message: "Hata" }); 
+
+        // 3. Başarılı yanıt gönder (studentId'yi grafiği tetiklemek için ekliyoruz)
+        res.json({ 
+            message: "Görev başarıyla eklendi", 
+            task: newTask.rows[0],
+            studentId: student.id 
+        });
+
+    } catch (error) {
+        console.error("Görev ekleme hatası:", error);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.get("/my-tasks/:userId", auth, async (req, res) => {
