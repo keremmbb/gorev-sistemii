@@ -32,7 +32,23 @@
         .badge-icon { font-size: 2rem; display: block; margin-bottom: 5px; }
         .badge-name { font-size: 0.7rem; font-weight: bold; color: #2d3748; }
 
-        /* Arşiv ve Liste Temizliği */
+        /* Sepet Butonu Özel Stil */
+        #checkout-btn {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+            transition: 0.3s;
+            margin-top: 20px;
+            width: 100%;
+        }
+        #checkout-btn:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4); }
+
         ul { padding: 0; list-style: none; }
     </style>
 </head>
@@ -92,7 +108,7 @@
             btnMarket.style.color = 'white';
             btnTasks.style.background = '#e2e8f0';
             btnTasks.style.color = '#4a5568';
-            // Market açıldığında ürünleri yükle
+            // Market açıldığında ürünleri ve sepeti yükle
             if(typeof loadMarketItems === 'function') loadMarketItems();
         }
     }
@@ -149,30 +165,37 @@
     </div>
 
     <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
-        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 15px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">📖 Görevlerim</button>
-        <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 15px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">🛒 Ödül Marketi</button>
+        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 15px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s;">📖 Görevlerim</button>
+        <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 15px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s;">🛒 Ödül Marketi</button>
     </div>
 
     <div id="section-tasks">
-        <ul id="taskList">
-            </ul>
+        <ul id="taskList"></ul>
 
         <div id="section-archive" style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
             <div onclick="toggleArchive()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
                 <span style="color: #64748b; font-size: 0.9rem; font-weight: 600;">🏆 Tamamlanan Görevler (<span id="completed-count">0</span>)</span>
                 <span id="archive-chevron">▼</span>
             </div>
-            <ul id="completedTaskList" style="display: none; padding: 10px 0; margin-top: 10px;">
-                </ul>
+            <ul id="completedTaskList" style="display: none; padding: 10px 0; margin-top: 10px;"></ul>
         </div>
     </div>
 
     <div id="section-market" style="display: none;">
-        <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: center;">
-            <span style="font-size: 0.9rem; color: #92400e; font-weight: bold;">💰 Mevcut Bakiyen: <span id="market-balance">0</span> GP</span>
-        </div>
-        <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div style="flex: 1; background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 15px; text-align: center;">
+                <span style="font-size: 0.8rem; color: #92400e;">💰 Bakiyen: <span id="market-balance" style="font-weight: bold;">0</span> GP</span>
             </div>
+            <div style="flex: 1; background: #f0f7ff; border: 1px solid #e0e7ff; padding: 15px; border-radius: 15px; text-align: center;">
+                <span style="font-size: 0.8rem; color: #1e40af;">🛒 Sepetim: <span id="cart-count" style="font-weight: bold;">0</span> Ürün</span>
+            </div>
+        </div>
+
+        <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;"></div>
+
+        <button id="checkout-btn" onclick="checkout()" style="display: none;">
+            ✅ Sepeti Onayla ve Satın Al
+        </button>
     </div>
 
     <div style="text-align: center; margin-top: 60px; padding-bottom: 40px;">
