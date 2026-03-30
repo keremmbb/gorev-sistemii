@@ -687,52 +687,56 @@ async function checkAndLoadStats() {
 }
 async function loadStatsByEmail() {
     const email = document.getElementById("statsSearchEmail").value;
-    const historyList = document.getElementById("task-history-list");
+    const historyContainer = document.getElementById("history-container");
     
     if (!email) return alert("Lütfen bir e-posta girin");
 
     try {
-        // Önce öğrenciyi bul
+        // 1. Öğrenciyi Bul
         const userRes = await fetch(`/get-user-by-email?email=${email}`, { headers: getAuthHeaders() });
+        if (!userRes.ok) throw new Error("Öğrenci bulunamadı");
         const user = await userRes.json();
         
-        if (!user.id) return alert("Öğrenci bulunamadı");
-
-        // İstatistikleri ve görev detaylarını getir
+        // 2. İstatistikleri ve Detayları Getir
         const statsRes = await fetch(`/user-stats/${user.id}`, { headers: getAuthHeaders() });
-        const data = await statsRes.json(); // data.history içerisinde görev listesi olduğunu varsayıyoruz
+        if (!statsRes.ok) throw new Error("İstatistik verisi alınamadı");
+        const data = await statsRes.json();
 
-        // 1. GRAFİĞİ ÇİZ (Mevcut kodun)
+        // 3. Grafiği Çiz
         renderChart(data.labels, data.values);
 
-        // 2. GÖREV LİSTESİNİ DOLDUR
-        historyList.innerHTML = ""; // Temizle
-        
-        if (data.details && data.details.length > 0) {
-            data.details.forEach(task => {
-                const date = new Date(task.updated_at).toLocaleString('tr-TR', {
-                    day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit'
-                });
+        // 4. Görev Geçmişini Listele
+        if (historyContainer) {
+            historyContainer.innerHTML = ""; // Mevcut içeriği temizle
+            
+            if (data.details && data.details.length > 0) {
+                data.details.forEach(task => {
+                    const date = new Date(task.updated_at).toLocaleString('tr-TR', {
+                        day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit'
+                    });
 
-                const item = document.createElement("div");
-                item.style = "background: #f8fafc; padding: 12px; border-radius: 10px; border-left: 4px solid #2ecc71; display: flex; justify-content: space-between; align-items: center;";
-                item.innerHTML = `
-                    <div>
-                        <strong style="display: block; color: #2d3748;">${task.title}</strong>
-                        <span style="font-size: 12px; color: #718096;">${date} tarihinde tamamladı</span>
-                    </div>
-                    <div style="background: #eefdf3; color: #166534; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold;">
-                        +${task.points || 0} Puan
-                    </div>
-                `;
-                historyList.appendChild(item);
-            });
-        } else {
-            historyList.innerHTML = `<p style="text-align:center; color:#94a3b8;">Son 7 günde tamamlanan görev bulunamadı.</p>`;
+                    const item = document.createElement("div");
+                    item.className = "history-item"; // CSS stillerini kullanır
+                    item.style = "background: #f8fafc; padding: 10px 15px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #2ecc71;";
+                    item.innerHTML = `
+                        <div>
+                            <strong style="display: block; color: #2d3748; font-size:14px;">${task.title}</strong>
+                            <span style="font-size: 11px; color: #718096;">${date}</span>
+                        </div>
+                        <div style="background: #eefdf3; color: #166534; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                            +${task.points || 0} Puan
+                        </div>
+                    `;
+                    historyContainer.appendChild(item);
+                });
+            } else {
+                historyContainer.innerHTML = `<p style="text-align:center; color:#999; font-size:13px;">Henüz tamamlanan görev yok.</p>`;
+            }
         }
 
     } catch (error) {
-        console.error("Hata:", error);
+        console.error("Hata Detayı:", error);
+        alert("Veriler alınırken bir hata oluştu. Lütfen endpoint'leri kontrol edin.");
     }
 }
 async function sendCode() {

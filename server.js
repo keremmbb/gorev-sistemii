@@ -350,11 +350,12 @@ app.delete("/clear-rejected-purchase/:id", auth, async (req, res) => {
         res.status(500).json({ message: "Hata" });
     }
 });
+// ÖĞRENCİ İSTATİSTİKLERİNİ GETİR (Grafik + Detaylı Liste)
 app.get("/user-stats/:userId", auth, async (req, res) => {
     try {
         const { userId } = req.params;
-        
-        // Grafik için veriler (Son 7 gün)
+
+        // 1. Grafik Verisi (Son 7 gün)
         const chartData = await db.query(`
             SELECT TO_CHAR(updated_at, 'DD Mon') as gun, COUNT(*) as miktar
             FROM tasks 
@@ -362,21 +363,22 @@ app.get("/user-stats/:userId", auth, async (req, res) => {
             GROUP BY gun, DATE(updated_at) ORDER BY DATE(updated_at) ASC
         `, [userId]);
 
-        // Detaylı görev listesi
+        // 2. Detaylı Görev Listesi (Hangi görev, ne zaman?)
         const taskDetails = await db.query(`
             SELECT title, updated_at, points
             FROM tasks 
             WHERE assigned_to = $1 AND status = 'Tamamlandı'
-            ORDER BY updated_at DESC LIMIT 10
+            ORDER BY updated_at DESC LIMIT 15
         `, [userId]);
 
         res.json({
             labels: chartData.rows.map(r => r.gun),
             values: chartData.rows.map(r => r.miktar),
-            details: taskDetails.rows // Görev isimleri ve tarihleri
+            details: taskDetails.rows // Frontend bu 'details'ı kullanacak
         });
     } catch (error) {
-        res.status(500).json({ message: "Hata oluştu" });
+        console.error("Stats Hatası:", error);
+        res.status(500).json({ message: "İstatistikler yüklenemedi" });
     }
 });
 app.get("/get-student-id", auth, async (req, res) => {
