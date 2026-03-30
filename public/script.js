@@ -30,7 +30,27 @@ async function loadMyTasks() {
 
         tasks.forEach(task => {
             const li = document.createElement("li");
-            // ... (Buradaki mevcut li oluşturma kodların aynen kalıyor)
+            li.style = "background: white; padding: 15px; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center;";
+            
+            // Tarih ve Puan bilgisini hazırla
+            const dateStr = fixDate(task.due_date);
+            
+            li.innerHTML = `
+                <div style="flex: 1;">
+                    <div style="font-weight: bold; color: #2d3748; font-size: 1rem;">${task.title}</div>
+                    <div style="font-size: 0.75rem; color: #718096; margin-top: 4px;">
+                        📅 ${dateStr} | 💰 <span style="color: #4facfe; font-weight: bold;">${task.points} GP</span>
+                    </div>
+                </div>
+                <div>
+                    <select class="status-select" onchange="updateTaskStatus(${task.id}, this.value)">
+                        <option value="Baslamadi" ${task.status === 'Baslamadi' ? 'selected' : ''}>⏳ Başlamadı</option>
+                        <option value="Baslandi" ${task.status === 'Baslandi' ? 'selected' : ''}>🚀 Başlandı</option>
+                        <option value="DevamEdiyor" ${task.status === 'DevamEdiyor' ? 'selected' : ''}>🔄 Devam Ediyor</option>
+                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>✅ Tamamlandı</option>
+                    </select>
+                </div>
+            `;
             
             if (task.status === "Tamamlandı") {
                 doneCounter++;
@@ -44,9 +64,7 @@ async function loadMyTasks() {
             document.getElementById("completed-count").innerText = doneCounter;
         }
 
-        // --- İŞTE EKLEDİĞİMİZ KRİTİK SATIR ---
         loadRejectedPurchases(); 
-        // -------------------------------------
 
     } catch (error) {
         console.error("Görevler yüklenirken hata:", error);
@@ -589,5 +607,27 @@ async function loadStatistics(studentId) {
         });
     } catch (error) {
         console.error("Grafik yüklenemedi:", error);
+    }
+}
+function showSection(section) {
+    const tasksDiv = document.getElementById('section-tasks');
+    const marketDiv = document.getElementById('section-market');
+    const btnTasks = document.getElementById('btn-tasks');
+    const btnMarket = document.getElementById('btn-market');
+
+    if (section === 'tasks') {
+        tasksDiv.style.display = 'block';
+        marketDiv.style.display = 'none';
+        btnTasks.style.background = '#4facfe';
+        btnTasks.style.color = 'white';
+        btnMarket.style.background = '#e2e8f0';
+        btnMarket.style.color = '#4a5568';
+    } else {
+        tasksDiv.style.display = 'none';
+        marketDiv.style.display = 'block';
+        btnTasks.style.background = '#e2e8f0';
+        btnTasks.style.color = '#4a5568';
+        btnMarket.style.background = '#4facfe';
+        btnMarket.style.color = 'white';
     }
 }
