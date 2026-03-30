@@ -444,4 +444,29 @@ app.get("/get-user-by-email", auth, async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
+app.get("/tasks/assigned", auth, async (req, res) => {
+    try {
+        const result = await db.query(
+            "SELECT * FROM tasks WHERE created_by = $1 ORDER BY created_at DESC",
+            [req.user.email]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: "Görevler yüklenemedi" });
+    }
+});
+app.post("/tasks", auth, async (req, res) => {
+    const { title, description, assignedToEmail, dueDate } = req.body;
+    try {
+        // Veli e-postasını token'dan (req.user.email) alıyoruz
+        await db.query(
+            "INSERT INTO tasks (title, description, assigned_to_email, created_by, status, due_date) VALUES ($1, $2, $3, $4, 'Başlamadı', $5)",
+            [title, description, assignedToEmail, req.user.email, dueDate]
+        );
+        res.json({ message: "Görev başarıyla eklendi" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Görev eklenemedi" });
+    }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

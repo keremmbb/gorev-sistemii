@@ -135,94 +135,80 @@ async function loadMyAssignedTasks() {
         const response = await fetch("/tasks/assigned", {
             headers: getAuthHeaders()
         });
-
-        if (!response.ok) throw new Error("Görevler yüklenemedi");
-
         const tasks = await response.json();
 
-        // Sütunları temizle (Eski verilerin üst üste binmemesi için)
-        const statuses = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"];
-        statuses.forEach(s => {
-            const list = document.getElementById(`parent-list-${s}`);
-            const count = document.getElementById(`count-${s}`);
-            if (list) list.innerHTML = "";
-            if (count) count.innerText = "0";
+        const lists = {
+            "Baslamadi": document.getElementById("parent-list-Baslamadi"),
+            "Baslandi": document.getElementById("parent-list-Baslandi"),
+            "DevamEdiyor": document.getElementById("parent-list-DevamEdiyor"),
+            "Tamamlandi": document.getElementById("parent-list-Tamamlandi")
+        };
+
+        // Önce listeleri temizle
+        Object.values(lists).forEach(list => { if(list) list.innerHTML = ""; });
+        
+        // Sayaçları sıfırla
+        ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"].forEach(s => {
+            const c = document.getElementById(`count-${s}`);
+            if(c) c.innerText = "0";
         });
 
-        // Sayaçları tutmak için bir obje
-        const counts = { Baslamadi: 0, Baslandi: 0, DevamEdiyor: 0, Tamamlandi: 0 };
+        const counts = { "Baslamadi": 0, "Baslandi": 0, "DevamEdiyor": 0, "Tamamlandi": 0 };
 
         tasks.forEach(task => {
-            // Backend'den gelen statüdeki boşlukları temizle (Örn: "Devam Ediyor" -> "DevamEdiyor")
+            // Backend'den gelen statüdeki boşlukları sil (Örn: "Devam Ediyor" -> "DevamEdiyor")
             const statusKey = task.status.replace(/\s/g, '');
-            const listElement = document.getElementById(`parent-list-${statusKey}`);
+            const targetList = lists[statusKey];
 
-            if (listElement) {
-                const taskElement = document.createElement("div");
-                taskElement.style = "background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid #ddd;";
+            if (targetList) {
+                counts[statusKey]++;
+                const card = document.createElement("div");
+                card.className = "task-card";
+                card.style = "background:white; padding:10px; border-radius:8px; margin-bottom:10px; border-left:5px solid #4facfe; box-shadow:0 2px 4px rgba(0,0,0,0.1);";
                 
-                // Statüye göre sol kenar rengini ayarla
-                if(task.status === "Tamamlandı") taskElement.style.borderLeftColor = "#2ecc71";
-                else if(task.status === "Devam Ediyor") taskElement.style.borderLeftColor = "#f1c40f";
-                else if(task.status === "Başlandı") taskElement.style.borderLeftColor = "#3498db";
-                else taskElement.style.borderLeftColor = "#ed5e68";
+                const deleteBtn = task.status !== 'Tamamlandı' 
+                    ? `<button onclick="deleteTask(${task.id})" style="background:#ff4d4d; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Sil</button>`
+                    : `<span style="color:green; font-size:11px; font-weight:bold;">✓ Tamamlandı</span>`;
 
-                // SİLME BUTONU KONTROLÜ: Sadece "Tamamlandı" değilse Sil butonu gösterilir
-                const actionArea = task.status !== 'Tamamlandı' 
-                    ? `<button onclick="deleteTask(${task.id})" style="background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Sil</button>`
-                    : `<span style="color: #2ecc71; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 4px;">✅ Kaydedildi</span>`;
-
-                taskElement.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div style="flex: 1; padding-right: 10px;">
-                            <strong style="display: block; color: #2d3748; font-size: 14px; margin-bottom: 4px;">${task.title}</strong>
-                            <p style="font-size: 12px; color: #718096; margin: 0; line-height: 1.4;">${task.description || 'Açıklama yok'}</p>
-                            <div style="margin-top: 8px; font-size: 10px; color: #a0aec0;">
-                                👤 ${task.assigned_to_email}
-                            </div>
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div>
+                            <strong style="font-size:14px;">${task.title}</strong>
+                            <p style="font-size:12px; color:#666; margin:4px 0;">${task.assigned_to_email}</p>
                         </div>
-                        <div style="display: flex; align-items: center; height: 100%;">
-                            ${actionArea}
-                        </div>
+                        ${deleteBtn}
                     </div>
                 `;
-
-                listElement.appendChild(taskElement);
-                
-                // Sayacı artır
-                counts[statusKey]++;
-                const countBadge = document.getElementById(`count-${statusKey}`);
-                if (countBadge) countBadge.innerText = counts[statusKey];
+                targetList.appendChild(card);
             }
         });
 
+        // Sayaçları güncelle
+        Object.keys(counts).forEach(key => {
+            const countEl = document.getElementById(`count-${key}`);
+            if(countEl) countEl.innerText = counts[key];
+        });
+
     } catch (error) {
-        console.error("Görev listeleme hatası:", error);
+        console.error("Görevler yüklenirken hata:", error);
     }
 }
 
 async function addTask() {
-    // Elementleri değişkenlere ata
     const titleEl = document.getElementById("taskTitle");
     const descEl = document.getElementById("taskDescription");
     const emailEl = document.getElementById("assignedToEmail");
     const dateEl = document.getElementById("dueDate");
     const timeEl = document.getElementById("dueTime");
 
-    // Hata kontrolü: Eğer elementlerden biri sayfada yoksa (null ise) durdur
-    if (!titleEl || !descEl || !emailEl || !dateEl || !timeEl) {
-        console.error("HATA: Bazı form elemanları bulunamadı!");
-        return;
+    if (!titleEl.value || !emailEl.value) {
+        return alert("Lütfen başlık ve öğrenci e-postasını girin.");
     }
 
-    const title = titleEl.value;
-    const description = descEl.value;
-    const assignedToEmail = emailEl.value;
-    const dueDate = dateEl.value;
-    const dueTime = timeEl.value;
-
-    if (!title || !assignedToEmail) {
-        return alert("Lütfen başlık ve e-posta alanlarını doldurun.");
+    // Tarih ISO formatı: 2023-10-25T14:30:00
+    let isoDate = null;
+    if (dateEl.value) {
+        isoDate = `${dateEl.value}T${timeEl.value || "00:00"}:00`;
     }
 
     try {
@@ -230,28 +216,26 @@ async function addTask() {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify({
-                title,
-                description,
-                assignedToEmail,
-                dueDate: `${dueDate}T${dueTime}` // Backend'in beklediği format
+                title: titleEl.value,
+                description: descEl.value,
+                assignedToEmail: emailEl.value,
+                dueDate: isoDate
             })
         });
 
         if (response.ok) {
-            alert("Görev başarıyla eklendi!");
-            // Formu temizle
+            alert("Görev başarıyla atandı!");
             titleEl.value = "";
             descEl.value = "";
-            loadMyAssignedTasks();
+            loadMyAssignedTasks(); // Listeyi yenile
         } else {
             const err = await response.json();
             alert("Hata: " + err.message);
         }
     } catch (error) {
-        console.error("Görev ekleme hatası:", error);
+        console.error("Görev atama hatası:", error);
     }
 }
-
 async function deleteTask(taskId) {
     // Önce kullanıcıdan onay al
     if (!confirm("Bu görevi silmek istediğinize emin misiniz?")) return;

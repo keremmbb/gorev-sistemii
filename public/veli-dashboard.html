@@ -168,6 +168,20 @@
         if (event.target == modal) closeChartModal();
     }
 </script>
+<script>
+    // Sayfa açıldığında görevleri ve bekleyen alımları yükle
+    window.onload = function() {
+        loadMyAssignedTasks(); 
+        loadPendingPurchases();
+    };
 
+    function openChartModal() { document.getElementById('chart-modal').style.display = 'flex'; }
+    function closeChartModal() { document.getElementById('chart-modal').style.display = 'none'; }
+    
+    window.onclick = function(event) {
+        const modal = document.getElementById('chart-modal');
+        if (event.target == modal) closeChartModal();
+    }
+</script>
 </body>
 </html>
