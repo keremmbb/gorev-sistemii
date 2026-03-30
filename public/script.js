@@ -131,22 +131,42 @@ async function loadStudentPoints() {
 
 // -------------------- VELİ FONKSİYONLARI (KANBAN & YÖNETİM) --------------------
 async function loadMyAssignedTasks() {
+    const parentId = localStorage.getItem("userId"); // Veli ID'sini al
+    if (!parentId) return;
+
     try {
-        const response = await fetch("/tasks/assigned", {
-            headers: getAuthHeaders()
+        // Sunucuya hangi velinin görevlerini istediğimizi söylemeliyiz
+        // Eğer API endpoint'in /tasks/assigned/:parentId şeklindeyse URL'yi güncelle
+        const response = await fetch(`/tasks/assigned/${parentId}`, { 
+            headers: getAuthHeaders() 
         });
         
         const tasks = await response.json();
 
-        // Gelen verinin bir liste (Array) olup olmadığını kontrol et
         if (!Array.isArray(tasks)) {
             console.error("Sunucudan liste yerine hata geldi:", tasks);
-            return; // Eğer liste değilse fonksiyonu burada durdur, aşağıya geçme
+            return;
         }
 
-        // ... geri kalan sütunları temizleme ve forEach döngüsü ...
+        // Listeleri temizle (Bunlar eksik olabilir)
+        const columns = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandı"];
+        columns.forEach(col => {
+            const el = document.getElementById(`parent-list-${col}`);
+            if (el) el.innerHTML = "";
+            const countEl = document.getElementById(`count-${col}`);
+            if (countEl) countEl.innerText = "0";
+        });
+
+        // Görevleri sütunlara dağıt
         tasks.forEach(task => {
-            // Kodların buraya gelecek
+            const listId = `parent-list-${task.status}`;
+            const listEl = document.getElementById(listId);
+            if (listEl) {
+                const li = document.createElement("div");
+                li.className = "kanban-item";
+                li.innerHTML = `<b>${task.title}</b><br><small>${task.assigned_to_email}</small>`;
+                listEl.appendChild(li);
+            }
         });
 
     } catch (error) {
