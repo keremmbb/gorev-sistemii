@@ -938,15 +938,17 @@ async function loadMyBadges() {
     if (!container || !userId) return;
 
     try {
+        // Backend'den rozetleri çek
         const res = await fetch(`/my-badges/${userId}`, { headers: getAuthHeaders() });
         const badges = await res.json();
 
-        if (badges.length === 0) {
-            container.innerHTML = '<p style="color: #a0aec0; font-size: 0.8rem; width:100%; text-align:center;">Henüz hiç rozet kazanmadın. Görevleri tamamla!</p>';
+        console.log("Kazanılan Rozetler:", badges); // Tarayıcı konsolunda veriyi kontrol etmek için
+
+        if (!badges || badges.length === 0) {
+            container.innerHTML = '<p style="color: #a0aec0; font-size: 0.8rem; width:100%; text-align:center;">Henüz rozet kazanılmadı. Görevleri tamamla!</p>';
             return;
         }
 
-        // Rozet isimlerine göre emoji eşleştirme
         const badgeIcons = {
             "Kitap Kurdu": "📖",
             "Temizlik Ustası": "🧹",
@@ -956,9 +958,9 @@ async function loadMyBadges() {
         };
 
         container.innerHTML = badges.map(badgeName => `
-            <div class="badge-item" title="${badgeName}">
-                <div style="font-size: 2rem;">${badgeIcons[badgeName] || "🏅"}</div>
-                <div style="font-size: 0.7rem; font-weight: bold; color: #2d3748; margin-top: 5px;">${badgeName}</div>
+            <div class="badge-item">
+                <span style="font-size: 2rem; display:block;">${badgeIcons[badgeName] || "🏅"}</span>
+                <span style="font-size: 0.7rem; font-weight: bold; color: #2d3748;">${badgeName}</span>
             </div>
         `).join("");
 
