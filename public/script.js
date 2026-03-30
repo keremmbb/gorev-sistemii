@@ -497,8 +497,7 @@ async function loadRejectedPurchases() {
         if (section) section.style.display = "block";
         container.innerHTML = ""; 
 
-        rejectedItems.forEach(item => {
-            rejectedItems.forEach(item => {
+       rejectedItems.forEach(item => {
     const div = document.createElement("div");
     div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #feb2b2; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
     
