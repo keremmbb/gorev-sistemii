@@ -294,24 +294,14 @@ async function archiveTask(taskId) {
 }
 
 // -------------------- MARKET & SEPET SİSTEMİ --------------------
-let cart = []; // Sepeti tutan dizi
 
-// Ürünü sepete ekleme fonksiyonu
-function addToCart(name, cost) {
-    cart.push({ name, cost });
-    updateCartUI();
-}
 
-function removeFromCart(rewardName) {
-    const itemIndex = cart.findIndex(item => item.rewardName === rewardName);
-    if (itemIndex > -1) {
-        if (cart[itemIndex].quantity > 1) {
-            cart[itemIndex].quantity -= 1;
-        } else {
-            cart.splice(itemIndex, 1);
-        }
-    }
+
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
     updateCartUI();
+    showCart(); // Listeyi güncellemek için tekrar çağır
 }
 
 function updateCartUI() {
@@ -960,31 +950,24 @@ const marketRewards = [
 
 function loadMarketItems() {
     const grid = document.getElementById("market-items-grid");
-    const balanceDisplay = document.getElementById("market-balance");
-    const currentGP = parseInt(document.getElementById("total-points")?.innerText || "0");
-    
-    if (balanceDisplay) balanceDisplay.innerText = currentGP;
     if (!grid) return;
 
     grid.innerHTML = marketRewards.map(item => `
         <div class="market-card">
             <div style="font-size: 2.5rem; margin-bottom: 10px;">${item.icon}</div>
-            <h4 style="margin: 5px 0; font-size: 1rem; color: #2d3748;">${item.name}</h4>
+            <h4 style="margin: 5px 0; font-size: 1rem;">${item.name}</h4>
             <div style="color: #4facfe; font-weight: bold; margin-bottom: 10px;">${item.cost} GP</div>
-            <button onclick="addToCart('${item.name}', ${item.cost})" 
-                style="width: 100%; padding: 10px; border-radius: 10px; border: none; 
-                background: #4facfe; color: white; cursor: pointer; 
-                font-weight: bold; transition: 0.3s;">
+            <button onclick="addToCart('${item.name}', ${item.cost}, '${item.icon}')" 
+                style="width: 100%; padding: 10px; border-radius: 10px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold;">
                 ➕ Sepete Ekle
             </button>
         </div>
     `).join("");
-    
-    updateCartUI(); // Sayfa açıldığında sepet butonunu kontrol et
+    updateCartUI();
 }
 
-function addToCart(name, cost) {
-    cart.push({ name, cost });
+function addToCart(name, cost, icon) {
+    cart.push({ name, cost, icon });
     updateCartUI();
 }
 async function buyReward(name, cost) {
@@ -1030,4 +1013,39 @@ function showSection(section) {
         // KRİTİK NOKTA: Market açıldığında ödülleri yükle diyoruz
         loadMarketItems(); 
     }
+}
+function closeCart() {
+    document.getElementById("cart-modal").style.display = "none";
+}
+let cart = [];
+
+// Sepeti Aç
+function showCart() {
+    const modal = document.getElementById("cart-modal");
+    const list = document.getElementById("cart-items-list");
+    const totalDisplay = document.getElementById("cart-total-amount");
+    
+    if (cart.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:#a0aec0; padding:20px;">Sepetin şu an boş.</p>';
+        document.getElementById("modal-checkout-btn").style.display = "none";
+    } else {
+        list.innerHTML = cart.map((item, index) => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 10px; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">${item.icon}</span>
+                    <div>
+                        <div style="font-weight: bold; font-size: 0.9rem;">${item.name}</div>
+                        <div style="font-size: 0.8rem; color: #4facfe;">${item.cost} GP</div>
+                    </div>
+                </div>
+                <button onclick="removeFromCart(${index})" style="background: #fff5f5; border: 1px solid #feb2b2; color: #f56565; padding: 5px 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;">❌</button>
+            </div>
+        `).join("");
+        
+        const total = cart.reduce((sum, item) => sum + item.cost, 0);
+        totalDisplay.innerText = `${total} GP`;
+        document.getElementById("modal-checkout-btn").style.display = "block";
+    }
+    
+    modal.style.display = "flex";
 }
