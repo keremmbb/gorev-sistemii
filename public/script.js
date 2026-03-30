@@ -938,23 +938,33 @@ async function loadMyBadges() {
     if (!container || !userId) return;
 
     try {
-        const res = await fetch(`http://localhost:3000/my-badges/${userId}`, {
-            headers: getAuthHeaders()
-        });
+        const res = await fetch(`/my-badges/${userId}`, { headers: getAuthHeaders() });
         const badges = await res.json();
-        if (badges.length > 0) {
-            container.innerHTML = "";
-            badges.forEach(badge => {
-                const badgeDiv = document.createElement("div");
-                badgeDiv.className = "badge-item";
-                badgeDiv.innerHTML = `
-                    <div style="font-size: 1.8rem;">${badge.badge_icon}</div>
-                    <div style="font-size: 10px; font-weight: bold; color: #2d3748; margin-top: 5px;">${badge.badge_name}</div>
-                `;
-                container.appendChild(badgeDiv);
-            });
+
+        if (badges.length === 0) {
+            container.innerHTML = '<p style="color: #a0aec0; font-size: 0.8rem; width:100%; text-align:center;">Henüz hiç rozet kazanmadın. Görevleri tamamla!</p>';
+            return;
         }
-    } catch (err) { console.error(err); }
+
+        // Rozet isimlerine göre emoji eşleştirme
+        const badgeIcons = {
+            "Kitap Kurdu": "📖",
+            "Temizlik Ustası": "🧹",
+            "Sabah Yıldızı": "☀️",
+            "Matematik Dehası": "🔢",
+            "Süper Evlat": "⭐"
+        };
+
+        container.innerHTML = badges.map(badgeName => `
+            <div class="badge-item" title="${badgeName}">
+                <div style="font-size: 2rem;">${badgeIcons[badgeName] || "🏅"}</div>
+                <div style="font-size: 0.7rem; font-weight: bold; color: #2d3748; margin-top: 5px;">${badgeName}</div>
+            </div>
+        `).join("");
+
+    } catch (error) {
+        console.error("Rozet yükleme hatası:", error);
+    }
 }
 
 // Bunu dashboard.html'deki body onload kısmına ekle:

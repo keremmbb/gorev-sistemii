@@ -468,4 +468,20 @@ app.get("/my-badges/:userId", auth, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+app.get("/my-badges/:userId", auth, async (req, res) => {
+    const { userId } = req.params;
+    try {
+        // Sadece durumu 'Tamamlandı' olan ve rozet ödülü boş olmayan görevleri getir
+        const result = await db.query(
+            "SELECT DISTINCT badge_reward FROM tasks WHERE assigned_to = $1 AND status = 'Tamamlandı' AND badge_reward IS NOT NULL AND badge_reward != ''",
+            [userId]
+        );
+        
+        const badges = result.rows.map(row => row.badge_reward);
+        res.json(badges);
+    } catch (error) {
+        console.error("Rozetler getirilirken hata:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

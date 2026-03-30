@@ -2,12 +2,43 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Öğrenci Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
+    <style>
+        /* Genel Durum ve Kart Stilleri */
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-select { border: 1px solid #e2e8f0; padding: 5px 10px; border-radius: 8px; font-size: 0.85rem; color: #4a5568; cursor: pointer; outline: none; transition: 0.3s; }
+        .status-select:hover { border-color: #4facfe; }
+        
+        /* Market Kartları */
+        .market-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8; transition: 0.3s; }
+        .market-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        
+        /* Rozet (Başarım) Stilleri */
+        .badge-item {
+            text-align: center; 
+            background: #f0f7ff; 
+            padding: 10px; 
+            border-radius: 12px; 
+            border: 2px solid #4facfe; 
+            min-width: 80px; 
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 10px rgba(79, 172, 254, 0.1);
+        }
+        .badge-item:hover { transform: scale(1.1); }
+        .badge-icon { font-size: 2rem; display: block; margin-bottom: 5px; }
+        .badge-name { font-size: 0.7rem; font-weight: bold; color: #2d3748; }
+
+        /* Arşiv ve Liste Temizliği */
+        ul { padding: 0; list-style: none; }
+    </style>
 </head>
 <body onload="loadMyTasks(); loadStudentPoints(); loadRejectedPurchases(); loadMyBadges();">
+
 <script>
+    // Giriş Kontrolü
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
 
@@ -15,6 +46,7 @@
         window.location.href = "index.html";
     }
 
+    // Arşiv Paneli Aç/Kapat
     function toggleArchive() {
         const list = document.getElementById("completedTaskList");
         const chevron = document.getElementById("archive-chevron");
@@ -27,11 +59,9 @@
         }
     }
 
+    // Rütbe Tablosu Aç/Kapat
     function toggleLevelTable() {
         const table = document.getElementById("levelTable");
-        const currentXp = document.getElementById("total-xp-display")?.innerText || "0";
-        if(document.getElementById("current-xp-info")) document.getElementById("current-xp-info").innerText = currentXp;
-
         if (table.style.display === "none" || table.style.display === "") {
             table.style.display = "block";
             table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -39,33 +69,39 @@
             table.style.display = "none";
         }
     }
-</script>
 
-<style>
-    .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-    .status-select { border: 1px solid #e2e8f0; padding: 5px 10px; border-radius: 8px; font-size: 0.85rem; color: #4a5568; cursor: pointer; outline: none; transition: 0.3s; }
-    .status-select:hover { border-color: #4facfe; }
-    .market-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8; transition: 0.3s; }
-    .market-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-    
-    .badge-item {
-        text-align: center; 
-        background: #f0f7ff; 
-        padding: 10px; 
-        border-radius: 12px; 
-        border: 2px solid #4facfe; 
-        min-width: 80px; 
-        transition: transform 0.3s ease;
+    // Bölüm Değiştirme (Görevler / Market)
+    function showSection(section) {
+        const tasks = document.getElementById('section-tasks');
+        const market = document.getElementById('section-market');
+        const btnTasks = document.getElementById('btn-tasks');
+        const btnMarket = document.getElementById('btn-market');
+
+        if (section === 'tasks') {
+            tasks.style.display = 'block';
+            market.style.display = 'none';
+            btnTasks.style.background = '#4facfe';
+            btnTasks.style.color = 'white';
+            btnMarket.style.background = '#e2e8f0';
+            btnMarket.style.color = '#4a5568';
+        } else {
+            tasks.style.display = 'none';
+            market.style.display = 'block';
+            btnMarket.style.background = '#4facfe';
+            btnMarket.style.color = 'white';
+            btnTasks.style.background = '#e2e8f0';
+            btnTasks.style.color = '#4a5568';
+            if(typeof loadMarketItems === 'function') loadMarketItems();
+        }
     }
-    .badge-item:hover { transform: scale(1.1); }
-</style>
+</script>
 
 <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', sans-serif;">
     
     <div style="text-align: center; margin-bottom: 25px;">
         <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; padding: 25px; border-radius: 25px; box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3); display: inline-block; width: 100%; box-sizing: border-box;">
             <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.9;">Mevcut Seviye: <span id="user-level" style="font-weight: bold;">1</span></div>
-            <div id="user-rank" style="font-size: 1.6rem; font-weight: bold; margin-bottom: 10px;">Çaylak Görevci</div>
+            <div id="user-rank" style="font-size: 1.6rem; font-weight: bold; margin-bottom: 10px;">Yükleniyor...</div>
             
             <div style="margin: 15px 0; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px; display: flex; justify-content: space-around;">
                 <div>
@@ -104,36 +140,42 @@
     </div>
 
     <div style="background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #edf2f7;">
-        <h3 style="margin-top: 0; color: #2d3748; font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">🏅 Başarımlarım</h3>
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">🏅 Kazandığım Rozetler</h3>
         <div id="badge-container" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
-            <p style="color: #a0aec0; font-size: 0.8rem;">Rozetler yükleniyor...</p>
+            <p style="color: #a0aec0; font-size: 0.8rem;">Rozetleriniz yükleniyor...</p>
         </div>
     </div>
 
     <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
-        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s;">📖 Görevlerim</button>
-        <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s;">🛒 Ödül Marketi</button>
+        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 15px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">📖 Görevlerim</button>
+        <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 15px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">🛒 Ödül Marketi</button>
     </div>
 
     <div id="section-tasks">
-        <ul id="taskList" style="padding: 0; list-style: none;"></ul>
-        <div id="section-archive" style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px;">
+        <ul id="taskList">
+            </ul>
+
+        <div id="section-archive" style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
             <div onclick="toggleArchive()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                <span style="color: #64748b; font-size: 0.9rem; font-weight: 600;">🏆 Tamamlananlar (<span id="completed-count">0</span>)</span>
+                <span style="color: #64748b; font-size: 0.9rem; font-weight: 600;">🏆 Tamamlanan Görevler (<span id="completed-count">0</span>)</span>
                 <span id="archive-chevron">▼</span>
             </div>
-            <ul id="completedTaskList" style="display: none; padding: 10px 0; list-style: none; margin-top: 10px;"></ul>
+            <ul id="completedTaskList" style="display: none; padding: 10px 0; margin-top: 10px;">
+                </ul>
         </div>
     </div>
 
     <div id="section-market" style="display: none;">
-        </div>
+        <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            </div>
+    </div>
 
     <div style="text-align: center; margin-top: 60px; padding-bottom: 40px;">
-        <button onclick="logout()" style="background-color: #ff4d4d; color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem;">
-            🚪 Sistemden Çıkış Yap
+        <button onclick="logout()" style="background-color: #ff4d4d; color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(255, 77, 77, 0.2);">
+            🚪 Güvenli Çıkış
         </button>
     </div>
 </div>
+
 </body>
 </html>
