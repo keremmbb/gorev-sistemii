@@ -137,58 +137,13 @@ async function loadMyAssignedTasks() {
         });
         const tasks = await response.json();
 
-        const lists = {
-            "Baslamadi": document.getElementById("parent-list-Baslamadi"),
-            "Baslandi": document.getElementById("parent-list-Baslandi"),
-            "DevamEdiyor": document.getElementById("parent-list-DevamEdiyor"),
-            "Tamamlandi": document.getElementById("parent-list-Tamamlandi")
-        };
+        // KRİTİK KONTROL: tasks bir liste değilse durdur
+        if (!Array.isArray(tasks)) {
+            console.error("Gelen veri bir liste değil:", tasks);
+            return;
+        }
 
-        // Önce listeleri temizle
-        Object.values(lists).forEach(list => { if(list) list.innerHTML = ""; });
-        
-        // Sayaçları sıfırla
-        ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandi"].forEach(s => {
-            const c = document.getElementById(`count-${s}`);
-            if(c) c.innerText = "0";
-        });
-
-        const counts = { "Baslamadi": 0, "Baslandi": 0, "DevamEdiyor": 0, "Tamamlandi": 0 };
-
-        tasks.forEach(task => {
-            // Backend'den gelen statüdeki boşlukları sil (Örn: "Devam Ediyor" -> "DevamEdiyor")
-            const statusKey = task.status.replace(/\s/g, '');
-            const targetList = lists[statusKey];
-
-            if (targetList) {
-                counts[statusKey]++;
-                const card = document.createElement("div");
-                card.className = "task-card";
-                card.style = "background:white; padding:10px; border-radius:8px; margin-bottom:10px; border-left:5px solid #4facfe; box-shadow:0 2px 4px rgba(0,0,0,0.1);";
-                
-                const deleteBtn = task.status !== 'Tamamlandı' 
-                    ? `<button onclick="deleteTask(${task.id})" style="background:#ff4d4d; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Sil</button>`
-                    : `<span style="color:green; font-size:11px; font-weight:bold;">✓ Tamamlandı</span>`;
-
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:start;">
-                        <div>
-                            <strong style="font-size:14px;">${task.title}</strong>
-                            <p style="font-size:12px; color:#666; margin:4px 0;">${task.assigned_to_email}</p>
-                        </div>
-                        ${deleteBtn}
-                    </div>
-                `;
-                targetList.appendChild(card);
-            }
-        });
-
-        // Sayaçları güncelle
-        Object.keys(counts).forEach(key => {
-            const countEl = document.getElementById(`count-${key}`);
-            if(countEl) countEl.innerText = counts[key];
-        });
-
+        // ... geri kalan forEach döngüsü kodların ...
     } catch (error) {
         console.error("Görevler yüklenirken hata:", error);
     }
