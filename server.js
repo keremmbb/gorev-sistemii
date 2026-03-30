@@ -301,14 +301,13 @@ app.post("/checkout", auth, async (req, res) => {
 });
 app.get("/rejected-purchases/:userId", auth, async (req, res) => {
     try {
-        // rejection_reason sütununu da sorguya ekledik
         const result = await db.query(
             "SELECT id, reward_name, cost, rejection_reason FROM purchases WHERE student_id = $1 AND status = 'Reddedildi' ORDER BY id DESC", 
             [req.params.userId]
         );
         res.json(result.rows);
     } catch (error) {
-        console.error("Reddedilenler çekilirken hata:", error);
+        console.error("Hata:", error);
         res.status(500).json({ message: "Hata" });
     }
 });
@@ -329,6 +328,28 @@ app.delete("/clear-rejected-purchase/:id", auth, async (req, res) => {
         res.json({ message: "Silindi" });
     } catch (error) {
         res.status(500).json({ message: "Hata" });
+    }
+});
+app.get("/user-stats/:userId", auth, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        // Son 7 günün tamamlanan görev sayılarını gün bazlı getirir
+        const result = await db.query(`
+            SELECT 
+                TO_CHAR(updated_at, 'DD Mon') as gun, 
+                COUNT(*) as miktar
+            FROM tasks 
+            WHERE assigned_to = $1 
+              AND status = 'Tamamlandı' 
+              AND updated_at >= NOW() - INTERVAL '7 days'
+            GROUP BY TO_CHAR(updated_at, 'DD Mon'), updated_at
+            ORDER BY updated_at ASC
+        `, [userId]);
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error("İstatistik hatası:", error);
+        res.status(500).json({ message: "Hata oluştu" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

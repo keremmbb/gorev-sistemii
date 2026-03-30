@@ -509,26 +509,26 @@ async function loadRejectedPurchases() {
 
         rejectedItems.forEach(item => {
             const div = document.createElement("div");
-            div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #feb2b2; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
+            div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #feb2b2; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);";
             
-            // Eğer veli bir neden yazdıysa onu göster, yazmadıysa varsayılan metni göster
-            const reasonHTML = item.rejection_reason 
-                ? `<div style="background: #fff5f5; padding: 8px; border-left: 4px solid #f56565; color: #c53030; font-size: 0.85rem; border-radius: 4px;">
-                    <strong>Veli Notu:</strong> ${item.rejection_reason}
+            // Veli notu varsa göster, yoksa standart iade bilgisini göster
+            const noteBox = item.rejection_reason 
+                ? `<div style="background: #fff5f5; padding: 10px; border-left: 4px solid #f56565; color: #c53030; font-size: 0.85rem; border-radius: 4px;">
+                    <strong>Veli Notu:</strong> "${item.rejection_reason}"
                    </div>`
-                : `<div style="font-size: 0.75rem; color: #718096;">${item.cost} GP hesabınıza iade edildi.</div>`;
+                : `<div style="font-size: 0.8rem; color: #718096;">💰 Tutar hesabınıza iade edildi.</div>`;
 
             div.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: #c53030; font-size: 1rem;">❌ Reddedildi: ${item.reward_name}</strong>
-                    <button onclick="dismissRejected(${item.id})" style="background: #fed7d7; border: none; color: #c53030; cursor: pointer; border-radius: 6px; padding: 5px 10px; font-weight: bold; font-size: 0.8rem;">Anladım</button>
+                    <strong style="color: #c53030;">❌ Reddedildi: ${item.reward_name}</strong>
+                    <button onclick="dismissRejected(${item.id})" style="background: #fed7d7; border: none; color: #c53030; cursor: pointer; border-radius: 6px; padding: 5px 12px; font-weight: bold; font-size: 0.8rem;">Tamam</button>
                 </div>
-                ${reasonHTML}
+                ${noteBox}
             `;
             container.appendChild(div);
         });
     } catch (error) {
-        console.error("Reddedilenler yüklenemedi:", error);
+        console.error("Yükleme hatası:", error);
     }
 }
 async function dismissRejected(id) {
@@ -547,5 +547,47 @@ async function dismissRejected(id) {
         }
     } catch (error) {
         console.error("Silme hatası:", error);
+    }
+}
+async function loadStatistics(studentId) {
+    try {
+        const res = await fetch(`/user-stats/${studentId}`, { headers: getAuthHeaders() });
+        const data = await res.json();
+
+        const labels = data.map(item => item.gun);
+        const values = data.map(item => item.miktar);
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+        
+        // Eğer daha önce bir grafik varsa onu yok et (yenileme hatasını önler)
+        if (window.myChartInstance) {
+            window.myChartInstance.destroy();
+        }
+
+        window.myChartInstance = new Chart(ctx, {
+            type: 'line', // Çizgi grafiği
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Tamamlanan Görevler',
+                    data: values,
+                    borderColor: '#4facfe',
+                    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4, // Çizgiyi kavisli yapar
+                    fill: true,
+                    pointBackgroundColor: '#4facfe'
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Grafik yüklenemedi:", error);
     }
 }
