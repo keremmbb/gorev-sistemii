@@ -454,13 +454,15 @@ async function loadRejectedPurchases() {
     if (!userId) return;
 
     try {
-        const res = await fetch(`/rejected-purchases/${userId}`, { headers: getAuthHeaders() });
+        const res = await fetch(`/rejected-purchases/${userId}`, { 
+            headers: { 'Authorization': `Bearer ${localStorage.getItem("token")}` } 
+        });
         const rejectedItems = await res.json();
         
         const container = document.getElementById("rejected-rewards-list");
         const section = document.getElementById("section-rejected-rewards");
 
-        if (rejectedItems.length === 0) {
+        if (!rejectedItems || rejectedItems.length === 0) {
             if (section) section.style.display = "none";
             return;
         }
@@ -470,18 +472,18 @@ async function loadRejectedPurchases() {
 
         rejectedItems.forEach(item => {
             const div = document.createElement("div");
-            div.style = "background: white; padding: 10px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid #f56565; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
+            div.style = "background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #feb2b2; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
             div.innerHTML = `
                 <div>
-                    <span style="font-weight: bold; color: #2d3748;">${item.reward_name}</span>
-                    <span style="font-size: 0.8rem; color: #e53e3e; margin-left: 10px;">(Puan İade Edildi 💰)</span>
+                    <strong style="color: #c53030;">❌ Reddedildi: ${item.reward_name}</strong>
+                    <div style="font-size: 0.75rem; color: #718096;">${item.cost} GP hesabınıza iade edildi.</div>
                 </div>
-                <button onclick="dismissRejected(${item.id})" style="background: #edf2f7; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; color: #718096;">✕</button>
+                <button onclick="dismissRejected(${item.id})" style="background: #fed7d7; border: none; color: #c53030; cursor: pointer; border-radius: 6px; padding: 5px 8px; font-weight: bold;">Kapat</button>
             `;
             container.appendChild(div);
         });
     } catch (error) {
-        console.error("Red listesi hatası:", error);
+        console.error("Reddedilenler yüklenemedi:", error);
     }
 }
 async function dismissRejected(purchaseId) {
@@ -494,4 +496,17 @@ async function dismissRejected(purchaseId) {
         loadRejectedPurchases(); // Listeyi tazele
         loadStudentPoints();    // Puan iadesi yansıdı mı kontrol et
     } catch (e) { console.error(e); }
+}
+async function dismissRejected(id) {
+    try {
+        const res = await fetch(`/clear-rejected-purchase/${id}`, { 
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem("token")}` }
+        });
+        if (res.ok) {
+            loadRejectedPurchases(); // Listeyi yenile
+        }
+    } catch (error) {
+        console.error("Silme hatası:", error);
+    }
 }

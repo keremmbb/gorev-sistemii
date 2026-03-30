@@ -233,18 +233,26 @@ app.get("/pending-purchases/:parentId", auth, async (req, res) => {
 app.post("/update-purchase-status", auth, async (req, res) => {
     const { purchaseId, status } = req.body;
     try {
-        // Eğer veli REDDETTİYSE puanı öğrenciye geri iade etmeliyiz
         if (status === "Reddedildi") {
-            const purchaseRes = await db.query("SELECT student_id, cost FROM purchases WHERE id = $1", [purchaseId]);
+            // Önce ödül bilgilerini alalım (Kim reddedildi, kaç para?)
+            const purchaseRes = await db.query("SELECT student_id, cost, reward_name FROM purchases WHERE id = $1", [purchaseId]);
+            
             if (purchaseRes.rows.length > 0) {
                 const { student_id, cost } = purchaseRes.rows[0];
+                // 1. Parayı İADE ET
                 await db.query("UPDATE users SET current_balance = current_balance + $1 WHERE id = $2", [cost, student_id]);
+                // 2. Durumu 'Reddedildi' yap (Öğrenci panelinde görünecek)
+                await db.query("UPDATE purchases SET status = 'Reddedildi' WHERE id = $1", [purchaseId]);
+                
+                return res.json({ message: "Ödül reddedildi ve puan iade edildi!" });
             }
         }
         
+        // Diğer durumlar (Onaylandı vs.)
         await db.query("UPDATE purchases SET status = $1 WHERE id = $2", [status, purchaseId]);
         res.json({ message: `İşlem ${status} olarak güncellendi.` });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: "Güncelleme hatası" });
     }
 });
@@ -286,13 +294,14 @@ app.post("/checkout", auth, async (req, res) => {
 });
 app.get("/rejected-purchases/:userId", auth, async (req, res) => {
     try {
+        // Sadece durumu 'Reddedildi' olanları getir
         const result = await db.query(
-            "SELECT * FROM purchases WHERE student_id = $1 AND status = 'Reddedildi'", 
+            "SELECT id, reward_name, cost FROM purchases WHERE student_id = $1 AND status = 'Reddedildi' ORDER BY id DESC", 
             [req.params.userId]
         );
         res.json(result.rows);
     } catch (error) {
-        res.status(500).json({ message: "Hata oluştu" });
+        res.status(500).json({ message: "Hata" });
     }
 });
 app.post("/clear-rejected-purchase", auth, async (req, res) => {
@@ -304,6 +313,14 @@ app.post("/clear-rejected-purchase", auth, async (req, res) => {
         res.json({ message: "Bildirim temizlendi." });
     } catch (error) {
         res.status(500).json({ message: "Temizleme hatası" });
+    }
+});
+app.delete("/clear-rejected-purchase/:id", auth, async (req, res) => {
+    try {
+        await db.query("DELETE FROM purchases WHERE id = $1 AND status = 'Reddedildi'", [req.params.id]);
+        res.json({ message: "Silindi" });
+    } catch (error) {
+        res.status(500).json({ message: "Hata" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
