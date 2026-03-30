@@ -180,34 +180,39 @@ async function addTask() {
     const emailEl = document.getElementById("assignedToEmail");
     const dateEl = document.getElementById("dueDate");
     const timeEl = document.getElementById("dueTime");
+    // Eğer HTML'de puan alanı eklediysen onu da al, yoksa manuel 100 gönderelim
+    const points = 100; 
 
     if (!titleEl.value || !emailEl.value) {
         return alert("Lütfen başlık ve öğrenci e-postasını girin.");
     }
 
-    // Tarih ISO formatı: 2023-10-25T14:30:00
     let isoDate = null;
     if (dateEl.value) {
         isoDate = `${dateEl.value}T${timeEl.value || "00:00"}:00`;
     }
 
     try {
-        const response = await fetch("/tasks", {
+        // URL'yi "/add-task" olarak düzelttik
+        const response = await fetch("/add-task", { 
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify({
                 title: titleEl.value,
                 description: descEl.value,
                 assignedToEmail: emailEl.value,
-                dueDate: isoDate
+                dueDate: isoDate,
+                points: points // Puan bilgisini ekledik
             })
         });
 
         if (response.ok) {
             alert("Görev başarıyla atandı!");
+            // Formu temizle
             titleEl.value = "";
             descEl.value = "";
-            loadMyAssignedTasks(); // Listeyi yenile
+            emailEl.value = "";
+            if(typeof loadMyAssignedTasks === "function") loadMyAssignedTasks(); 
         } else {
             const err = await response.json();
             alert("Hata: " + err.message);
