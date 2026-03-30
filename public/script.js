@@ -285,21 +285,33 @@ function updateCartUI() {
 
 async function checkout() {
     const userId = localStorage.getItem("userId");
-    // Sepetteki ürünleri alıyoruz (cart dizisi sende tanımlı olmalı)
-    if (cart.length === 0) return;
+    const token = localStorage.getItem("token"); // Token'ı al
+
+    if (!userId || !token) {
+        alert("Oturum süreniz dolmuş, lütfen tekrar giriş yapın.");
+        window.location.href = "index.html";
+        return;
+    }
+
+    if (cart.length === 0) {
+        alert("Sepetiniz boş!");
+        return;
+    }
 
     const totalCost = cart.reduce((sum, item) => sum + item.cost, 0);
 
     try {
         const res = await fetch("/checkout", {
             method: "POST",
-            headers: getAuthHeaders(),
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token // 401 hatasını bu satır çözer!
+            },
             body: JSON.stringify({
                 userId: userId,
                 items: cart.map(item => ({
                     rewardName: item.name,
-                    cost: item.cost,
-                    quantity: 1 // Veya item.quantity
+                    cost: item.cost
                 })),
                 totalCost: totalCost
             })
@@ -307,15 +319,16 @@ async function checkout() {
 
         if (res.ok) {
             alert("Satın alma başarılı! Veli onayı bekleniyor.");
-            cart = []; // Sepeti temizle
-            updateCartUI(); // Sepet arayüzünü güncelle
-            loadStudentPoints(); // Puanları güncelle
+            cart = [];
+            updateCartUI();
+            loadStudentPoints(); 
         } else {
             const err = await res.json();
             alert("Hata: " + err.message);
         }
     } catch (error) {
         console.error("Checkout hatası:", error);
+        alert("Bir ağ hatası oluştu.");
     }
 }
 
