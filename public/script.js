@@ -26,51 +26,60 @@ async function loadMyTasks() {
         
         if (taskList) taskList.innerHTML = "";
         if (completedTaskList) completedTaskList.innerHTML = "";
+        
         let doneCounter = 0;
 
         tasks.forEach(task => {
             const li = document.createElement("li");
             
-            // Rozet varsa kutu stilini değiştir
+            // Rozet kontrolü ve genel kutu stilleri
             const isBadgeTask = task.badge_reward && task.badge_reward !== "";
-            const badgeStyle = isBadgeTask ? "border: 2px solid #f6ad55; background: #fffcf0;" : "border: 1px solid #edf2f7; background: white;";
+            const badgeStyle = isBadgeTask 
+                ? "border: 2px solid #f6ad55; background: #fffcf0;" 
+                : "border: 1px solid #edf2f7; background: white;";
 
-            li.style = `padding: 15px; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; ${badgeStyle}`;
-            
-            const dateStr = typeof fixDate === "function" ? fixDate(task.due_date) : task.due_date;
-            
-            // Rozetli görevse ek simge göster
-            const badgeHtml = isBadgeTask ? `<div style="font-size: 0.7rem; color: #b7791f; font-weight: bold; margin-top: 4px;">🎁 Rozet Ödülü: ${task.badge_reward}</div>` : "";
+            // Temel stil tanımlaması
+            let baseStyle = `padding: 15px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; ${badgeStyle}`;
+
+            // --- TAMAMLANAN GÖREVLER İÇİN ÖZEL STİL VE KISITLAMA ---
+            if (task.status === 'Tamamlandı' || task.status === 'Onay Bekliyor') {
+                baseStyle += " opacity: 0.6; pointer-events: none; filter: grayscale(40%); cursor: not-allowed;";
+                doneCounter++;
+            }
+
+            li.style = baseStyle;
 
             li.innerHTML = `
-                <div style="flex: 1;">
-                    <div style="font-weight: bold; color: #2d3748; font-size: 1rem;">${task.title} ${isBadgeTask ? "✨" : ""}</div>
-                    <div style="font-size: 0.75rem; color: #718096; margin-top: 4px;">
-                        📅 ${dateStr} | 💰 <span style="color: #4facfe; font-weight: bold;">${task.points} GP</span>
-                    </div>
-                    ${badgeHtml}
-                </div>
                 <div>
-                    <select class="status-select" onchange="updateTaskStatus(${task.id}, this.value)">
-                        <option value="Baslamadi" ${task.status === 'Baslamadi' ? 'selected' : ''}>⏳ Başlamadı</option>
-                        <option value="Baslandi" ${task.status === 'Baslandi' ? 'selected' : ''}>🚀 Başlandı</option>
-                        <option value="DevamEdiyor" ${task.status === 'DevamEdiyor' ? 'selected' : ''}>🔄 Devam Ediyor</option>
-                        <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>✅ Tamamlandı</option>
-                    </select>
+                    <strong style="color: #2d3748; display: block;">${task.title}</strong>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                        <span style="background: #ebf8ff; color: #3182ce; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;">
+                            ${task.reward_points} GP
+                        </span>
+                        ${isBadgeTask ? `<span style="background: #fffaf0; color: #dd6b20; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;">🏆 ${task.badge_reward}</span>` : ""}
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    ${task.status === 'Tamamlandı' 
+                        ? '<span style="color: #48bb78; font-weight: bold; font-size: 0.85rem;">✅ Tamamlandı</span>' 
+                        : task.status === 'Onay Bekliyor'
+                        ? '<span style="color: #f6ad55; font-weight: bold; font-size: 0.85rem;">⏳ Onay Bekliyor</span>'
+                        : `<button onclick="completeTask(${task.id}, ${task.reward_points}, '${task.badge_reward || ""}')" class="complete-btn" style="background: #4facfe; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">Tamamla</button>`
+                    }
                 </div>
             `;
-            
-            if (task.status === "Tamamlandı") {
-                doneCounter++;
+
+            // Listelere dağıtma
+            if (task.status === 'Tamamlandı') {
                 if (completedTaskList) completedTaskList.appendChild(li);
             } else {
                 if (taskList) taskList.appendChild(li);
             }
         });
 
-        if (document.getElementById("completed-count")) {
-            document.getElementById("completed-count").innerText = doneCounter;
-        }
+        // Sayaç güncelleme
+        const doneCounterEl = document.getElementById("doneCounter");
+        if (doneCounterEl) doneCounterEl.innerText = doneCounter;
 
     } catch (error) {
         console.error("Görevler yüklenirken hata:", error);
