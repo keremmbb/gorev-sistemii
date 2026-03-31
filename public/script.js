@@ -1,12 +1,14 @@
-window.addEventListener('DOMContentLoaded', (event) => {
-    // Sayfa yüklenince 0.5 saniye bekle ve o kutuyu bulup yok et
-    setTimeout(() => {
-        const picker = document.getElementById('time-picker-container');
-        if (picker) {
-            picker.remove();
-            console.log("Zamanlayıcı zorla kaldırıldı!");
-        }
-    }, 500);
+const observer = new MutationObserver((mutations) => {
+    const picker = document.getElementById('time-picker-container');
+    if (picker) {
+        picker.remove();
+        console.log("Zamanlayıcı yakalandı ve yok edildi!");
+    }
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
 });
 // -------------------- GENEL AYARLAR & AUTH --------------------
 function logout() {
