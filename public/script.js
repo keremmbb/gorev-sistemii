@@ -23,28 +23,34 @@ async function loadMyTasks() {
         
         const taskList = document.getElementById("taskList");
         const completedTaskList = document.getElementById("completedTaskList");
-        const doneCounterEl = document.getElementById("doneCounter"); // Sayaç elementi
+        const completedCountEl = document.getElementById("completed-count"); // HTML'deki o 0 yazan yer
         
         if (taskList) taskList.innerHTML = "";
         if (completedTaskList) completedTaskList.innerHTML = "";
         
-        let doneCounter = 0; // Sayacı sıfırla
+        let completedCounter = 0; // Sayacı burada başlatıyoruz
 
         tasks.forEach(task => {
             const li = document.createElement("li");
+            
+            // Rozet kontrolü ve stil
             const isBadgeTask = task.badge_reward && task.badge_reward !== "";
             const badgeStyle = isBadgeTask ? "border: 2px solid #f6ad55; background: #fffcf0;" : "border: 1px solid #edf2f7; background: white;";
+            
             let baseStyle = `padding: 15px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; ${badgeStyle}`;
 
-            // EĞER GÖREV TAMAMLANDIYSA SAYAÇ ARTIR VE STİL UYGULA
-            if (task.status === 'Tamamlandı') {
-                doneCounter++; // Sayacı artır
-                baseStyle += " opacity: 0.6; pointer-events: none; filter: grayscale(40%);";
-            } else if (task.status === 'Onay Bekliyor') {
-                baseStyle += " opacity: 0.7; pointer-events: none;";
+            // TAMAMLANAN VEYA ONAY BEKLEYEN GÖREVLER İÇİN
+            if (task.status === 'Tamamlandı' || task.status === 'Onay Bekliyor') {
+                baseStyle += " opacity: 0.6; pointer-events: none; filter: grayscale(50%);";
+                
+                // Sadece 'Tamamlandı' olanları saymak istersen bu if kalsın:
+                if (task.status === 'Tamamlandı') {
+                    completedCounter++; 
+                }
             }
 
             li.style = baseStyle;
+
             li.innerHTML = `
                 <div>
                     <strong style="color: #2d3748; display: block;">${task.title}</strong>
@@ -60,21 +66,21 @@ async function loadMyTasks() {
                 </div>
             `;
 
-            // Listelere dağıt
+            // Listelere dağıtma
             if (task.status === 'Tamamlandı') {
-                completedTaskList.appendChild(li);
+                if (completedTaskList) completedTaskList.appendChild(li);
             } else {
-                taskList.appendChild(li);
+                if (taskList) taskList.appendChild(li);
             }
         });
 
-        // Ekranda sayıyı güncelle
-        if (doneCounterEl) {
-            doneCounterEl.innerText = doneCounter;
+        // EKRANDAKİ SAYIYI GÜNCELLEME (İstediğin kısım)
+        if (completedCountEl) {
+            completedCountEl.innerText = completedCounter;
         }
 
     } catch (error) {
-        console.error("Görev sayacı hatası:", error);
+        console.error("Görevler yüklenirken hata:", error);
     }
 }
 
