@@ -235,18 +235,29 @@ app.post("/buy-reward", auth, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        // Kullanıcı bakiyesini kontrol et ve düş
+        // 1. Önce kullanıcının yeterli puanı var mı tekrar kontrol et (Güvenlik için)
+        const userRes = await db.query("SELECT points FROM users WHERE id = $1", [userId]);
+        const currentPoints = userRes.rows[0].points;
+
+        if (currentPoints < cost) {
+            return res.status(400).json({ error: "Yetersiz bakiye." });
+        }
+
+        // 2. Bakiyeyi düş
         await db.query("UPDATE users SET points = points - $1 WHERE id = $2", [cost, userId]);
         
-        // Satın alma geçmişine/onay listesine ekle
+        // 3. Satın alma kaydını oluştur
+        // Tablondaki sütun isimlerinin item_name ve cost olduğundan emin ol
         await db.query(
             "INSERT INTO purchases (user_id, item_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
             [userId, rewardName, cost]
         );
 
-        res.json({ message: "Satın alma başarılı, onay bekleniyor." });
+        res.json({ message: "Satın alma başarılı!" });
     } catch (error) {
-        res.status(500).json({ error: "İşlem başarısız." });
+        // Terminalde hatanın ne olduğunu tam görmek için:
+        console.error("❌ Satın alma hatası:", error.message);
+        res.status(500).json({ error: "İşlem başarısız: " + error.message });
     }
 });
 app.get("/pending-purchases/:parentId", auth, async (req, res) => {
