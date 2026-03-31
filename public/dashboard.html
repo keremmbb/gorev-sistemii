@@ -81,6 +81,16 @@
             background: #f8fafc;
             margin-top: 10px;
         }
+            #time-picker-container, 
+            #task-time,
+            button[onclick="confirmTime()"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            position: absolute !important;
+            left: -9999px !important;
+        }
     </style>
 </head>
 <body onload="loadMyTasks(); loadStudentPoints(); loadRejectedPurchases(); loadMyBadges();">
