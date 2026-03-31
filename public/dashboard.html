@@ -20,15 +20,17 @@
         .badge-item {
             text-align: center; 
             background: #f0f7ff; 
-            padding: 15px; 
+            padding: 10px; 
             border-radius: 12px; 
             border: 2px solid #4facfe; 
-            min-width: 90px; 
+            min-width: 80px; 
             transition: transform 0.3s ease;
             box-shadow: 0 4px 10px rgba(79, 172, 254, 0.1);
+            position: relative;
         }
-        .badge-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
-        .badge-name { font-size: 0.8rem; font-weight: bold; color: #2d3748; }
+        .badge-item:hover { transform: scale(1.1); }
+        .badge-icon { font-size: 2rem; display: block; margin-bottom: 5px; }
+        .badge-name { font-size: 0.7rem; font-weight: bold; color: #2d3748; }
 
         /* Sepet Butonu Özel Stil */
         #checkout-btn {
@@ -49,7 +51,7 @@
 
         ul { padding: 0; list-style: none; }
 
-        /* Modal Stilleri */
+        /* Modal Stili */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -60,14 +62,13 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            backdrop-filter: blur(4px);
         }
         .modal-content {
             background: white;
             width: 100%;
-            max-width: 450px;
+            max-width: 400px;
             border-radius: 20px;
-            padding: 25px;
+            padding: 20px;
             box-shadow: 0 15px 30px rgba(0,0,0,0.2);
         }
     </style>
@@ -78,11 +79,12 @@
     // Giriş Kontrolü
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
+
     if (!userId || (role && role.toLowerCase() !== "student")) {
         window.location.href = "index.html";
     }
 
-    // Modal Fonksiyonları
+    // Modal Kontrolleri
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -157,19 +159,16 @@
 
             <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
                 <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">📜 Rütbe Tablosu</button>
-                <button onclick="openModal('badge-modal')" style="background: #fff; border: none; color: #4facfe; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">🏅 Rozetlerim</button>
+                <button onclick="openModal('badge-modal')" style="background: #fff; border: none; color: #4facfe; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">🏅 Rozetlerim</button>
             </div>
 
-            <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; color: #333;">
-                <h4 style="margin-top: 0; color: #2d3748; border-bottom: 2px solid #f0f4f8; padding-bottom: 10px; text-align: center;">🏆 Rütbe Gereksinimleri</h4>
-                <table style="width: 100%; font-size: 0.95rem; text-align: left; border-collapse: collapse;">
-                    <tbody>
-                        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">0 - 500 XP</td> <td style="text-align: right; font-weight: bold; color: #718096;">⚪ Çaylak</td> </tr>
-                        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">501 - 1500 XP</td> <td style="text-align: right; font-weight: bold; color: #3182ce;">🔵 Asistan</td> </tr>
-                        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">1501 - 3000 XP</td> <td style="text-align: right; font-weight: bold; color: #805ad5;">🟣 Usta</td> </tr>
-                        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">3001 - 6000 XP</td> <td style="text-align: right; font-weight: bold; color: #38a169;">🟢 Kahraman</td> </tr>
-                        <tr> <td style="padding: 12px 5px;">6000+ XP</td> <td style="text-align: right; font-weight: bold; color: #d69e2e;">👑 Efsane</td> </tr>
-                    </tbody>
+            <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 20px; color: #333; text-align: left;">
+                <h4 style="margin: 0 0 10px 0; text-align: center;">🏆 Rütbe Gereksinimleri</h4>
+                <table style="width: 100%; font-size: 0.85rem;">
+                    <tr style="border-bottom: 1px solid #eee;"><td>0 - 500 XP</td><td style="text-align: right;">⚪ Çaylak</td></tr>
+                    <tr style="border-bottom: 1px solid #eee;"><td>501 - 1500 XP</td><td style="text-align: right;">🔵 Asistan</td></tr>
+                    <tr style="border-bottom: 1px solid #eee;"><td>1501 - 3000 XP</td><td style="text-align: right;">🟣 Usta</td></tr>
+                    <tr><td>6000+ XP</td><td style="text-align: right;">👑 Efsane</td></tr>
                 </table>
             </div>
         </div>
@@ -192,29 +191,27 @@
     </div>
 
     <div id="section-market" style="display: none;">
-        <div style="margin-bottom: 20px;">
-            <div onclick="showCart()" style="background: #f0f7ff; border: 1px solid #e0e7ff; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; transition: 0.3s; width: 100%;">
-                <span style="font-size: 0.9rem; color: #1e40af; font-weight: 600;">🛒 Sepetim: <span id="cart-count">0</span> Ürün</span>
-            </div>
+        <div onclick="showCart()" style="background: #f0f7ff; border: 1px solid #e0e7ff; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; width: 100%;">
+            <span style="font-size: 0.9rem; color: #1e40af; font-weight: 600;">🛒 Sepetim: <span id="cart-count">0</span> Ürün</span>
         </div>
-        <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;"></div>
-        <button id="checkout-btn" onclick="checkout()" style="display: none;">✅ Sepeti Onayla ve Satın Al</button>
+        <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;"></div>
     </div>
 
     <div style="text-align: center; margin-top: 60px; padding-bottom: 40px;">
-        <button onclick="logout()" style="background-color: #ff4d4d; color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(255, 77, 77, 0.2);">🚪 Güvenli Çıkış</button>
+        <button onclick="logout()" style="background-color: #ff4d4d; color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem;">🚪 Güvenli Çıkış</button>
     </div>
 </div>
 
 <div id="badge-modal" class="modal-overlay">
     <div class="modal-content">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
-            <h3 style="margin: 0; color: #2d3748; display: flex; align-items: center; gap: 10px;">🏅 Başarımlarım</h3>
+            <h3 style="margin: 0; color: #2d3748;">🏅 Rozetlerim</h3>
             <button onclick="closeModal('badge-modal')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #a0aec0;">&times;</button>
         </div>
-        <div id="badge-container" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-height: 400px; overflow-y: auto; padding: 10px;">
-            <p style="color: #a0aec0; font-size: 0.9rem;">Rozetlerin yükleniyor...</p>
+        <div id="badge-container" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-height: 300px; overflow-y: auto;">
+            <p style="color: #a0aec0; font-size: 0.8rem;">Yükleniyor...</p>
         </div>
+        <button onclick="closeModal('badge-modal')" style="width: 100%; margin-top: 20px; padding: 12px; border-radius: 12px; border: none; background: #f1f5f9; color: #475569; font-weight: bold; cursor: pointer;">Kapat</button>
     </div>
 </div>
 
@@ -224,25 +221,12 @@
             <h3 style="margin: 0; color: #2d3748; font-size: 1.1rem;">🛒 Sepet Detayı</h3>
             <button onclick="closeCart()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #a0aec0;">&times;</button>
         </div>
-        <div id="cart-items-list" style="max-height: 250px; overflow-y: auto;"></div>
+        <div id="cart-items-list"></div>
         <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
-            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; color: #2d3748; margin-bottom: 15px;">
-                <span>Toplam:</span>
-                <span id="cart-total-amount">0 GP</span>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 15px;">
+                <span>Toplam:</span><span id="cart-total-amount">0 GP</span>
             </div>
-            <button onclick="checkout()" id="final-checkout-btn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(72, 187, 120, 0.2); transition: 0.3s;">✅ Alışverişi Tamamla</button>
-        </div>
-    </div>
-</div>
-
-<div id="confirm-modal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 380px; text-align: center;">
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">🗑️</div>
-        <h3 id="confirm-title" style="margin: 0 0 10px 0; color: #2d3748; font-size: 1.4rem;">Emin misiniz?</h3>
-        <p id="confirm-text" style="color: #718096; margin-bottom: 25px; line-height: 1.5;">Bu ürünü sepetten tamamen silmek istediğinize emin misiniz?</p>
-        <div style="display: flex; gap: 12px; justify-content: center;">
-            <button id="confirm-cancel-btn" onclick="closeModal('confirm-modal')" style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #4a5568; cursor: pointer; font-weight: bold;">Vazgeç</button>
-            <button id="confirm-yes-btn" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #f56565; color: white; cursor: pointer; font-weight: bold;">Evet, Sil</button>
+            <button onclick="checkout()" id="final-checkout-btn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: #48bb78; color: white; font-weight: bold; cursor: pointer;">✅ Alışverişi Tamamla</button>
         </div>
     </div>
 </div>
