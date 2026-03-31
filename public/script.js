@@ -1173,3 +1173,10 @@ function confirmTime() {
     
     alert("Saat ayarlandı: " + selectedTime);
 }
+document.getElementById('dueTime')?.addEventListener('change', function() {
+    const el = this;
+    // Küçük bir gecikme ile odağı kaydırarak panelin kapanmasını zorla
+    setTimeout(() => {
+        el.blur();
+    }, 50);
+});
