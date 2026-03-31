@@ -79,8 +79,8 @@
             border-radius: 12px;
             font-size: 16px;
             background: #f8fafc;
-            margin-top: 10px;
             -webkit-appearance: none;
+            outline: none;
         }
     </style>
 </head>
@@ -94,18 +94,17 @@
         window.location.href = "index.html";
     }
 
-    // SAATİ KAPATAN KRİTİK FONKSİYON
-    function handleTimeChange(inputElement) {
-        // Seçim yapıldığı an odağı kaldır
-        inputElement.blur();
+    // iOS Kapanmayan Saat Sorunu İçin Onay Fonksiyonu
+    function confirmTime() {
+        const timeInput = document.getElementById('task-time');
+        if (!timeInput.value) return;
         
-        // Saati seçtikten sonra seçiciyi zorla kapatmak için tipi saniyelik değiştir
-        const val = inputElement.value;
-        inputElement.type = 'text';
-        setTimeout(() => {
-            inputElement.type = 'time';
-            inputElement.value = val;
-        }, 50);
+        // Odağı butona çekerek saati kapatır
+        timeInput.blur();
+        window.focus();
+        
+        // Kaydedildiğine dair küçük bir görsel efekt (isteğe bağlı)
+        console.log("Saat Ayarlandı:", timeInput.value);
     }
 
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -181,7 +180,7 @@
                 <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">📜 Rütbe Tablosu</button>
                 <button onclick="openModal('badge-modal')" style="background: #fff; border: none; color: #4facfe; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">🏅 Rozetlerim</button>
             </div>
-            
+
             <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 20px; color: #333; text-align: left;">
                 <h4 style="margin: 0 0 10px 0; text-align: center;">🏆 Rütbe Gereksinimleri</h4>
                 <table style="width: 100%; font-size: 0.85rem;">
@@ -195,8 +194,11 @@
     </div>
 
     <div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <label style="font-size: 0.85rem; color: #718096; font-weight: bold;">🕒 Görev Zamanlayıcı</label>
-        <input type="time" id="task-time" class="time-input-styled" oninput="handleTimeChange(this)" onchange="this.blur()">
+        <label style="font-size: 0.85rem; color: #718096; font-weight: bold; display: block; margin-bottom: 5px;">🕒 Görev Zamanlayıcı</label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="time" id="task-time" class="time-input-styled" style="flex: 1; margin-top: 0;">
+            <button onclick="confirmTime()" style="background: #4facfe; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; white-space: nowrap;">Tamam</button>
+        </div>
     </div>
 
     <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
@@ -251,9 +253,7 @@
             <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 15px;">
                 <span>Toplam:</span><span id="cart-total-amount">0 GP</span>
             </div>
-            <button onclick="checkout()" id="final-checkout-btn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(72, 187, 120, 0.2); transition: 0.3s;">
-                ✅ Alışverişi Tamamla
-            </button>
+            <button onclick="checkout()" id="final-checkout-btn">✅ Siparişi Onayla</button>
         </div>
     </div>
 </div>

@@ -1155,3 +1155,21 @@ function handleTimeChange(inputElement) {
 
     console.log("Saat Seçildi ve Kapatıldı:", currentVal);
 }
+function confirmTime() {
+    const timeInput = document.getElementById('task-time');
+    const selectedTime = timeInput.value;
+
+    if (!selectedTime) {
+        alert("Lütfen önce bir saat seçin!");
+        return;
+    }
+
+    // Seçiciyi ve klavyeyi zorla kapat
+    timeInput.blur();
+    window.focus(); 
+
+    // Saati yerel hafızaya kaydet veya kullan
+    localStorage.setItem("selectedTaskTime", selectedTime);
+    
+    alert("Saat ayarlandı: " + selectedTime);
+}
