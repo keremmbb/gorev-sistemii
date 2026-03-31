@@ -216,7 +216,10 @@ app.get("/get-user-id", auth, async (req, res) => {
 app.get("/user-points/:userId", auth, async (req, res) => {
     try {
         const userId = parseInt(req.params.userId);
-        const result = await db.query("SELECT total_points, current_balance FROM users WHERE id = $1", [userId]);
+        const result = await db.query(
+    "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+    [userId, rewardName, cost]
+);
         
         if (result.rows.length === 0) {
             return res.json({ total_points: 0, current_balance: 0 });
@@ -231,8 +234,6 @@ app.get("/user-points/:userId", auth, async (req, res) => {
         res.status(500).json({ error: "Veritabanı hatası" });
     }
 });
-
-// GÜNCELLENMİŞ SATIN ALMA FONKSİYONU
 app.post("/buy-reward", auth, async (req, res) => {
     const { rewardName, cost } = req.body;
     const userId = req.user.id;
@@ -247,6 +248,7 @@ app.post("/buy-reward", auth, async (req, res) => {
 
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [cost, userId]);
         
+        // BURASI: Sütun isimleri veritabanıyla (student_id, reward_name) tam uyumlu olmalı
         await db.query(
             "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
             [userId, rewardName, cost]
@@ -254,38 +256,7 @@ app.post("/buy-reward", auth, async (req, res) => {
 
         res.json({ message: "Satın alma başarılı!" });
     } catch (error) {
-        console.error("Satın alma hatası:", error);
-        res.status(500).json({ error: "İşlem başarısız." });
-    }
-});
-app.post("/buy-reward", auth, async (req, res) => {
-    const { rewardName, cost } = req.body;
-    const userId = req.user.id;
-
-    try {
-        // 1. Puanı çek (points yerine current_balance kullanıyoruz)
-        const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
-        
-        if (userRes.rows.length === 0) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
-
-        const balance = userRes.rows[0].current_balance || 0;
-
-        if (balance < cost) {
-            return res.status(400).json({ error: "Yetersiz bakiye." });
-        }
-
-        // 2. Bakiyeyi düş
-        await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [cost, userId]);
-        
-        // 3. Kaydı oluştur
-        await db.query(
-            "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
-            [userId, rewardName, cost]
-        );
-
-        res.json({ message: "Satın alma başarılı!" });
-    } catch (error) {
-        console.error("Hata:", error.message);
+        console.error("❌ Satın alma hatası:", error.message);
         res.status(500).json({ error: "İşlem başarısız." });
     }
 });
@@ -342,24 +313,21 @@ app.post("/archive-task-parent", auth, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Hata oluştu." });
     }
-});
+}); 
 app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
     
     try {
-        // 1. Bakiyeyi kontrol et
         const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
-        const currentBalance = userRes.rows[0].current_balance;
+        const currentBalance = userRes.rows[0]?.current_balance || 0;
 
         if (currentBalance < totalCost) {
             return res.status(400).json({ message: "Yetersiz bakiye!" });
         }
 
-        // 2. Bakiyeyi DÜŞ (Toplam tutar kadar)
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [totalCost, userId]);
         
-        // 3. HER ÜRÜN İÇİN AYRI SATIR EKLE
-        // items: [{rewardName: 'Oyun', cost: 100}, {rewardName: 'Oyun', cost: 100}]
+        // BURASI: Döngü içindeki INSERT sorgusunu güncelle
         for (const item of items) {
             await db.query(
                 "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
@@ -369,7 +337,7 @@ app.post("/checkout", auth, async (req, res) => {
 
         res.json({ message: "İşlem başarılı" });
     } catch (error) {
-        console.error(error);
+        console.error("Checkout hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
