@@ -924,13 +924,27 @@ function showCart() {
                 </div>
                 
                 <div style="display: flex; align-items: center; background: #f7fafc; border-radius: 8px; padding: 4px; gap: 10px;">
-                    <button onclick="changeQuantity(${index}, -1)" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: #edf2f7; cursor: pointer; font-weight: bold; color: #4a5568;">-</button>
+                    <button onclick="changeQuantity(${index}, -1)" 
+                        style="width: 32px; height: 32px; border-radius: 6px; border: none; 
+                               background: ${item.quantity === 1 ? '#fff5f5' : '#edf2f7'}; 
+                               cursor: pointer; font-weight: bold; 
+                               color: ${item.quantity === 1 ? '#f56565' : '#4a5568'}; 
+                               transition: 0.2s; display: flex; align-items: center; justify-content: center;">
+                        ${item.quantity === 1 ? '🗑️' : '-'}
+                    </button>
+                    
                     <span style="font-weight: bold; min-width: 20px; text-align: center; color: #2d3748;">${item.quantity}</span>
-                    <button onclick="changeQuantity(${index}, 1)" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: #edf2f7; cursor: pointer; font-weight: bold; color: #4a5568;">+</button>
+                    
+                    <button onclick="changeQuantity(${index}, 1)" 
+                        style="width: 32px; height: 32px; border-radius: 6px; border: none; 
+                               background: #edf2f7; cursor: pointer; font-weight: bold; 
+                               color: #4a5568; transition: 0.2s; display: flex; align-items: center; justify-content: center;">
+                        +
+                    </button>
                 </div>
 
-                <button onclick="removeFromCart(${index})" style="margin-left: 15px; background: none; border: none; color: #feb2b2; cursor: pointer; font-size: 1.1rem; transition: 0.2s;" onmouseover="this.style.color='#f56565'" onmouseout="this.style.color='#feb2b2'">
-                    🗑️
+                <button onclick="removeFromCart(${index})" style="margin-left: 15px; background: none; border: none; color: #cbd5e0; cursor: pointer; font-size: 1.1rem; transition: 0.2s;" onmouseover="this.style.color='#f56565'" onmouseout="this.style.color='#cbd5e0'">
+                    &times;
                 </button>
             </div>
         `).join("");
@@ -1067,14 +1081,26 @@ async function rejectPurchase(id) {
 }
 function changeQuantity(index, delta) {
     if (cart[index]) {
-        cart[index].quantity += delta;
-
-        // Eğer miktar 1'in altına düşerse ürünü sepetten tamamen çıkar
-        if (cart[index].quantity <= 0) {
-            cart.splice(index, 1);
+        // Eğer miktar 1 ise ve kullanıcı azaltmaya (-1) bastıysa
+        if (cart[index].quantity === 1 && delta === -1) {
+            const confirmDelete = confirm(`${cart[index].name} ürününü sepetten silmek istiyor musunuz?`);
+            
+            if (confirmDelete) {
+                cart.splice(index, 1); // Kullanıcı 'Tamam' derse sil
+            } else {
+                return; // 'İptal' derse hiçbir şey yapma, fonksiyondan çık
+            }
+        } else {
+            // Diğer durumlarda (miktar 1'den büyükse veya artırılıyorsa) normal işlemi yap
+            cart[index].quantity += delta;
+            
+            // Güvenlik önlemi: Miktar bir şekilde 0 veya altına düşerse sil
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
         }
 
         updateCartUI();
-        showCart(); // Sepet açık olduğu için listeyi anlık yeniliyoruz
+        showCart(); // Sepet listesini anlık yenile
     }
 }
