@@ -327,55 +327,35 @@ app.post("/archive-task-parent", auth, async (req, res) => {
 // server.js içindeki ilgili endpoint
 app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
-    
+
     try {
-        // 1. Kullanıcı bakiye ve email kontrolü
-        const userRes = await db.query("SELECT current_balance, email FROM users WHERE id = $1", [userId]);
-        
-        if (userRes.rows.length === 0) {
-            return res.status(404).json({ message: "Kullanıcı bulunamadı." });
-        }
-
-        const currentBalance = userRes.rows[0].current_balance;
-        const studentEmail = userRes.rows[0].email;
-
-        if (currentBalance < totalCost) {
-            return res.status(400).json({ message: "Yetersiz bakiye! Lütfen sepetinizi düzenleyin." });
-        }
-
-        // 2. Bakiyeyi düş
-        await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [totalCost, userId]);
-        
-        let itemsHtml = "";
-
-        // 3. Ürünleri adetleri (quantity) kadar veritabanına ekle
+        // 1. ÖNCE veritabanına ödülleri kaydetmeyi dene
+        // Veritabanı "reward_name" beklediği için item.reward_name kullanıyoruz
         for (const item of items) {
-            for (let i = 0; i < item.quantity; i++) {
-                await db.query(
-                    "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
-                    [userId, item.rewardName, item.cost]
-                );
-            }
-            itemsHtml += `<li><b>${item.quantity} adet</b> ${item.rewardName} (${item.cost} GP / adet)</li>`;
+            await db.query(
+                "INSERT INTO purchases (user_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+                [userId, item.reward_name, item.cost]
+            );
         }
 
-        // 4. Veliye mail gönder
-        await sendMail(
-            'keremacar3754is@gmail.com', 
-            "🛒 Yeni Sepet Onay İsteği", 
-            `<h3>Öğrenciniz Yeni Bir Sipariş Verdi!</h3>
-             <p><b>Öğrenci:</b> ${studentEmail}</p>
-             <p><b>Sipariş Detayı:</b></p>
-             <ul>${itemsHtml}</ul>
-             <hr>
-             <p><b>Toplam Kesilen Tutar:</b> <span style="color:green;">${totalCost} GP</span></p>
-             <p>Onaylamak veya reddetmek için veli paneline giriş yapınız.</p>`
+        // 2. Ödüller başarıyla kaydedildiyse ŞİMDİ puanı düş
+        const userRes = await db.query(
+            "UPDATE users SET points = points - $1 WHERE id = $2 RETURNING points",
+            [totalCost, userId]
         );
 
-        res.json({ message: "Sepet başarıyla gönderildi ve veliye bildirildi!" });
+        if (userRes.rowCount === 0) {
+            throw new Error("Kullanıcı bulunamadı veya puan güncellenemedi.");
+        }
+
+        res.json({ 
+            message: "Satın alma başarılı, veli onayına gönderildi.", 
+            newPoints: userRes.rows[0].points 
+        });
 
     } catch (error) {
-        console.error("❌ Checkout Hatası:", error.message);
+        console.error("Checkout Hatası:", error);
+        // Hata mesajını detaylı gönderiyoruz ki sorunu görebilelim
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });

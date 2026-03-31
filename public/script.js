@@ -1092,24 +1092,20 @@ function changeQuantity(index, delta) {
     }
 }
 async function checkout() {
-    // 1. Sepet kontrolü
     if (!cart || cart.length === 0) {
-        alert("Sepetiniz boş! Marketten ürün ekleyin.");
+        alert("Sepetiniz boş!");
         return;
     }
 
     const userId = localStorage.getItem("userId");
     const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
 
-    // 2. RENDER LOGLARINDAKİ HATAYI ÇÖZEN KISIM:
-    // Sunucu ve Veritabanı "reward_name" bekliyor. Sepetteki "name"i buraya eşliyoruz.
+    // Sunucu ve DB "reward_name" beklediği için veriyi hazırlıyoruz
     const itemsToPost = cart.map(item => ({
-        reward_name: item.name, 
+        reward_name: item.name, // Burası çok kritik!
         cost: item.cost,
         quantity: item.quantity || 1
     }));
-
-    console.log("Satın alma isteği gönderiliyor:", { userId, items: itemsToPost, totalCost });
 
     try {
         const res = await fetch("/checkout", {
@@ -1122,6 +1118,8 @@ async function checkout() {
             })
         });
 
+        const data = await res.json();
+
         if (res.ok) {
             alert("Harika! Siparişin veli onayına gönderildi. 🚀");
             cart = []; 
@@ -1129,9 +1127,8 @@ async function checkout() {
             closeModal('cart-modal');
             if (typeof loadStudentPoints === 'function') loadStudentPoints();
         } else {
-            const errorData = await res.json();
-            alert("Hata: " + (errorData.message || "Satın alma başarısız."));
-            // Hata olsa bile puanları yenile ki düşmüş gibi görünmesin
+            alert("Hata: " + data.message);
+            // Puan hatalı düştüyse arayüzü tazeleyelim
             if (typeof loadStudentPoints === 'function') loadStudentPoints();
         }
     } catch (error) {
