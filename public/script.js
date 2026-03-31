@@ -232,21 +232,29 @@ async function loadMyAssignedTasks() {
 
 async function addTask() {
     const title = document.getElementById("taskTitle").value;
-    const studentEmail = document.getElementById("studentSelect").value;
-    const points = document.getElementById("taskPoints").value; // Yeni eklenen puan
-    const badge = document.getElementById("taskBadge").value; // Eğer rozet varsa
+    const description = document.getElementById("taskDescription").value;
+    const assignedToEmail = document.getElementById("assignedToEmail").value;
+    const dueDate = document.getElementById("dueDate").value;
+    const dueTime = document.getElementById("dueTime").value;
+    const badgeReward = document.getElementById("taskBadge").value;
+    
+    // YENİ: HTML'e eklediğimiz puan alanını buradan alıyoruz
+    const rewardPoints = document.getElementById("taskPoints").value; 
 
-    if (!title || !studentEmail || !points) {
-        alert("Lütfen tüm alanları doldurun!");
+    if (!title || !assignedToEmail || !rewardPoints) {
+        alert("Lütfen en azından Başlık, Öğrenci E-postası ve Puan alanlarını doldurun!");
         return;
     }
 
     const taskData = {
-        title: title,
-        assigned_to_email: studentEmail,
-        reward_points: parseInt(points), // Sayıya çevirerek gönderiyoruz
-        badge_reward: badge,
-        status: "Baslamadi"
+        title,
+        description,
+        assignedToEmail,
+        dueDate,
+        dueTime,
+        badge_reward: badgeReward,
+        reward_points: parseInt(rewardPoints), // Sayıya çeviriyoruz
+        status: 'Baslamadi'
     };
 
     try {
@@ -256,13 +264,23 @@ async function addTask() {
             body: JSON.stringify(taskData)
         });
 
+        const result = await res.json();
+
         if (res.ok) {
-            alert("Görev başarıyla atandı!");
-            closeModal('task-modal');
+            alert("🚀 Görev başarıyla gönderildi!");
+            // Formu temizle
+            document.getElementById("taskTitle").value = "";
+            document.getElementById("taskDescription").value = "";
+            document.getElementById("assignedToEmail").value = "";
+            document.getElementById("taskPoints").value = "10";
+            
             loadMyAssignedTasks(); // Listeyi yenile
+        } else {
+            alert("❌ Hata: " + result.message);
         }
     } catch (error) {
-        console.error("Hata:", error);
+        console.error("Görev ekleme hatası:", error);
+        alert("Sunucuya bağlanılamadı.");
     }
 }
 async function deleteTask(taskId) {
