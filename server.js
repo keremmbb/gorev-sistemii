@@ -329,8 +329,7 @@ app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
 
     try {
-        // 1. ÖNCE veritabanına ödülleri kaydetmeyi dene
-        // Veritabanı "reward_name" beklediği için item.reward_name kullanıyoruz
+        // 1. Önce satın almaları kaydet
         for (const item of items) {
             await db.query(
                 "INSERT INTO purchases (user_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
@@ -338,24 +337,19 @@ app.post("/checkout", auth, async (req, res) => {
             );
         }
 
-        // 2. Ödüller başarıyla kaydedildiyse ŞİMDİ puanı düş
+        // 2. Satın almalar başarılıysa puanı düş
         const userRes = await db.query(
             "UPDATE users SET points = points - $1 WHERE id = $2 RETURNING points",
             [totalCost, userId]
         );
 
-        if (userRes.rowCount === 0) {
-            throw new Error("Kullanıcı bulunamadı veya puan güncellenemedi.");
-        }
-
         res.json({ 
-            message: "Satın alma başarılı, veli onayına gönderildi.", 
+            message: "Siparişiniz alındı, veli onayına gönderildi! ✅", 
             newPoints: userRes.rows[0].points 
         });
 
     } catch (error) {
         console.error("Checkout Hatası:", error);
-        // Hata mesajını detaylı gönderiyoruz ki sorunu görebilelim
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
