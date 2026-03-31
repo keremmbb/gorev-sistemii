@@ -129,29 +129,27 @@ async function updateTaskStatus(taskId, newStatus) {
 }
 
 async function loadStudentPoints() {
-    const userId = localStorage.getItem("userId");
-    if (!userId) return;
-
     try {
-        const response = await fetch(`/user-points/${userId}`, { headers: getAuthHeaders() });
+        const response = await fetch(`/user-points/${userId}`, {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
 
-        const totalXP = data.total_points || 0;
-        const balanceGP = data.current_balance || 0;
-        const level = Math.floor(totalXP / 200) + 1;
+        // HTML'deki ID'lerle eşleştirme
+        const totalXP = document.getElementById("total-xp-display");
+        const currentGP = document.getElementById("total-points");
+        const marketGP = document.getElementById("market-balance");
 
-        let rank = "Çaylak Görevci";
-        if (totalXP >= 500) rank = "Görev Asistanı";
-        if (totalXP >= 1500) rank = "Görev Ustası";
-        if (totalXP >= 3000) rank = "Şehir Kahramanı";
-        if (totalXP >= 6000) rank = "Efsanevi Görevci 👑";
-
-        if (document.getElementById("user-level")) document.getElementById("user-level").innerText = level;
-        if (document.getElementById("user-rank")) document.getElementById("user-rank").innerText = rank;
-        if (document.getElementById("total-xp-display")) document.getElementById("total-xp-display").innerText = totalXP;
-        if (document.getElementById("total-points")) document.getElementById("total-points").innerText = balanceGP;
+        if (totalXP) totalXP.innerText = data.total_points || 0;
+        if (currentGP) currentGP.innerText = data.current_balance || 0;
+        if (marketGP) marketGP.innerText = data.current_balance || 0;
         
-    } catch (error) { console.error("Puan yükleme hatası:", error); }
+        // Rütbe hesaplamasını tetikle
+        if (typeof updateRank === 'function') updateRank(data.total_points || 0);
+
+    } catch (error) {
+        console.error("Puan yükleme hatası:", error);
+    }
 }
 
 // -------------------- VELİ FONKSİYONLARI (KANBAN & YÖNETİM) --------------------

@@ -237,23 +237,21 @@ app.post("/buy-reward", auth, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        // 1. Bakiyeyi kontrol et (points yerine current_balance kullanıyoruz)
+        // 1. Puanı çek (points yerine current_balance kullanıyoruz)
         const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
         
-        if (userRes.rows.length === 0) {
-            return res.status(404).json({ error: "Kullanıcı bulunamadı." });
-        }
+        if (userRes.rows.length === 0) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
 
-        const currentPoints = userRes.rows[0].current_balance;
+        const balance = userRes.rows[0].current_balance || 0;
 
-        if (currentPoints < cost) {
+        if (balance < cost) {
             return res.status(400).json({ error: "Yetersiz bakiye." });
         }
 
-        // 2. Bakiyeyi düş (current_balance sütununu güncelliyoruz)
+        // 2. Bakiyeyi düş
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [cost, userId]);
         
-        // 3. Satın alma kaydını oluştur (Sütun isimlerini student_id ve reward_name yaptık)
+        // 3. Kaydı oluştur
         await db.query(
             "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
             [userId, rewardName, cost]
@@ -261,8 +259,8 @@ app.post("/buy-reward", auth, async (req, res) => {
 
         res.json({ message: "Satın alma başarılı!" });
     } catch (error) {
-        console.error("❌ Satın alma hatası:", error.message);
-        res.status(500).json({ error: "İşlem başarısız: " + error.message });
+        console.error("Hata:", error.message);
+        res.status(500).json({ error: "İşlem başarısız." });
     }
 });
 app.get("/pending-purchases/:parentId", auth, async (req, res) => {
