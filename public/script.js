@@ -907,33 +907,36 @@ function updateCartUI() {
 
 // Sepeti Açıp İçindekileri Gösterme
 function showCart() {
-    const modal = document.getElementById("cart-modal");
-    const list = document.getElementById("cart-items-list");
-    const totalDisplay = document.getElementById("cart-total-amount");
-    
-    if (!modal || !list) return;
+    const cartItemsList = document.getElementById("cart-items-list");
+    if (!cartItemsList) return;
 
     if (cart.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:#a0aec0; padding:20px;">Sepetin şu an boş.</p>';
-        if(totalDisplay) totalDisplay.innerText = "0 GP";
+        cartItemsList.innerHTML = "<p style='text-align:center; color:#a0aec0; padding:20px;'>Sepetiniz boş.</p>";
     } else {
-        list.innerHTML = cart.map((item, index) => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 10px; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
+        cartItemsList.innerHTML = cart.map((item, index) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #f0f4f8;">
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
                     <span style="font-size: 1.5rem;">${item.icon}</span>
                     <div>
-                        <div style="font-weight: bold; font-size: 0.9rem;">${item.name}</div>
-                        <div style="font-size: 0.8rem; color: #4facfe;">${item.cost} GP</div>
+                        <div style="font-weight: 600; color: #2d3748; font-size: 0.95rem;">${item.name}</div>
+                        <div style="font-size: 0.85rem; color: #4facfe; font-weight: bold;">${item.cost * item.quantity} GP</div>
                     </div>
                 </div>
-                <button onclick="removeFromCart(${index})" style="background: #fff5f5; border: none; color: #f56565; cursor: pointer; padding: 5px;">❌</button>
+                
+                <div style="display: flex; align-items: center; background: #f7fafc; border-radius: 8px; padding: 4px; gap: 10px;">
+                    <button onclick="changeQuantity(${index}, -1)" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: #edf2f7; cursor: pointer; font-weight: bold; color: #4a5568;">-</button>
+                    <span style="font-weight: bold; min-width: 20px; text-align: center; color: #2d3748;">${item.quantity}</span>
+                    <button onclick="changeQuantity(${index}, 1)" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: #edf2f7; cursor: pointer; font-weight: bold; color: #4a5568;">+</button>
+                </div>
+
+                <button onclick="removeFromCart(${index})" style="margin-left: 15px; background: none; border: none; color: #feb2b2; cursor: pointer; font-size: 1.1rem; transition: 0.2s;" onmouseover="this.style.color='#f56565'" onmouseout="this.style.color='#feb2b2'">
+                    🗑️
+                </button>
             </div>
         `).join("");
-        
-        const total = cart.reduce((sum, item) => sum + item.cost, 0);
-        if(totalDisplay) totalDisplay.innerText = `${total} GP`;
     }
-    modal.style.display = "flex";
+
+    document.getElementById("cart-modal").style.display = "flex";
 }
 
 function closeCart() {
@@ -1016,21 +1019,6 @@ function updateCartUI() {
         totalDisplay.innerText = `${totalCost} GP`;
     }
 }
-// Sepeti Aç ve İçini Göster
-function showCart() {
-    const cartItemsList = document.getElementById("cart-items-list");
-    if (!cartItemsList) return;
-
-    cartItemsList.innerHTML = cart.map((item, index) => `
-        <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
-            <span>${item.icon} ${item.name} <strong>(x${item.quantity})</strong></span>
-            <span>${item.cost * item.quantity} GP</span>
-        </div>
-    `).join("");
-
-    document.getElementById("cart-modal").style.display = "flex";
-}
-
 function closeCart() {
     document.getElementById("cart-modal").style.display = "none";
 }
@@ -1076,4 +1064,17 @@ async function rejectPurchase(id) {
             loadPendingPurchases(); // Listeyi ve Badge sayısını yenile
         }
     } catch (err) { console.error(err); }
+}
+function changeQuantity(index, delta) {
+    if (cart[index]) {
+        cart[index].quantity += delta;
+
+        // Eğer miktar 1'in altına düşerse ürünü sepetten tamamen çıkar
+        if (cart[index].quantity <= 0) {
+            cart.splice(index, 1);
+        }
+
+        updateCartUI();
+        showCart(); // Sepet açık olduğu için listeyi anlık yeniliyoruz
+    }
 }
