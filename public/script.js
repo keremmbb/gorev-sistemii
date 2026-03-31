@@ -1043,21 +1043,31 @@ function removeFromCart(index) {
 
 // Sepetteki ürünleri satın alma fonksiyonu
 async function checkout() {
-    if (cart.length === 0) return;
-    const totalCost = cart.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
-    
-    const res = await fetch("/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
-        body: JSON.stringify({ userId: localStorage.getItem("userId"), items: cart, totalCost })
-    });
+    if (!cart || cart.length === 0) {
+        alert("Sepetiniz boş!");
+        return;
+    }
+    const userId = localStorage.getItem("userId");
+    const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
 
-    if (res.ok) {
-        alert("Sipariş veli onayına gönderildi!");
-        cart = [];
-        updateCartUI();
-        closeCart();
-        loadStudentPoints();
+    try {
+        const res = await fetch("/checkout", {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ userId, items: cart, totalCost })
+        });
+        if (res.ok) {
+            alert("Harika! Siparişin veli onayına gönderildi. 🚀");
+            cart = [];
+            updateCartUI();
+            closeModal('cart-modal');
+            loadStudentPoints();
+        } else {
+            const err = await res.json();
+            alert("Hata: " + err.message);
+        }
+    } catch (error) {
+        console.error("Hata:", error);
     }
 }
 async function rejectPurchase(id) {
