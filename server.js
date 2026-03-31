@@ -324,11 +324,12 @@ app.post("/archive-task-parent", auth, async (req, res) => {
     }
 }); 
 // server.js - SEPETİ ONAYLA (Adet Mantığına Uygun Tam Kod)
+// server.js içindeki ilgili endpoint
 app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
     
     try {
-        // 1. Kullanıcının mevcut bakiyesini ve mailini kontrol et
+        // 1. Kullanıcı bakiye ve email kontrolü
         const userRes = await db.query("SELECT current_balance, email FROM users WHERE id = $1", [userId]);
         
         if (userRes.rows.length === 0) {
@@ -338,31 +339,27 @@ app.post("/checkout", auth, async (req, res) => {
         const currentBalance = userRes.rows[0].current_balance;
         const studentEmail = userRes.rows[0].email;
 
-        // 2. Bakiye kontrolü
         if (currentBalance < totalCost) {
             return res.status(400).json({ message: "Yetersiz bakiye! Lütfen sepetinizi düzenleyin." });
         }
 
-        // 3. Bakiyeyi düş
+        // 2. Bakiyeyi düş
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [totalCost, userId]);
         
         let itemsHtml = "";
 
-        // 4. KRİTİK KISIM: Ürünleri adetleri (quantity) kadar veritabanına ekle
+        // 3. Ürünleri adetleri (quantity) kadar veritabanına ekle
         for (const item of items) {
-            // Adet sayısı kadar döngü çalıştır
             for (let i = 0; i < item.quantity; i++) {
                 await db.query(
                     "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
                     [userId, item.rewardName, item.cost]
                 );
             }
-            // Mail için liste oluştur (Örn: 3x Çikolata)
             itemsHtml += `<li><b>${item.quantity} adet</b> ${item.rewardName} (${item.cost} GP / adet)</li>`;
         }
 
-        // 5. VELİYE MAİL GÖNDER
-        // Not: 'keremacar3754is@gmail.com' kısmını kendi mailinle değiştirebilirsin
+        // 4. Veliye mail gönder
         await sendMail(
             'keremacar3754is@gmail.com', 
             "🛒 Yeni Sepet Onay İsteği", 
