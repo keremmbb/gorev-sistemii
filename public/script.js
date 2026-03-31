@@ -981,17 +981,67 @@ function loadMarketItems() {
 }
 
 // Sepete Ekle
-function addToCart(name, cost, icon) {
-    cart.push({ name, cost, icon });
-    updateCartUI();
+function addToCart(rewardName, cost) {
+    // Sepette bu ürün var mı kontrol et
+    const existingItem = cart.find(item => item.rewardName === rewardName);
+
+    if (existingItem) {
+        // Varsa miktarını artır
+        existingItem.quantity += 1;
+    } else {
+        // Yoksa yeni bir obje olarak ekle (quantity: 1 ile)
+        cart.push({
+            rewardName: rewardName,
+            cost: cost,
+            quantity: 1
+        });
+    }
+    
+    updateCartUI(); // Arayüzü güncelle
+    alert(`${rewardName} sepete eklendi!`);
 }
 
 // Sepet Arayüzünü Güncelle
 function updateCartUI() {
-    const countLabel = document.getElementById("cart-count");
-    if (countLabel) countLabel.innerText = cart.length;
-}
+    const cartList = document.getElementById("cart-items-list");
+    const cartTotalAmount = document.getElementById("cart-total-amount");
+    const cartBadge = document.getElementById("cart-badge"); // Eğer varsa sepet ikonundaki sayı
 
+    if (!cartList) return;
+
+    cartList.innerHTML = "";
+    let total = 0;
+    let totalItems = 0;
+
+    cart.forEach((item, index) => {
+        const itemTotal = item.cost * item.quantity;
+        total += itemTotal;
+        totalItems += item.quantity;
+
+        cartList.innerHTML += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                <div style="flex: 1;">
+                    <strong style="color: #2d3748;">${item.rewardName}</strong>
+                    <div style="font-size: 0.85rem; color: #718096;">
+                        ${item.cost} GP x ${item.quantity} Adet
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; color: #48bb78;">${itemTotal} GP</span>
+                    <button onclick="removeFromCart(${index})" style="background: none; border: none; color: #f56565; cursor: pointer; font-size: 1.2rem;">&times;</button>
+                </div>
+            </div>
+        `;
+    });
+
+    cartTotalAmount.innerText = `${total} GP`;
+    
+    // Sepet butonundaki toplam sayı rozeti (badge) güncelleme
+    if (cartBadge) {
+        cartBadge.innerText = totalItems;
+        cartBadge.style.display = totalItems > 0 ? "flex" : "none";
+    }
+}
 // Sepeti Aç ve İçini Göster
 function showCart() {
     const modal = document.getElementById("cart-modal");
@@ -1032,50 +1082,37 @@ function removeFromCart(index) {
 
 // Sepetteki ürünleri satın alma fonksiyonu
 async function checkout() {
-    if (cart.length === 0) {
-        alert("Sepetin boş! Önce bir şeyler eklemelisin. 🛒");
-        return;
-    }
+    if (cart.length === 0) return alert("Sepetiniz boş!");
 
-    const totalCost = cart.reduce((sum, item) => sum + item.cost, 0);
-    const currentGP = parseInt(document.getElementById("total-points")?.innerText || "0");
-
-    // Bakiye Kontrolü
-    if (totalCost > currentGP) {
-        alert(`Yetersiz bakiye! Toplam ${totalCost} GP gerekiyor, sende ${currentGP} GP var. 💪`);
-        return;
-    }
-
-    if (!confirm(`Toplam ${totalCost} GP tutarındaki ${cart.length} ürünü satın almak istiyor musun?`)) {
-        return;
-    }
+    const totalCost = cart.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+    const userId = localStorage.getItem("userId");
 
     try {
-        // Her ürünü sırayla backend'e gönder
-        for (const item of cart) {
-            const response = await fetch("/buy-reward", {
-                method: "POST",
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ 
-                    rewardName: item.name, 
-                    cost: item.cost 
-                })
-            });
+        const response = await fetch("/checkout", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify({
+                userId: userId,
+                items: cart, // Artık içinde quantity olan objeler gidiyor
+                totalCost: totalCost
+            })
+        });
 
-            if (!response.ok) throw new Error("Satın alma işlemi başarısız.");
+        const data = await response.json();
+        if (response.ok) {
+            alert("Siparişiniz veli onayına gönderildi!");
+            cart = [];
+            updateCartUI();
+            closeCart();
+            if (typeof loadStudentPoints === "function") loadStudentPoints();
+        } else {
+            alert(data.message || "Hata oluştu.");
         }
-
-        alert("🎉 Tebrikler! Satın aldığın ödüller onay için veline gönderildi.");
-        
-        // Temizlik ve Güncelleme
-        cart = []; 
-        closeCart();
-        updateCartUI();
-        if (typeof loadStudentPoints === 'function') loadStudentPoints(); 
-        
     } catch (error) {
-        console.error("Hata:", error);
-        alert("İşlem sırasında bir hata oluştu. Lütfen tekrar dene.");
+        console.error("Checkout hatası:", error);
     }
 }
 async function rejectPurchase(id) {

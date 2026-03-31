@@ -323,42 +323,63 @@ app.post("/archive-task-parent", auth, async (req, res) => {
         res.status(500).json({ message: "Hata oluştu." });
     }
 }); 
+// server.js - SEPETİ ONAYLA (Adet Mantığına Uygun Tam Kod)
 app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
     
     try {
+        // 1. Kullanıcının mevcut bakiyesini ve mailini kontrol et
         const userRes = await db.query("SELECT current_balance, email FROM users WHERE id = $1", [userId]);
+        
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+        }
+
         const currentBalance = userRes.rows[0].current_balance;
         const studentEmail = userRes.rows[0].email;
 
+        // 2. Bakiye kontrolü
         if (currentBalance < totalCost) {
-            return res.status(400).json({ message: "Yetersiz bakiye!" });
+            return res.status(400).json({ message: "Yetersiz bakiye! Lütfen sepetinizi düzenleyin." });
         }
 
+        // 3. Bakiyeyi düş
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [totalCost, userId]);
         
         let itemsHtml = "";
+
+        // 4. KRİTİK KISIM: Ürünleri adetleri (quantity) kadar veritabanına ekle
         for (const item of items) {
-            await db.query(
-                "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
-                [userId, item.rewardName, item.cost]
-            );
-            itemsHtml += `<li>${item.rewardName} (${item.cost} GP)</li>`;
+            // Adet sayısı kadar döngü çalıştır
+            for (let i = 0; i < item.quantity; i++) {
+                await db.query(
+                    "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+                    [userId, item.rewardName, item.cost]
+                );
+            }
+            // Mail için liste oluştur (Örn: 3x Çikolata)
+            itemsHtml += `<li><b>${item.quantity} adet</b> ${item.rewardName} (${item.cost} GP / adet)</li>`;
         }
 
-        // VELİYE TOPLU MAİL
+        // 5. VELİYE MAİL GÖNDER
+        // Not: 'keremacar3754is@gmail.com' kısmını kendi mailinle değiştirebilirsin
         await sendMail(
             'keremacar3754is@gmail.com', 
             "🛒 Yeni Sepet Onay İsteği", 
-            `<h3>Öğrenciniz Sepetini Onayladı!</h3>
+            `<h3>Öğrenciniz Yeni Bir Sipariş Verdi!</h3>
              <p><b>Öğrenci:</b> ${studentEmail}</p>
+             <p><b>Sipariş Detayı:</b></p>
              <ul>${itemsHtml}</ul>
-             <p><b>Toplam Tutar:</b> ${totalCost} GP</p>`
+             <hr>
+             <p><b>Toplam Kesilen Tutar:</b> <span style="color:green;">${totalCost} GP</span></p>
+             <p>Onaylamak veya reddetmek için veli paneline giriş yapınız.</p>`
         );
 
         res.json({ message: "Sepet başarıyla gönderildi ve veliye bildirildi!" });
+
     } catch (error) {
-        res.status(500).json({ message: "Sunucu hatası" });
+        console.error("❌ Checkout Hatası:", error.message);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.get("/rejected-purchases/:userId", auth, async (req, res) => {
