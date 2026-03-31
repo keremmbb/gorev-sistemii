@@ -202,20 +202,17 @@
     </div>
 
     <div id="section-market" style="display: none;">
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <div style="flex: 1; background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 15px; text-align: center;">
-                <span style="font-size: 0.8rem; color: #92400e;">💰 Bakiyen: <span id="market-balance" style="font-weight: bold;">0</span> GP</span>
-            </div>
-            <div onclick="showCart()" style="flex: 1; background: #f0f7ff; border: 1px solid #e0e7ff; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; transition: 0.3s;">
-                <span style="font-size: 0.8rem; color: #1e40af;">🛒 Sepetim: <span id="cart-count" style="font-weight: bold;">0</span> Ürün</span>
-            </div>
+    <div style="margin-bottom: 20px;">
+        <div onclick="showCart()" style="background: #f0f7ff; border: 1px solid #e0e7ff; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; transition: 0.3s; width: 100%;">
+            <span style="font-size: 0.9rem; color: #1e40af; font-weight: 600;">🛒 Sepetim: <span id="cart-count">0</span> Ürün</span>
         </div>
+    </div>
 
-        <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;"></div>
+    <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;"></div>
 
-        <button id="checkout-btn" onclick="checkout()" style="display: none;">
-            ✅ Sepeti Onayla ve Satın Al
-        </button>
+    <button id="checkout-btn" onclick="checkout()" style="display: none;">
+        ✅ Sepeti Onayla ve Satın Al
+    </button>
 
         <div id="cart-modal" class="modal-overlay">
             <div class="modal-content">
