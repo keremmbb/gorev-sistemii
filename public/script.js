@@ -1150,36 +1150,6 @@ async function checkout() {
         alert("Sunucuya bağlanılamadı.");
     }
 }
-function handleTimeChange(inputElement) {
-    inputElement.blur();
-    const currentVal = inputElement.value;
-    inputElement.type = 'text';
-    
-    setTimeout(() => {
-        inputElement.type = 'time';
-        inputElement.value = currentVal;
-    }, 50);
-
-    console.log("Saat Seçildi ve Kapatıldı:", currentVal);
-}
-function confirmTime() {
-    const timeInput = document.getElementById('task-time');
-    const selectedTime = timeInput.value;
-
-    if (!selectedTime) {
-        alert("Lütfen önce bir saat seçin!");
-        return;
-    }
-
-    // Seçiciyi ve klavyeyi zorla kapat
-    timeInput.blur();
-    window.focus(); 
-
-    // Saati yerel hafızaya kaydet veya kullan
-    localStorage.setItem("selectedTaskTime", selectedTime);
-    
-    alert("Saat ayarlandı: " + selectedTime);
-}
 document.getElementById('dueTime')?.addEventListener('change', function() {
     const el = this;
     // Küçük bir gecikme ile odağı kaydırarak panelin kapanmasını zorla
