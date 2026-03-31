@@ -235,6 +235,7 @@ app.get("/user-points/:userId", auth, async (req, res) => {
 app.post("/buy-reward", auth, async (req, res) => {
     const { rewardName, cost } = req.body;
     const userId = req.user.id;
+    const userEmail = req.user.email; // Token'dan gelen kullanıcı maili
 
     try {
         const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
@@ -246,13 +247,23 @@ app.post("/buy-reward", auth, async (req, res) => {
 
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [cost, userId]);
         
-        // BURASI: Sütun isimleri veritabanıyla (student_id, reward_name) tam uyumlu olmalı
         await db.query(
             "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
             [userId, rewardName, cost]
         );
 
-        res.json({ message: "Satın alma başarılı!" });
+        // VELİYE MAİL GÖNDER (Kendi mailine bildirim)
+        await sendMail(
+            'keremacar3754is@gmail.com', 
+            "🛒 Yeni Market Onay İsteği", 
+            `<h3>Öğrenciniz Marketten Bir Ürün Aldı!</h3>
+             <p><b>Öğrenci:</b> ${userEmail}</p>
+             <p><b>Ürün:</b> ${rewardName}</p>
+             <p><b>Maliyet:</b> ${cost} GP</p>
+             <p>Lütfen onaylamak için veli paneline giriş yapın.</p>`
+        );
+
+        res.json({ message: "Satın alma başarılı ve veliye bildirildi!" });
     } catch (error) {
         console.error("❌ Satın alma hatası:", error.message);
         res.status(500).json({ error: "İşlem başarısız." });
@@ -316,8 +327,9 @@ app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
     
     try {
-        const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
-        const currentBalance = userRes.rows[0]?.current_balance || 0;
+        const userRes = await db.query("SELECT current_balance, email FROM users WHERE id = $1", [userId]);
+        const currentBalance = userRes.rows[0].current_balance;
+        const studentEmail = userRes.rows[0].email;
 
         if (currentBalance < totalCost) {
             return res.status(400).json({ message: "Yetersiz bakiye!" });
@@ -325,17 +337,27 @@ app.post("/checkout", auth, async (req, res) => {
 
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [totalCost, userId]);
         
-        // BURASI: Döngü içindeki INSERT sorgusunu güncelle
+        let itemsHtml = "";
         for (const item of items) {
             await db.query(
                 "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
                 [userId, item.rewardName, item.cost]
             );
+            itemsHtml += `<li>${item.rewardName} (${item.cost} GP)</li>`;
         }
 
-        res.json({ message: "İşlem başarılı" });
+        // VELİYE TOPLU MAİL
+        await sendMail(
+            'keremacar3754is@gmail.com', 
+            "🛒 Yeni Sepet Onay İsteği", 
+            `<h3>Öğrenciniz Sepetini Onayladı!</h3>
+             <p><b>Öğrenci:</b> ${studentEmail}</p>
+             <ul>${itemsHtml}</ul>
+             <p><b>Toplam Tutar:</b> ${totalCost} GP</p>`
+        );
+
+        res.json({ message: "Sepet başarıyla gönderildi ve veliye bildirildi!" });
     } catch (error) {
-        console.error("Checkout hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });

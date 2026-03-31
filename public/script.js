@@ -377,87 +377,127 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 async function loadPendingPurchases() {
-    const parentId = localStorage.getItem("userId");
-    if (!parentId) return;
-
     try {
-        const res = await fetch(`/pending-purchases/${parentId}`, { headers: getAuthHeaders() });
-        const purchases = await res.json();
+        const response = await fetch("/pending-purchases", {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
         
-        const container = document.getElementById("pending-purchases-list");
-        if (!container) return;
+        if (!response.ok) throw new Error("Market verileri alınamadı");
+        
+        const data = await response.json();
+        
+        // HTML Elementlerini bulalım
+        const listContainer = document.getElementById("pending-purchases-list");
+        const badge = document.getElementById("market-badge");
 
-        if (!purchases || purchases.length === 0) {
-            container.innerHTML = `
-                <div id="no-reward-msg" style="text-align: center; padding: 20px; background: #fff; border-radius: 12px; border: 1px dashed #cbd5e0;">
-                    <p style="color: #718096; margin: 0; font-size: 0.9rem;">Şu an onay bekleyen bir ödül yok. 😊</p>
+        // 1. BİLDİRİM ROZETİ GÜNCELLEME (Butonun üzerindeki sayı)
+        if (badge) {
+            if (data.length > 0) {
+                badge.innerText = data.length;
+                badge.style.display = "flex"; // Sayı varsa göster
+            } else {
+                badge.style.display = "none"; // Sayı yoksa gizle
+            }
+        }
+
+        // 2. MODAL İÇİNDEKİ LİSTEYİ GÜNCELLEME
+        if (!listContainer) return; // Element yoksa durdur
+
+        if (data.length === 0) {
+            listContainer.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #a0aec0;">
+                    <p style="font-size: 3rem; margin-bottom: 10px;">☕</p>
+                    <p>Şu an onay bekleyen bir satın alma isteği bulunmuyor.</p>
                 </div>`;
             return;
         }
 
-        container.innerHTML = ""; 
-
-        purchases.forEach(p => {
-            const div = document.createElement("div");
-            div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
-            
-            // ... (loadPendingPurchases içindeki döngü kısmı)
-                          div.innerHTML = `
-                      <div>
-                        <strong style="color: #2d3748;">🛒 ${p.reward_name}</strong>
-                       <div style="font-size: 0.8rem; color: #718096;">💰 <b>${p.cost} GP</b></div>
+        // İstekleri şık kartlar halinde listele
+        listContainer.innerHTML = data.map(item => `
+            <div class="task-card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #edf2f7; margin-bottom: 10px; border-radius: 12px; background: #fff;">
+                <div style="flex: 1;">
+                    <strong style="color: #2d3748; display: block; font-size: 1rem;">${item.reward_name}</strong>
+                    <div style="font-size: 0.85rem; color: #718096; margin-top: 4px;">
+                        <span>👤 ID: ${item.student_id}</span> • 
+                        <span style="color: #48bb78; font-weight: bold;">💰 ${item.cost} GP</span>
+                    </div>
                 </div>
-                     <div style="display: flex; gap: 8px;">
-                    <button onclick="approvePurchase(${p.id}, 'Onaylandı')" 
-                         style="background: #48bb78; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;">
-                       Onayla
-                        </button>
-                      <button onclick="approvePurchase(${p.id}, 'Reddedildi')" 
-                       style="background: #f56565; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;">
-                      Reddet
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="approvePurchase(${item.id})" 
+                            style="background: #48bb78; color: white; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"
+                            title="Onayla">
+                        ✓
                     </button>
-                  </div>
-                    `;
-            container.appendChild(div);
-        });
+                    <button onclick="rejectPurchase(${item.id})" 
+                            style="background: #f56565; color: white; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"
+                            title="Reddet">
+                        ✕
+                    </button>
+                </div>
+            </div>
+        `).join("");
+
     } catch (error) {
-        console.error("Onay listesi yüklenirken hata:", error);
+        console.error("Market onay listesi yüklenirken hata:", error);
     }
 }
 async function approvePurchase(purchaseId, status) {
     let reason = ""; // Varsayılan boş açıklama
 
+    // 1. Reddetme durumunda neden sor
     if (status === "Reddedildi") {
         const userInput = prompt("Reddetme nedenini yazar mısınız? (İsteğe bağlı)");
         
-        // Eğer kullanıcı 'İptal'e basarsa (userInput === null) işlemi durdur
+        // Eğer kullanıcı 'İptal'e basarsa işlemi durdur
         if (userInput === null) return; 
-        
-        reason = userInput; // Kullanıcı bir şey yazdıysa veya boş bırakıp 'Tamam' dediyse ata
+        reason = userInput; 
+    } else {
+        // Onaylama durumunda teyit al (Yanlışlıkla basılmasını önler)
+        if (!confirm("Bu ödül alımını onaylıyor musunuz?")) return;
     }
 
     try {
         const res = await fetch("/update-purchase-status", {
             method: "POST",
-            headers: getAuthHeaders(),
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            },
             body: JSON.stringify({ 
                 purchaseId: purchaseId, 
                 status: status, 
-                reason: reason // Boş da olsa gönderiyoruz
+                reason: reason 
             })
         });
         
         if (res.ok) {
-            alert(status === "Reddedildi" ? "Ödül reddedildi." : "Ödül onaylandı!");
-            loadPendingPurchases(); // Listeyi yenile
-            if (typeof loadStudentPoints === "function") loadStudentPoints();
+            // Başarı mesajı
+            alert(status === "Reddedildi" ? "❌ Ödül reddedildi." : "✅ Ödül başarıyla onaylandı!");
+            
+            // 2. KRİTİK: Listeyi ve Bildirim Rozetini (Badge) anında yenile
+            if (typeof loadPendingPurchases === "function") {
+                await loadPendingPurchases(); 
+            }
+
+            // Eğer öğrenci puanlarının da yenilenmesi gerekiyorsa (veli ekranında öğrenci seçiliyse)
+            if (typeof loadStudentPoints === "function") {
+                loadStudentPoints();
+            }
+
+            // 3. EĞER LİSTE BOŞALDIYSA MODALI KAPAT (Opsiyonel konfor ayarı)
+            const listContainer = document.getElementById("pending-purchases-list");
+            if (listContainer && listContainer.children.length === 0) {
+                // Eğer istersen onay listesi bittiğinde modalı otomatik kapatabilirsin:
+                // closeModal('market-modal');
+            }
+
         } else {
             const err = await res.json();
-            alert("Hata: " + err.message);
+            alert("İşlem başarısız: " + (err.message || "Bilinmeyen hata"));
         }
     } catch (error) {
         console.error("Onaylama/Reddetme Hatası:", error);
-        alert("Sunucuya bağlanılamadı.");
+        alert("Bağlantı hatası: Sunucuya ulaşılamadı.");
     }
 }
 async function loadRejectedPurchases() {
@@ -1058,4 +1098,21 @@ async function checkout() {
         console.error("Hata:", error);
         alert("İşlem sırasında bir hata oluştu. Lütfen tekrar dene.");
     }
+}
+async function rejectPurchase(id) {
+    const reason = prompt("Reddetme sebebi (isteğe bağlı):");
+    try {
+        const res = await fetch(`/reject-purchase/${id}`, { 
+            method: "POST", 
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}` 
+            },
+            body: JSON.stringify({ reason })
+        });
+        if (res.ok) {
+            alert("İşlem reddedildi.");
+            loadPendingPurchases(); // Listeyi ve Badge sayısını yenile
+        }
+    } catch (err) { console.error(err); }
 }
