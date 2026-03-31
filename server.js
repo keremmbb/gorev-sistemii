@@ -95,48 +95,26 @@ app.post("/login", async (req, res) => {
 
 // server.js içindeki /add-task kısmını bulup bununla değiştirin
 app.post("/add-task", auth, async (req, res) => {
-    // Frontend'den gelen veri isimleriyle eşitledik: assignedToEmail
-    const { title, description, assignedToEmail, dueDate, points, badge_reward } = req.body;
-
+    const { title, assigned_to_email, reward_points, badge_reward } = req.body;
+    
     try {
-        // 1. Öğrenciyi email ile buluyoruz
-        const studentRes = await db.query(
-            "SELECT id FROM users WHERE email = $1 AND role = 'student'", 
-            [assignedToEmail]
-        );
-        const student = studentRes.rows[0];
+        // Önce email üzerinden öğrencinin ID'sini buluyoruz (Eğer sisteminiz böyleyse)
+        const student = await db.query("SELECT id FROM users WHERE email = $1", [assigned_to_email]);
+        
+        if (student.rows.length === 0) return res.status(404).json({ message: "Öğrenci bulunamadı" });
 
-        if (!student) {
-            return res.status(404).json({ message: "Öğrenci bulunamadı. Lütfen e-posta adresini kontrol edin." });
-        }
+        const studentId = student.rows[0].id;
 
-        // 2. Görevi veritabanına kaydediyoruz
-        // NOT: badge_reward'ın boş gelme ihtimaline karşı null kontrolü eklemek iyidir
-        const newTask = await db.query(
-            `INSERT INTO tasks 
-            (title, description, assigned_to, assigned_by, due_date, points, badge_reward, status, updated_at) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Baslamadi', NOW()) 
-            RETURNING *`,
-            [
-                title, 
-                description, 
-                student.id, 
-                req.user.id, 
-                dueDate || null, 
-                points || 0, 
-                badge_reward || null
-            ]
+        // Görevi kaydediyoruz
+        await db.query(
+            "INSERT INTO tasks (title, assigned_to, reward_points, badge_reward, status) VALUES ($1, $2, $3, $4, $5)",
+            [title, studentId, reward_points, badge_reward, 'Baslamadi']
         );
 
-        res.json({ 
-            success: true,
-            message: "Görev ve rozet başarıyla tanımlandı!", 
-            task: newTask.rows[0] 
-        });
-
+        res.json({ message: "Görev başarıyla eklendi" });
     } catch (error) {
-        console.error("Görev ekleme hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası: " + error.message });
+        console.error(error);
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.get("/my-tasks/:userId", auth, async (req, res) => {

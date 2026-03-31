@@ -118,6 +118,9 @@
         <textarea id="taskDescription" placeholder="Görev detayları..." class="form-input" style="height: 80px; resize: none;"></textarea>
         <input type="email" id="assignedToEmail" placeholder="Öğrenci e-postası" class="form-input">
         
+        <label style="font-size: 13px; color: #718096; margin-left: 5px; margin-bottom: 5px; display: block; font-weight: bold;">Görevin Puanı (GP):</label>
+        <input type="number" id="taskPoints" class="form-input" placeholder="Örn: 50" min="1" value="10" style="background: #f0f9ff; border: 1px solid #4facfe;">
+
         <label style="font-size: 13px; color: #718096; margin-left: 5px; margin-bottom: 5px; display: block;">Ödül Rozeti Seçin:</label>
         <select id="taskBadge" class="form-input" style="background: #fffcf0; border: 1px solid #fbd38d; font-weight: bold; color: #744210;">
             <option value="">🎁 Rozet Ödülü Yok</option>
@@ -242,7 +245,6 @@
             event.target.style.display = 'none';
         }
     }
-    
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

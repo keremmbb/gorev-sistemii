@@ -231,50 +231,38 @@ async function loadMyAssignedTasks() {
 }
 
 async function addTask() {
-    const titleEl = document.getElementById("taskTitle");
-    const descEl = document.getElementById("taskDescription");
-    const emailEl = document.getElementById("assignedToEmail");
-    const dateEl = document.getElementById("dueDate");
-    const timeEl = document.getElementById("dueTime");
-    const badgeEl = document.getElementById("taskBadge"); // Rozet öğesini al
-    const points = 100; 
+    const title = document.getElementById("taskTitle").value;
+    const studentEmail = document.getElementById("studentSelect").value;
+    const points = document.getElementById("taskPoints").value; // Yeni eklenen puan
+    const badge = document.getElementById("taskBadge").value; // Eğer rozet varsa
 
-    if (!titleEl.value || !emailEl.value) {
-        return alert("Lütfen başlık ve öğrenci e-postasını girin.");
+    if (!title || !studentEmail || !points) {
+        alert("Lütfen tüm alanları doldurun!");
+        return;
     }
 
-    let isoDate = null;
-    if (dateEl.value) {
-        isoDate = `${dateEl.value}T${timeEl.value || "00:00"}:00`;
-    }
+    const taskData = {
+        title: title,
+        assigned_to_email: studentEmail,
+        reward_points: parseInt(points), // Sayıya çevirerek gönderiyoruz
+        badge_reward: badge,
+        status: "Baslamadi"
+    };
 
     try {
-        const response = await fetch("/add-task", { 
+        const res = await fetch("/add-task", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({
-                title: titleEl.value,
-                description: descEl.value,
-                assignedToEmail: emailEl.value,
-                dueDate: isoDate,
-                points: points,
-                badge_reward: badgeEl ? badgeEl.value : "" // Rozet bilgisini gönder
-            })
+            body: JSON.stringify(taskData)
         });
 
-        if (response.ok) {
+        if (res.ok) {
             alert("Görev başarıyla atandı!");
-            titleEl.value = "";
-            descEl.value = "";
-            emailEl.value = "";
-            if(badgeEl) badgeEl.value = "";
-            if(typeof loadMyAssignedTasks === "function") loadMyAssignedTasks(); 
-        } else {
-            const err = await response.json();
-            alert("Hata: " + err.message);
+            closeModal('task-modal');
+            loadMyAssignedTasks(); // Listeyi yenile
         }
     } catch (error) {
-        console.error("Görev atama hatası:", error);
+        console.error("Hata:", error);
     }
 }
 async function deleteTask(taskId) {
