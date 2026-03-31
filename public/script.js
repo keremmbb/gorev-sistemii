@@ -1051,16 +1051,14 @@ async function checkout() {
     const userId = localStorage.getItem("userId");
     const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
 
-    // DİKKAT: Hata buradaydı. Sunucu her bir ürün için "reward_name" bekliyor.
-    // Her bir ürün için ayrı bir istek atmak yerine, sunucunun döngüsüne uygun hale getiriyoruz.
-    try {
-        // Sunucu tarafındaki döngüye uygun olarak ürünleri formatla
-        const formattedItems = cart.map(item => ({
-            reward_name: item.name, // "name" değil, "reward_name" olmalı!
-            cost: item.cost,
-            quantity: item.quantity || 1
-        }));
+    // KRİTİK DÜZELTME: "name" alanını "reward_name" olarak değiştiriyoruz
+    const formattedItems = cart.map(item => ({
+        reward_name: item.name, // Sunucu ve DB bu ismi bekliyor
+        cost: item.cost,
+        quantity: item.quantity || 1
+    }));
 
+    try {
         const res = await fetch("/checkout", {
             method: "POST",
             headers: getAuthHeaders(),
@@ -1074,18 +1072,18 @@ async function checkout() {
         if (res.ok) {
             alert("Harika! Siparişin veli onayına gönderildi. 🚀");
             cart = [];
-            if (typeof updateCartUI === 'function') updateCartUI();
+            updateCartUI();
             closeModal('cart-modal');
             if (typeof loadStudentPoints === 'function') loadStudentPoints();
         } else {
             const err = await res.json();
             alert("Hata: " + (err.message || "Satın alma başarısız."));
-            // Hata olursa puanın geri gelmesi için sayfayı yenilemek iyi olabilir
-            loadStudentPoints(); 
+            // Hata olursa güncel puanı tekrar yükle (eksik görünmesin)
+            if (typeof loadStudentPoints === 'function') loadStudentPoints();
         }
     } catch (error) {
         console.error("Checkout hatası:", error);
-        alert("Bağlantı hatası!");
+        alert("Sunucuya bağlanılamadı.");
     }
 }
 async function rejectPurchase(id) {
