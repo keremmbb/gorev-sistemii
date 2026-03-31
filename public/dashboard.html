@@ -80,14 +80,13 @@
             font-size: 16px;
             background: #f8fafc;
             margin-top: 10px;
-            -webkit-appearance: none; /* iOS için varsayılan stili temizle */
+            -webkit-appearance: none;
         }
     </style>
 </head>
 <body onload="loadMyTasks(); loadStudentPoints(); loadRejectedPurchases(); loadMyBadges();">
 
 <script>
-    // Giriş Kontrolü
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
 
@@ -95,22 +94,23 @@
         window.location.href = "index.html";
     }
 
-    // iOS Saat Kapatma Fonksiyonu
+    // SAATİ KAPATAN KRİTİK FONKSİYON
     function handleTimeChange(inputElement) {
+        // Seçim yapıldığı an odağı kaldır
         inputElement.blur();
-        const selectedTime = inputElement.value;
+        
+        // Saati seçtikten sonra seçiciyi zorla kapatmak için tipi saniyelik değiştir
+        const val = inputElement.value;
         inputElement.type = 'text';
         setTimeout(() => {
             inputElement.type = 'time';
-            inputElement.value = selectedTime;
-        }, 100);
+            inputElement.value = val;
+        }, 50);
     }
 
-    // Modal Kontrolleri
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // Arşiv Paneli Aç/Kapat
     function toggleArchive() {
         const list = document.getElementById("completedTaskList");
         const chevron = document.getElementById("archive-chevron");
@@ -123,7 +123,6 @@
         }
     }
 
-    // Rütbe Tablosu Aç/Kapat
     function toggleLevelTable() {
         const table = document.getElementById("levelTable");
         if (table.style.display === "none" || table.style.display === "") {
@@ -134,7 +133,6 @@
         }
     }
 
-    // Bölüm Değiştirme
     function showSection(section) {
         const tasks = document.getElementById('section-tasks');
         const market = document.getElementById('section-market');
@@ -183,7 +181,7 @@
                 <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">📜 Rütbe Tablosu</button>
                 <button onclick="openModal('badge-modal')" style="background: #fff; border: none; color: #4facfe; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">🏅 Rozetlerim</button>
             </div>
-
+            
             <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 20px; color: #333; text-align: left;">
                 <h4 style="margin: 0 0 10px 0; text-align: center;">🏆 Rütbe Gereksinimleri</h4>
                 <table style="width: 100%; font-size: 0.85rem;">
@@ -198,7 +196,7 @@
 
     <div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <label style="font-size: 0.85rem; color: #718096; font-weight: bold;">🕒 Görev Zamanlayıcı</label>
-        <input type="time" id="task-time" class="time-input-styled" oninput="handleTimeChange(this)">
+        <input type="time" id="task-time" class="time-input-styled" oninput="handleTimeChange(this)" onchange="this.blur()">
     </div>
 
     <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
