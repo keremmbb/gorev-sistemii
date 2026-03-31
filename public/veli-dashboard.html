@@ -2,76 +2,95 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Veli Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veli Kontrol Paneli</title>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
     <style>
-        /* Modern Arayüz Stilleri */
-        input:focus, textarea:focus { outline: none !important; border-color: #4facfe !important; }
-        input, textarea, select { transition: border-color 0.2s ease; box-sizing: border-box !important; }
-        .form-input { width: 100%; height: 42px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; display: block; margin-bottom: 10px; }
+        /* Modern Arayüz ve Form Stilleri */
+        input:focus, textarea:focus, select:focus { outline: none !important; border-color: #4facfe !important; box-shadow: 0 0 8px rgba(79, 172, 254, 0.2); }
+        input, textarea, select { transition: all 0.3s ease; box-sizing: border-box !important; }
+        .form-input { width: 100%; height: 42px; padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; display: block; margin-bottom: 12px; background: #f8fafc; }
 
-        /* MODAL SİSTEMİ */
+        /* MODAL SİSTEMİ (Tüm pencereler için ortak) */
         .modal-overlay {
             display: none; 
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
             z-index: 10000;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
         }
         .modal-content {
             background: white;
             padding: 30px;
-            border-radius: 20px;
+            border-radius: 24px;
             width: 90%;
-            max-width: 600px;
+            max-width: 650px;
             max-height: 85vh;
             overflow-y: auto;
             position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
         .close-modal {
             position: absolute;
-            top: 15px; right: 20px;
-            font-size: 30px;
+            top: 20px; right: 25px;
+            font-size: 32px;
             cursor: pointer;
-            color: #666;
+            color: #a0aec0;
+            line-height: 1;
         }
+        .close-modal:hover { color: #2d3748; }
 
         /* BİLDİRİM ROZETİ (BADGE) */
         .notification-badge {
             position: absolute;
-            top: -8px;
-            right: -8px;
+            top: -10px;
+            right: -10px;
             background: #ff4d4d;
             color: white;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 12px;
+            width: 26px;
+            height: 26px;
+            font-size: 13px;
             font-weight: bold;
-            display: none; /* JS ile açılacak */
+            display: none; /* JS ile kontrol edilir */
             align-items: center;
             justify-content: center;
-            border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(255, 77, 77, 0.3);
         }
 
-        /* ROZET REHBERİ IZGARASI */
-        .badge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 15px; }
-        .badge-guide-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 12px; text-align: center; }
+        /* ROZET REHBERİ KUTULARI */
+        .badge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
+        .badge-guide-item { 
+            padding: 20px; 
+            border-radius: 15px; 
+            text-align: center; 
+            border: 1px solid #edf2f7;
+            transition: transform 0.2s;
+        }
+        .badge-guide-item:hover { transform: translateY(-5px); }
 
-        /* KANBAN SÜTUNLARI */
-        .kanban-column-content { max-height: 350px; overflow-y: auto; min-height: 50px; }
-        .task-card { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        /* KANBAN BOARD */
+        .kanban-column-content { max-height: 400px; overflow-y: auto; min-height: 80px; padding: 5px; }
+        .task-card { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02); 
+            border: 1px solid #eef2f7; 
+        }
     </style>
 </head>
 <body onload="loadMyAssignedTasks(); loadPendingPurchases();">
 
 <script>
+    // Yetki Kontrolü
     const role = localStorage.getItem("role");
     const userId = localStorage.getItem("userId");
     if (!userId || (role && role.toLowerCase() !== "parent")) {
@@ -80,26 +99,27 @@
 </script>
 
 <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-    <h2 style="color: white; text-align: center; margin-bottom: 25px;">👨‍👩‍👧‍👦 Veli Kontrol Paneli</h2>
+    <h2 style="color: white; text-align: center; margin-bottom: 30px; font-weight: 800; letter-spacing: -0.5px;">👨‍👩‍👧‍👦 Veli Kontrol Paneli</h2>
 
-    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
-        <button onclick="openModal('chart-modal')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold;">📊 Gelişim Analizi</button>
+    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; flex-wrap: wrap;">
+        <button onclick="openModal('chart-modal')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px 28px; border-radius: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 10px 20px rgba(118, 75, 162, 0.2);">📊 Gelişim Analizi</button>
         
         <div style="position: relative;">
-            <button onclick="openModal('market-modal')" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold;">🛒 Market Onayları</button>
+            <button onclick="openModal('market-modal')" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; padding: 14px 28px; border-radius: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 10px 20px rgba(0, 242, 254, 0.2);">🛒 Market Onayları</button>
             <div id="market-badge" class="notification-badge">0</div>
         </div>
 
-        <button onclick="openModal('badge-modal')" style="background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%); color: white; border: none; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold;">📜 Rozet Rehberi</button>
+        <button onclick="openModal('badge-modal')" style="background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%); color: white; border: none; padding: 14px 28px; border-radius: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 10px 20px rgba(237, 137, 54, 0.2);">📜 Rozet Rehberi</button>
     </div>
 
-    <div class="section" style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto 30px auto;">
-        <h3 style="margin-top:0; color: #2d3748; text-align: center;">📝 Yeni Görev Tanımla</h3>
+    <div class="section" style="background: white; padding: 30px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); max-width: 550px; margin: 0 auto 40px auto;">
+        <h3 style="margin-top:0; color: #2d3748; text-align: center; margin-bottom: 20px;">📝 Yeni Görev Tanımla</h3>
         <input type="text" id="taskTitle" placeholder="Görev başlığı" class="form-input">
-        <textarea id="taskDescription" placeholder="Görev detayları..." class="form-input" style="height: 70px; resize: none;"></textarea>
+        <textarea id="taskDescription" placeholder="Görev detayları..." class="form-input" style="height: 80px; resize: none;"></textarea>
         <input type="email" id="assignedToEmail" placeholder="Öğrenci e-postası" class="form-input">
         
-        <select id="taskBadge" class="form-input" style="background: #fffcf0; border: 1px solid #f6ad55; font-weight: bold;">
+        <label style="font-size: 13px; color: #718096; margin-left: 5px; margin-bottom: 5px; display: block;">Ödül Rozeti Seçin:</label>
+        <select id="taskBadge" class="form-input" style="background: #fffcf0; border: 1px solid #fbd38d; font-weight: bold; color: #744210;">
             <option value="">🎁 Rozet Ödülü Yok</option>
             <option value="Kitap Kurdu">📖 Kitap Kurdu Rozeti</option>
             <option value="Temizlik Ustası">🧹 Temizlik Ustası Rozeti</option>
@@ -112,80 +132,118 @@
             <input type="date" id="dueDate" class="form-input" style="flex: 1;">
             <input type="time" id="dueTime" class="form-input" style="flex: 1;">
         </div>
-        <button onclick="addTask()" style="width: 100%; background: #4facfe; color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px;">🚀 Görevi Gönder</button>
+        <button onclick="addTask()" style="width: 100%; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px;">🚀 Görevi Öğrenciye Gönder</button>
     </div>
 
-    <div class="kanban-board" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #ed5e68;">
-            <h3 style="display: flex; justify-content: space-between; color: #b91c1c; font-size: 0.9rem;">🔴 BAŞLAMADI <span id="count-Baslamadi">0</span></h3>
+    <div class="kanban-board" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 40px;">
+        <div class="column" style="background: #fdf2f2; padding: 20px; border-radius: 20px; border: 1px solid #fee2e2;">
+            <h3 style="display: flex; justify-content: space-between; color: #b91c1c; font-size: 0.95rem; margin-top: 0;">🔴 BAŞLAMADI <span id="count-Baslamadi" style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
             <div id="parent-list-Baslamadi" class="kanban-column-content"></div>
         </div>
-        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #3498db;">
-            <h3 style="display: flex; justify-content: space-between; color: #1e40af; font-size: 0.9rem;">🔵 BAŞLANDI <span id="count-Baslandi">0</span></h3>
+
+        <div class="column" style="background: #eff6ff; padding: 20px; border-radius: 20px; border: 1px solid #dbeafe;">
+            <h3 style="display: flex; justify-content: space-between; color: #1e40af; font-size: 0.95rem; margin-top: 0;">🔵 BAŞLANDI <span id="count-Baslandi" style="background:#3b82f6; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
             <div id="parent-list-Baslandi" class="kanban-column-content"></div>
         </div>
-        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #f1c40f;">
-            <h3 style="display: flex; justify-content: space-between; color: #856404; font-size: 0.9rem;">🟡 DEVAM EDİYOR <span id="count-DevamEdiyor">0</span></h3>
+
+        <div class="column" style="background: #fffbeb; padding: 20px; border-radius: 20px; border: 1px solid #fef3c7;">
+            <h3 style="display: flex; justify-content: space-between; color: #92400e; font-size: 0.95rem; margin-top: 0;">🟡 DEVAM EDİYOR <span id="count-DevamEdiyor" style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
             <div id="parent-list-DevamEdiyor" class="kanban-column-content"></div>
         </div>
-        <div class="column" style="background: #f8fafc; padding: 15px; border-radius: 15px; border-top: 5px solid #2ecc71;">
-            <h3 style="display: flex; justify-content: space-between; color: #166534; font-size: 0.9rem;">🟢 TAMAMLANDI <span id="count-Tamamlandı">0</span></h3>
+
+        <div class="column" style="background: #f0fdf4; padding: 20px; border-radius: 20px; border: 1px solid #dcfce7;">
+            <h3 style="display: flex; justify-content: space-between; color: #166534; font-size: 0.95rem; margin-top: 0;">🟢 TAMAMLANDI <span id="count-Tamamlandı" style="background:#10b981; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
             <div id="parent-list-Tamamlandı" class="kanban-column-content"></div>
         </div>
     </div>
 
-    <div style="text-align: center; margin-top: 50px;">
-        <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 14px 40px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold;">🚪 Çıkış Yap</button>
-    </div>
-</div>
-
-<div id="market-modal" class="modal-overlay">
-    <div class="modal-content">
-        <span class="close-modal" onclick="closeModal('market-modal')">&times;</span>
-        <h3 style="text-align: center; color: #2d3748; margin-bottom: 20px;">🛒 Market Onay Bekleyenler</h3>
-        <div id="pending-purchases-list">
-            <p style="text-align: center; color: #999;">Bekleyen istek yok.</p>
-        </div>
+    <div style="text-align: center; padding-bottom: 40px;">
+        <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 14px 40px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; transition: 0.3s;">🚪 Güvenli Çıkış</button>
     </div>
 </div>
 
 <div id="badge-modal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 550px;">
+    <div class="modal-content" style="border-top: 8px solid #f6ad55;">
         <span class="close-modal" onclick="closeModal('badge-modal')">&times;</span>
-        <h3 style="text-align: center;">📜 Rozetlerin Anlamları</h3>
+        <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f7fafc; padding-bottom: 20px;">
+            <h2 style="margin: 0; color: #2d3748; font-size: 1.8rem;">📜 Rozet Rehberi</h2>
+            <p style="margin: 8px 0 0; color: #718096; font-size: 0.95rem;">Görevleri tamamlarken verilecek uzmanlık rozetlerinin anlamları</p>
+        </div>
+        
         <div class="badge-grid">
-            <div class="badge-guide-item" style="border-top: 4px solid #f6ad55;"><span>📖</span><br><strong>Kitap Kurdu</strong><p style="font-size: 0.75rem;">Okuma ve ders başarısı.</p></div>
-            <div class="badge-guide-item" style="border-top: 4px solid #4facfe;"><span>🧹</span><br><strong>Temizlik Ustası</strong><p style="font-size: 0.75rem;">Düzen ve ev işleri.</p></div>
-            <div class="badge-guide-item" style="border-top: 4px solid #ecc94b;"><span>☀️</span><br><strong>Sabah Yıldızı</strong><p style="font-size: 0.75rem;">Zamanlama ve rutinler.</p></div>
-            <div class="badge-guide-item" style="border-top: 4px solid #9f7aea;"><span>🔢</span><br><strong>Matematik Dehası</strong><p style="font-size: 0.75rem;">Sayısal ve mantıksal zeka.</p></div>
-            <div class="badge-guide-item" style="border-top: 4px solid #f687b3;"><span>⭐</span><br><strong>Süper Evlat</strong><p style="font-size: 0.75rem;">Örnek davranış ve nezaket.</p></div>
+            <div class="badge-guide-item" style="border-top: 4px solid #f6ad55; background: #fffaf0;">
+                <span style="font-size: 2.5rem;">📖</span><br>
+                <strong style="display:block; margin-top:10px; color:#2d3748;">Kitap Kurdu</strong>
+                <p style="font-size: 0.8rem; color: #718096; margin-top:8px;">Okuma ve ders çalışma görevleri.</p>
+            </div>
+            <div class="badge-guide-item" style="border-top: 4px solid #4facfe; background: #f0f9ff;">
+                <span style="font-size: 2.5rem;">🧹</span><br>
+                <strong style="display:block; margin-top:10px; color:#2d3748;">Temizlik Ustası</strong>
+                <p style="font-size: 0.8rem; color: #718096; margin-top:8px;">Oda düzeni ve ev işleri.</p>
+            </div>
+            <div class="badge-guide-item" style="border-top: 4px solid #ecc94b; background: #fffff0;">
+                <span style="font-size: 2.5rem;">☀️</span><br>
+                <strong style="display:block; margin-top:10px; color:#2d3748;">Sabah Yıldızı</strong>
+                <p style="font-size: 0.8rem; color: #718096; margin-top:8px;">Erken kalkma ve sabah rutinleri.</p>
+            </div>
+            <div class="badge-guide-item" style="border-top: 4px solid #9f7aea; background: #f5f3ff;">
+                <span style="font-size: 2.5rem;">🔢</span><br>
+                <strong style="display:block; margin-top:10px; color:#2d3748;">Matematik Dehası</strong>
+                <p style="font-size: 0.8rem; color: #718096; margin-top:8px;">Sayısal başarılar ve zeka soruları.</p>
+            </div>
+            <div class="badge-guide-item" style="border-top: 4px solid #f687b3; background: #fff5f7;">
+                <span style="font-size: 2.5rem;">⭐</span><br>
+                <strong style="display:block; margin-top:10px; color:#2d3748;">Süper Evlat</strong>
+                <p style="font-size: 0.8rem; color: #718096; margin-top:8px;">Yardımseverlik ve güzel davranışlar.</p>
+            </div>
+        </div>
+        <button onclick="closeModal('badge-modal')" style="width: 100%; margin-top: 30px; padding: 15px; border: none; background: #edf2f7; border-radius: 12px; cursor: pointer; font-weight: bold; color: #4a5568;">Anladım, Kapat</button>
+    </div>
+</div>
+
+<div id="market-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px; border-top: 8px solid #4facfe;">
+        <span class="close-modal" onclick="closeModal('market-modal')">&times;</span>
+        <h3 style="text-align: center; color: #2d3748; margin-bottom: 25px; font-size: 1.5rem;">🛒 Market Onay Bekleyenler</h3>
+        <div id="pending-purchases-list" style="display: flex; flex-direction: column; gap: 12px;">
+            <p style="text-align: center; color: #a0aec0; padding: 20px;">Bekleyen onay isteği bulunmuyor.</p>
         </div>
     </div>
 </div>
 
 <div id="chart-modal" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 800px; border-top: 8px solid #764ba2;">
         <span class="close-modal" onclick="closeModal('chart-modal')">&times;</span>
-        <h3 style="text-align: center;">📊 Öğrenci Gelişim Analizi</h3>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
-            <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." class="form-input" style="width: 250px; margin-bottom: 0;">
-            <button onclick="loadStatsByEmail()" style="background: #4facfe; color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Sorgula</button>
+        <h3 style="text-align: center; color: #2d3748; margin-bottom: 20px;">📊 Öğrenci Gelişim Analizi</h3>
+        <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
+            <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." class="form-input" style="width: 280px; margin-bottom: 0;">
+            <button onclick="loadStatsByEmail()" style="background: #4facfe; color: white; border: none; padding: 0 25px; border-radius: 10px; cursor: pointer; font-weight: bold;">Sorgula</button>
         </div>
-        <canvas id="myChart" style="width:100%; max-height:300px;"></canvas>
-        <div id="history-container" style="margin-top: 20px;"></div>
+        
+        <canvas id="myChart" style="width:100%; max-height:300px; background: #f8fafc; border-radius: 15px; padding: 10px;"></canvas>
+
+        <div style="margin-top: 30px;">
+            <h4 style="color: #4a5568; border-bottom: 1px solid #eee; padding-bottom: 10px;">🕒 Son Tamamlanan Görevler</h4>
+            <div id="history-container" style="max-height: 200px; overflow-y: auto;">
+                 <p style="color: #999; font-size: 13px; text-align: center; padding: 20px;">Sorgulama yapıldığında burada listelenecektir.</p>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+    // Modal Açma/Kapama Yardımı
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     
+    // Siyah alana basınca modal kapatma
     window.onclick = function(event) {
-        if (event.target.className === 'modal-overlay') event.target.style.display = 'none';
+        if (event.target.className === 'modal-overlay') {
+            event.target.style.display = 'none';
+        }
     }
-
-    // script.js içindeki loadPendingPurchases fonksiyonunu bu verilerle desteklemelisin
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
