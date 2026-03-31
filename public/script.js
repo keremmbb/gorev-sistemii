@@ -131,24 +131,48 @@ async function updateTaskStatus(taskId, newStatus) {
 async function loadStudentPoints() {
     try {
         const response = await fetch(`/user-points/${userId}`, {
-            headers: getAuthHeaders()
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
         const data = await response.json();
 
-        // HTML'deki ID'lerle eşleştirme
-        const totalXP = document.getElementById("total-xp-display");
-        const currentGP = document.getElementById("total-points");
-        const marketGP = document.getElementById("market-balance");
+        // HTML'deki elementleri bulalım
+        const xpDisplay = document.getElementById("total-xp-display");
+        const gpDisplay = document.getElementById("total-points");
+        const rankDisplay = document.getElementById("user-rank");
+        const levelDisplay = document.getElementById("user-level");
 
-        if (totalXP) totalXP.innerText = data.total_points || 0;
-        if (currentGP) currentGP.innerText = data.current_balance || 0;
-        if (marketGP) marketGP.innerText = data.current_balance || 0;
-        
-        // Rütbe hesaplamasını tetikle
-        if (typeof updateRank === 'function') updateRank(data.total_points || 0);
+        const totalXP = data.total_points || 0;
+        const currentGP = data.current_balance || 0;
+
+        // Değerleri ekrana yazalım
+        if (xpDisplay) xpDisplay.innerText = totalXP;
+        if (gpDisplay) gpDisplay.innerText = currentGP;
+
+        // Rütbe ve Seviye Hesaplama
+        if (rankDisplay) {
+            let rank = "⚪ Çaylak";
+            let level = 1;
+
+            if (totalXP >= 6000) {
+                rank = "👑 Efsane";
+                level = 5;
+            } else if (totalXP >= 3001) {
+                rank = "🟢 Kahraman";
+                level = 4;
+            } else if (totalXP >= 1501) {
+                rank = "🟣 Usta";
+                level = 3;
+            } else if (totalXP >= 501) {
+                rank = "🔵 Asistan";
+                level = 2;
+            }
+
+            rankDisplay.innerText = rank;
+            if (levelDisplay) levelDisplay.innerText = level;
+        }
 
     } catch (error) {
-        console.error("Puan yükleme hatası:", error);
+        console.error("Puanlar yüklenirken hata:", error);
     }
 }
 
