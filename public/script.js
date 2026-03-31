@@ -982,14 +982,14 @@ function loadMarketItems() {
 
 // Sepete Ekle
 function addToCart(rewardName, cost) {
-    // Sepette bu ürün var mı kontrol et
+    // Sepette bu ürünün daha önce eklenip eklenmediğini kontrol eder
     const existingItem = cart.find(item => item.rewardName === rewardName);
 
     if (existingItem) {
-        // Varsa miktarını artır
+        // Ürün zaten varsa sadece miktarını (quantity) artırır
         existingItem.quantity += 1;
     } else {
-        // Yoksa yeni bir obje olarak ekle (quantity: 1 ile)
+        // Ürün ilk kez ekleniyorsa yeni bir obje oluşturur
         cart.push({
             rewardName: rewardName,
             cost: cost,
@@ -997,8 +997,12 @@ function addToCart(rewardName, cost) {
         });
     }
     
-    updateCartUI(); // Arayüzü güncelle
-    alert(`${rewardName} sepete eklendi!`);
+    // UI (Arayüz) güncellemesini yapar (Sepet badge ve listesi için)
+    updateCartUI(); 
+
+    // Not: Buradaki alert(`${rewardName} sepete eklendi!`); satırı kaldırılmıştır.
+    // Kullanıcıya geri bildirim vermek istersen sepet butonunun üzerindeki 
+    // kırmızı sayının (badge) artması artık yeterli olacaktır.
 }
 
 // Sepet Arayüzünü Güncelle
