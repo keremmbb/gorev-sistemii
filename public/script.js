@@ -1091,6 +1091,7 @@ function changeQuantity(index, delta) {
         showCart();
     }
 }
+// script.js içindeki checkout fonksiyonunu bununla güncelle:
 async function checkout() {
     if (!cart || cart.length === 0) {
         alert("Sepetiniz boş!");
@@ -1100,7 +1101,6 @@ async function checkout() {
     const userId = localStorage.getItem("userId");
     const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
 
-    // Veritabanının beklediği isim formatı
     const itemsToPost = cart.map(item => ({
         reward_name: item.name, 
         cost: item.cost,
@@ -1121,15 +1121,20 @@ async function checkout() {
         const data = await res.json();
 
         if (res.ok) {
-            alert("Harika! Siparişin veli onayına gönderildi. 🚀");
-            cart = []; 
-            updateCartUI(); 
-            closeModal('cart-modal');
-            if (typeof loadStudentPoints === 'function') loadStudentPoints();
+            alert("Harika! Puanın düştü ve siparişin veli onayına gönderildi. 🚀");
+            cart = []; // Sepeti boşalt
+            updateCartUI();
+            closeCart();
+            
+            // KRİTİK: Puan tablosunu ve bakiyeyi ekranda hemen güncelle
+            if (typeof loadStudentPoints === "function") {
+                loadStudentPoints(); 
+            }
         } else {
             alert("Hata: " + data.message);
         }
     } catch (error) {
-        console.error("Bağlantı hatası:", error);
+        console.error("Checkout hatası:", error);
+        alert("İşlem tamamlanamadı.");
     }
 }

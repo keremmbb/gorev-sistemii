@@ -327,25 +327,38 @@ app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
 
     try {
-        for (const item of items) {
-            await db.query(
-                "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
-                [userId, item.reward_name, item.cost]
-            );
+        // 1. Kullanıcının mevcut bakiyesini kontrol et
+        const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
+        if (userRes.rows.length === 0) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+
+        const currentBalance = userRes.rows[0].current_balance;
+
+        if (currentBalance < totalCost) {
+            return res.status(400).json({ message: "Yetersiz baki. Daha fazla görev tamamlamalısın! 🚀" });
         }
-        const userRes = await db.query(
-            "UPDATE users SET points = points - $1 WHERE id = $2 RETURNING points",
+
+        // 2. Bakiyeyi düşür
+        await db.query(
+            "UPDATE users SET current_balance = current_balance - $1 WHERE id = $2",
             [totalCost, userId]
         );
 
+        // 3. Satın almaları 'Bekliyor' olarak kaydet
+        for (const item of items) {
+            await db.query(
+                "INSERT INTO purchases (user_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+                [userId, item.reward_name, item.cost]
+            );
+        }
+
         res.json({ 
-            message: "Alışveriş başarıyla tamamlandı! ✅", 
-            newPoints: userRes.rows[0].points 
+            message: "Satın alma başarılı! Puanın düşürüldü ve onay bekliyor.",
+            newBalance: currentBalance - totalCost 
         });
 
     } catch (error) {
-        console.error("Checkout Hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası: " + error.message });
+        console.error("Checkout hatası:", error);
+        res.status(500).json({ message: "İşlem sırasında bir hata oluştu." });
     }
 });
 app.get("/rejected-purchases/:userId", auth, async (req, res) => {
