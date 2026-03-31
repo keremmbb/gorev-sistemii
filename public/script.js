@@ -1047,27 +1047,44 @@ async function checkout() {
         alert("Sepetiniz boş!");
         return;
     }
+
     const userId = localStorage.getItem("userId");
+    
+    // Toplam maliyeti hesapla
     const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
+
+    // HATA BURADAYDI: Sunucu her bir ürün için "reward_name" bekliyor.
+    // Sepetteki ürünleri sunucunun istediği formata (reward_name) çeviriyoruz.
+    const itemsToPost = cart.map(item => ({
+        reward_name: item.name, // "name" olan değeri "reward_name" olarak eşliyoruz
+        cost: item.cost,
+        quantity: item.quantity || 1
+    }));
 
     try {
         const res = await fetch("/checkout", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ userId, items: cart, totalCost })
+            body: JSON.stringify({ 
+                userId, 
+                items: itemsToPost, // Düzenlenmiş listeyi gönderiyoruz
+                totalCost 
+            })
         });
+
         if (res.ok) {
             alert("Harika! Siparişin veli onayına gönderildi. 🚀");
             cart = [];
             updateCartUI();
             closeModal('cart-modal');
-            loadStudentPoints();
+            if (typeof loadStudentPoints === 'function') loadStudentPoints();
         } else {
             const err = await res.json();
-            alert("Hata: " + err.message);
+            alert("Hata: " + (err.message || "Satın alma başarısız."));
         }
     } catch (error) {
-        console.error("Hata:", error);
+        console.error("Checkout hatası:", error);
+        alert("Sunucuya bağlanılamadı.");
     }
 }
 async function rejectPurchase(id) {
