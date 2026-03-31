@@ -95,35 +95,25 @@ app.post("/login", async (req, res) => {
 
 // server.js içindeki /add-task kısmını bulup bununla değiştirin
 app.post("/add-task", auth, async (req, res) => {
-    // script.js'den gönderdiğimiz verileri alıyoruz
     const { title, description, assignedToEmail, dueDate, dueTime, badge_reward, reward_points } = req.body;
 
     try {
-        // 1. Önce e-posta adresinden öğrencinin ID'sini bulalım
-        const studentResult = await db.query("SELECT id FROM users WHERE email = $1", [assignedToEmail]);
+        // Öğrenciyi bul
+        const student = await db.query("SELECT id FROM users WHERE email = $1", [assignedToEmail]);
+        if (student.rows.length === 0) return res.status(404).json({ message: "Öğrenci bulunamadı" });
 
-        if (studentResult.rows.length === 0) {
-            return res.status(404).json({ message: "Bu e-posta adresine sahip bir öğrenci bulunamadı!" });
-        }
+        const studentId = student.rows[0].id;
 
-        const studentId = studentResult.rows[0].id;
+        // Görevi ekle
+        await db.query(
+            "INSERT INTO tasks (title, description, assigned_to, due_date, due_time, badge_reward, reward_points, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [title, description, studentId, dueDate, dueTime, badge_reward, reward_points || 10, 'Baslamadi']
+        );
 
-        // 2. Görevi veritabanına kaydedelim
-        // Not: Veritabanı tablo yapına göre sütun isimlerini (reward_points vb.) kontrol et
-        const query = `
-            INSERT INTO tasks (title, description, assigned_to, due_date, due_time, badge_reward, reward_points, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING *;
-        `;
-        
-        const values = [title, description, studentId, dueDate, dueTime, badge_reward, reward_points, 'Baslamadi'];
-        await db.query(query, values);
-
-        res.json({ message: "Görev başarıyla eklendi ve öğrenciye atandı!" });
-
-    } catch (error) {
-        console.error("Görev ekleme hatası (Server):", error);
-        res.status(500).json({ message: "Sunucu tarafında bir hata oluştu." });
+        res.json({ message: "Görev atandı!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.get("/my-tasks/:userId", auth, async (req, res) => {
