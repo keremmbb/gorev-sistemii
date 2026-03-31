@@ -130,7 +130,7 @@
 
         <div style="display: flex; gap: 10px;">
             <input type="date" id="dueDate" class="form-input" style="flex: 1;">
-            <input type="time" id="dueTime" class="form-input" style="flex: 1;" onchange="this.blur()">
+            <input type="time" id="dueTime" class="form-input" style="flex: 1;" oninput="this.blur()">
         </div>
         <button onclick="addTask()" style="width: 100%; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px;">🚀 Görevi Öğrenciye Gönder</button>
     </div>
