@@ -1040,55 +1040,6 @@ function removeFromCart(index) {
     updateCartUI();
     showCart(); // Listeyi anlık güncelle
 }
-
-// Sepetteki ürünleri satın alma fonksiyonu
-async function checkout() {
-    if (!cart || cart.length === 0) {
-        alert("Sepetiniz boş!");
-        return;
-    }
-
-    const userId = localStorage.getItem("userId");
-    // Toplam maliyeti hesapla
-    const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
-
-    // KRİTİK NOKTA: 
-    // Senin sepetindeki "name", veritabanında "reward_name" olarak bekleniyor.
-    // Veriyi sunucunun ve veritabanının istediği formata çeviriyoruz:
-    const formattedItems = cart.map(item => ({
-        reward_name: item.name, // "name" değerini "reward_name" anahtarına atıyoruz
-        cost: item.cost,
-        quantity: item.quantity || 1
-    }));
-
-    try {
-        const res = await fetch("/checkout", {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ 
-                userId, 
-                items: formattedItems, // Düzenlenmiş listeyi gönderiyoruz
-                totalCost 
-            })
-        });
-
-        if (res.ok) {
-            alert("Harika! Siparişin veli onayına gönderildi. 🚀");
-            cart = []; // Sepeti boşalt
-            updateCartUI(); // Arayüzü temizle
-            closeModal('cart-modal'); // Modalı kapat
-            if (typeof loadStudentPoints === 'function') loadStudentPoints(); // Puanı yenile
-        } else {
-            const err = await res.json();
-            alert("Hata: " + (err.message || "Satın alma başarısız."));
-            // Hata olduysa puanın güncel halini tekrar çek (düşmüş görünmesin)
-            if (typeof loadStudentPoints === 'function') loadStudentPoints();
-        }
-    } catch (error) {
-        console.error("Checkout hatası:", error);
-        alert("Sunucuya bağlanılamadı.");
-    }
-}
 async function rejectPurchase(id) {
     const reason = prompt("Reddetme sebebi (isteğe bağlı):");
     try {
@@ -1138,5 +1089,53 @@ function changeQuantity(index, delta) {
         }
         updateCartUI();
         showCart();
+    }
+}
+async function checkout() {
+    // 1. Sepet kontrolü
+    if (!cart || cart.length === 0) {
+        alert("Sepetiniz boş! Marketten ürün ekleyin.");
+        return;
+    }
+
+    const userId = localStorage.getItem("userId");
+    const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
+
+    // 2. RENDER LOGLARINDAKİ HATAYI ÇÖZEN KISIM:
+    // Sunucu ve Veritabanı "reward_name" bekliyor. Sepetteki "name"i buraya eşliyoruz.
+    const itemsToPost = cart.map(item => ({
+        reward_name: item.name, 
+        cost: item.cost,
+        quantity: item.quantity || 1
+    }));
+
+    console.log("Satın alma isteği gönderiliyor:", { userId, items: itemsToPost, totalCost });
+
+    try {
+        const res = await fetch("/checkout", {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ 
+                userId, 
+                items: itemsToPost, 
+                totalCost 
+            })
+        });
+
+        if (res.ok) {
+            alert("Harika! Siparişin veli onayına gönderildi. 🚀");
+            cart = []; 
+            updateCartUI(); 
+            closeModal('cart-modal');
+            if (typeof loadStudentPoints === 'function') loadStudentPoints();
+        } else {
+            const errorData = await res.json();
+            alert("Hata: " + (errorData.message || "Satın alma başarısız."));
+            // Hata olsa bile puanları yenile ki düşmüş gibi görünmesin
+            if (typeof loadStudentPoints === 'function') loadStudentPoints();
+        }
+    } catch (error) {
+        console.error("Bağlantı hatası:", error);
+        alert("Sunucuya bağlanılamadı.");
     }
 }
