@@ -1049,25 +1049,24 @@ async function checkout() {
     }
 
     const userId = localStorage.getItem("userId");
-    
-    // Toplam maliyeti hesapla
     const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
 
-    // HATA BURADAYDI: Sunucu her bir ürün için "reward_name" bekliyor.
-    // Sepetteki ürünleri sunucunun istediği formata (reward_name) çeviriyoruz.
-    const itemsToPost = cart.map(item => ({
-        reward_name: item.name, // "name" olan değeri "reward_name" olarak eşliyoruz
-        cost: item.cost,
-        quantity: item.quantity || 1
-    }));
-
+    // DİKKAT: Hata buradaydı. Sunucu her bir ürün için "reward_name" bekliyor.
+    // Her bir ürün için ayrı bir istek atmak yerine, sunucunun döngüsüne uygun hale getiriyoruz.
     try {
+        // Sunucu tarafındaki döngüye uygun olarak ürünleri formatla
+        const formattedItems = cart.map(item => ({
+            reward_name: item.name, // "name" değil, "reward_name" olmalı!
+            cost: item.cost,
+            quantity: item.quantity || 1
+        }));
+
         const res = await fetch("/checkout", {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify({ 
                 userId, 
-                items: itemsToPost, // Düzenlenmiş listeyi gönderiyoruz
+                items: formattedItems, 
                 totalCost 
             })
         });
@@ -1075,16 +1074,18 @@ async function checkout() {
         if (res.ok) {
             alert("Harika! Siparişin veli onayına gönderildi. 🚀");
             cart = [];
-            updateCartUI();
+            if (typeof updateCartUI === 'function') updateCartUI();
             closeModal('cart-modal');
             if (typeof loadStudentPoints === 'function') loadStudentPoints();
         } else {
             const err = await res.json();
             alert("Hata: " + (err.message || "Satın alma başarısız."));
+            // Hata olursa puanın geri gelmesi için sayfayı yenilemek iyi olabilir
+            loadStudentPoints(); 
         }
     } catch (error) {
         console.error("Checkout hatası:", error);
-        alert("Sunucuya bağlanılamadı.");
+        alert("Bağlantı hatası!");
     }
 }
 async function rejectPurchase(id) {
