@@ -212,13 +212,12 @@ app.get("/get-user-id", auth, async (req, res) => {
     const result = await db.query("SELECT id FROM users WHERE email=$1", [req.query.email]);
     res.json({ userId: result.rows[0]?.id || null });
 });
+// GÜNCELLENMİŞ PUAN GETİRME FONKSİYONU
 app.get("/user-points/:userId", auth, async (req, res) => {
     try {
-        const userId = parseInt(req.params.userId); // ID'nin sayı olduğundan emin ol
-        const result =await db.query(
-            "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
-            [userId, rewardName, cost]
-        );    
+        const userId = parseInt(req.params.userId);
+        const result = await db.query("SELECT total_points, current_balance FROM users WHERE id = $1", [userId]);
+        
         if (result.rows.length === 0) {
             return res.json({ total_points: 0, current_balance: 0 });
         }
@@ -229,7 +228,34 @@ app.get("/user-points/:userId", auth, async (req, res) => {
         });
     } catch (error) {
         console.error("Puan çekme hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
+        res.status(500).json({ error: "Veritabanı hatası" });
+    }
+});
+
+// GÜNCELLENMİŞ SATIN ALMA FONKSİYONU
+app.post("/buy-reward", auth, async (req, res) => {
+    const { rewardName, cost } = req.body;
+    const userId = req.user.id;
+
+    try {
+        const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
+        const balance = userRes.rows[0]?.current_balance || 0;
+
+        if (balance < cost) {
+            return res.status(400).json({ error: "Yetersiz bakiye." });
+        }
+
+        await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [cost, userId]);
+        
+        await db.query(
+            "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+            [userId, rewardName, cost]
+        );
+
+        res.json({ message: "Satın alma başarılı!" });
+    } catch (error) {
+        console.error("Satın alma hatası:", error);
+        res.status(500).json({ error: "İşlem başarısız." });
     }
 });
 app.post("/buy-reward", auth, async (req, res) => {

@@ -437,44 +437,22 @@ async function approvePurchase(purchaseId, status) {
     }
 }
 async function loadRejectedPurchases() {
-    const userId = localStorage.getItem("userId");
-    if (!userId) return;
+    const list = document.getElementById("rejected-list"); // HTML'de bu ID var mı kontrol et!
+    if (!list) return; // Eğer ID yoksa fonksiyonu durdur, hata verme.
 
     try {
-        const res = await fetch(`/rejected-purchases/${userId}`, { headers: getAuthHeaders() });
-        const rejectedItems = await res.json();
-        
-        const container = document.getElementById("rejected-rewards-list");
-        const section = document.getElementById("section-rejected-rewards");
-
-        if (!rejectedItems || rejectedItems.length === 0) {
-            if (section) section.style.display = "none";
-            return;
-        }
-
-        if (section) section.style.display = "block";
-        container.innerHTML = ""; 
-
-        rejectedItems.forEach(item => {
-            const div = document.createElement("div");
-            div.style = "background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #feb2b2; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);";
-            
-            // Veli notu varsa göster, yoksa standart iade bilgisini göster
-            const noteBox = item.rejection_reason 
-                ? `<div style="background: #fff5f5; padding: 10px; border-left: 4px solid #f56565; color: #c53030; font-size: 0.85rem; border-radius: 4px;">
-                    <strong>Veli Notu:</strong> "${item.rejection_reason}"
-                   </div>`
-                : `<div style="font-size: 0.8rem; color: #718096;">💰 Tutar hesabınıza iade edildi.</div>`;
-
-            div.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: #c53030;">❌ Reddedildi: ${item.reward_name}</strong>
-                    <button onclick="dismissRejected(${item.id})" style="background: #fed7d7; border: none; color: #c53030; cursor: pointer; border-radius: 6px; padding: 5px 12px; font-weight: bold; font-size: 0.8rem;">Tamam</button>
-                </div>
-                ${noteBox}
-            `;
-            container.appendChild(div);
+        const response = await fetch(`/rejected-purchases/${userId}`, {
+            headers: getAuthHeaders()
         });
+        if (!response.ok) throw new Error("Sunucu hatası");
+        
+        const data = await response.json();
+        list.innerHTML = data.map(item => `
+            <div class="rejected-item">
+                <span>${item.reward_name} - ${item.cost} GP</span>
+                <p>Neden: ${item.rejection_reason || 'Belirtilmedi'}</p>
+            </div>
+        `).join("");
     } catch (error) {
         console.error("Yükleme hatası:", error);
     }
