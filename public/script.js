@@ -911,41 +911,39 @@ function showCart() {
     if (!cartItemsList) return;
 
     if (cart.length === 0) {
-        cartItemsList.innerHTML = "<p style='text-align:center; color:#a0aec0; padding:20px;'>Sepetiniz boş.</p>";
+        cartItemsList.innerHTML = "<p style='text-align:center; color:#a0aec0; padding:30px;'>Sepetiniz şu an boş.</p>";
     } else {
         cartItemsList.innerHTML = cart.map((item, index) => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #f0f4f8;">
-                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                    <span style="font-size: 1.5rem;">${item.icon}</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #f1f5f9;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                    <span style="font-size: 1.8rem;">${item.icon}</span>
                     <div>
-                        <div style="font-weight: 600; color: #2d3748; font-size: 0.95rem;">${item.name}</div>
+                        <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">${item.name}</div>
                         <div style="font-size: 0.85rem; color: #4facfe; font-weight: bold;">${item.cost * item.quantity} GP</div>
                     </div>
                 </div>
                 
-                <div style="display: flex; align-items: center; background: #f7fafc; border-radius: 8px; padding: 4px; gap: 10px;">
+                <div style="display: flex; align-items: center; background: #f1f5f9; border-radius: 10px; padding: 4px; gap: 12px;">
                     <button onclick="changeQuantity(${index}, -1)" 
-                        style="width: 32px; height: 32px; border-radius: 6px; border: none; 
-                               background: ${item.quantity === 1 ? '#fff5f5' : '#edf2f7'}; 
+                        style="width: 32px; height: 32px; border-radius: 8px; border: none; 
+                               background: ${item.quantity === 1 ? '#fee2e2' : '#ffffff'}; 
                                cursor: pointer; font-weight: bold; 
-                               color: ${item.quantity === 1 ? '#f56565' : '#4a5568'}; 
+                               color: ${item.quantity === 1 ? '#ef4444' : '#475569'}; 
+                               box-shadow: 0 1px 2px rgba(0,0,0,0.05);
                                transition: 0.2s; display: flex; align-items: center; justify-content: center;">
                         ${item.quantity === 1 ? '🗑️' : '-'}
                     </button>
                     
-                    <span style="font-weight: bold; min-width: 20px; text-align: center; color: #2d3748;">${item.quantity}</span>
+                    <span style="font-weight: 800; min-width: 20px; text-align: center; color: #1e293b;">${item.quantity}</span>
                     
                     <button onclick="changeQuantity(${index}, 1)" 
-                        style="width: 32px; height: 32px; border-radius: 6px; border: none; 
-                               background: #edf2f7; cursor: pointer; font-weight: bold; 
-                               color: #4a5568; transition: 0.2s; display: flex; align-items: center; justify-content: center;">
+                        style="width: 32px; height: 32px; border-radius: 8px; border: none; 
+                               background: #ffffff; cursor: pointer; font-weight: bold; 
+                               color: #475569; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                               transition: 0.2s; display: flex; align-items: center; justify-content: center;">
                         +
                     </button>
                 </div>
-
-                <button onclick="removeFromCart(${index})" style="margin-left: 15px; background: none; border: none; color: #cbd5e0; cursor: pointer; font-size: 1.1rem; transition: 0.2s;" onmouseover="this.style.color='#f56565'" onmouseout="this.style.color='#cbd5e0'">
-                    &times;
-                </button>
             </div>
         `).join("");
     }
@@ -1080,27 +1078,36 @@ async function rejectPurchase(id) {
     } catch (err) { console.error(err); }
 }
 function changeQuantity(index, delta) {
-    if (cart[index]) {
-        // Eğer miktar 1 ise ve kullanıcı azaltmaya (-1) bastıysa
-        if (cart[index].quantity === 1 && delta === -1) {
-            const confirmDelete = confirm(`${cart[index].name} ürününü sepetten silmek istiyor musunuz?`);
-            
-            if (confirmDelete) {
-                cart.splice(index, 1); // Kullanıcı 'Tamam' derse sil
-            } else {
-                return; // 'İptal' derse hiçbir şey yapma, fonksiyondan çık
-            }
-        } else {
-            // Diğer durumlarda (miktar 1'den büyükse veya artırılıyorsa) normal işlemi yap
-            cart[index].quantity += delta;
-            
-            // Güvenlik önlemi: Miktar bir şekilde 0 veya altına düşerse sil
-            if (cart[index].quantity <= 0) {
-                cart.splice(index, 1);
-            }
-        }
+    if (!cart[index]) return;
 
+    // Ürün 1 adetse ve azaltılıyorsa onay modalını aç
+    if (cart[index].quantity === 1 && delta === -1) {
+        const modal = document.getElementById("confirm-modal");
+        const yesBtn = document.getElementById("confirm-yes-btn");
+        const cancelBtn = document.getElementById("confirm-cancel-btn");
+        const confirmText = document.getElementById("confirm-text");
+
+        confirmText.innerText = `${cart[index].name} ürününü sepetten tamamen silmek istiyor musunuz?`;
+        modal.style.display = "flex";
+
+        yesBtn.onclick = function() {
+            cart.splice(index, 1);
+            modal.style.display = "none";
+            updateCartUI();
+            showCart();
+        };
+
+        cancelBtn.onclick = function() {
+            modal.style.display = "none";
+        };
+
+    } else {
+        // Normal miktar artış/azalışı
+        cart[index].quantity += delta;
+        if (cart[index].quantity <= 0) {
+            cart.splice(index, 1);
+        }
         updateCartUI();
-        showCart(); // Sepet listesini anlık yenile
+        showCart();
     }
 }
