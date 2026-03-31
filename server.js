@@ -323,42 +323,58 @@ app.post("/archive-task-parent", auth, async (req, res) => {
         res.status(500).json({ message: "Hata oluştu." });
     }
 }); 
+// server.js içindeki app.post("/checkout", ...) kısmını tamamen silip bunu yapıştır:
 app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
 
     try {
-        // 1. Kullanıcının mevcut bakiyesini kontrol et
+        // 1. Kullanıcıyı ve bakiyesini kontrol et
         const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
-        if (userRes.rows.length === 0) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+        
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+        }
 
-        const currentBalance = userRes.rows[0].current_balance;
+        const currentBalance = parseInt(userRes.rows[0].current_balance || 0);
 
+        // 2. Bakiye kontrolü
         if (currentBalance < totalCost) {
-            return res.status(400).json({ message: "Yetersiz baki. Daha fazla görev tamamlamalısın! 🚀" });
+            return res.status(400).json({ message: `Yetersiz puan! Gereken: ${totalCost}, Sende olan: ${currentBalance}` });
         }
 
-        // 2. Bakiyeyi düşür
-        await db.query(
-            "UPDATE users SET current_balance = current_balance - $1 WHERE id = $2",
-            [totalCost, userId]
-        );
+        // 3. Veritabanı İşlemleri (Transaction - Hepsi olsun ya da hiçbiri olmasın)
+        await db.query('BEGIN');
 
-        // 3. Satın almaları 'Bekliyor' olarak kaydet
-        for (const item of items) {
+        try {
+            // Bakiyeyi düş
             await db.query(
-                "INSERT INTO purchases (user_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
-                [userId, item.reward_name, item.cost]
+                "UPDATE users SET current_balance = current_balance - $1 WHERE id = $2",
+                [totalCost, userId]
             );
-        }
 
-        res.json({ 
-            message: "Satın alma başarılı! Puanın düşürüldü ve onay bekliyor.",
-            newBalance: currentBalance - totalCost 
-        });
+            // Satın almaları kaydet
+            for (const item of items) {
+                await db.query(
+                    "INSERT INTO purchases (user_id, reward_name, cost, status, created_at) VALUES ($1, $2, $3, 'Bekliyor', NOW())",
+                    [userId, item.reward_name, item.cost]
+                );
+            }
+
+            await db.query('COMMIT');
+            
+            res.json({ 
+                message: "Satın alma başarılı! Puanın düşürüldü.", 
+                newBalance: currentBalance - totalCost 
+            });
+
+        } catch (dbErr) {
+            await db.query('ROLLBACK');
+            throw dbErr; // Hatayı dıştaki catch'e fırlat
+        }
 
     } catch (error) {
-        console.error("Checkout hatası:", error);
-        res.status(500).json({ message: "İşlem sırasında bir hata oluştu." });
+        console.error("KRİTİK CHECKOUT HATASI:", error); // Render loglarında hatayı görmeni sağlar
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.get("/rejected-purchases/:userId", auth, async (req, res) => {

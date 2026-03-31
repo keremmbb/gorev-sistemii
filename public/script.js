@@ -1092,6 +1092,7 @@ function changeQuantity(index, delta) {
     }
 }
 // script.js içindeki checkout fonksiyonunu bununla güncelle:
+// script.js içindeki checkout fonksiyonunu bununla değiştir:
 async function checkout() {
     if (!cart || cart.length === 0) {
         alert("Sepetiniz boş!");
@@ -1103,38 +1104,35 @@ async function checkout() {
 
     const itemsToPost = cart.map(item => ({
         reward_name: item.name, 
-        cost: item.cost,
-        quantity: item.quantity || 1
+        cost: item.cost
     }));
 
     try {
         const res = await fetch("/checkout", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ 
-                userId, 
-                items: itemsToPost, 
-                totalCost 
-            })
+            body: JSON.stringify({ userId, items: itemsToPost, totalCost })
         });
 
         const data = await res.json();
 
         if (res.ok) {
-            alert("Harika! Puanın düştü ve siparişin veli onayına gönderildi. 🚀");
-            cart = []; // Sepeti boşalt
+            alert("✅ " + data.message);
+            cart = []; 
             updateCartUI();
             closeCart();
             
-            // KRİTİK: Puan tablosunu ve bakiyeyi ekranda hemen güncelle
+            // Puanı ekranda hemen güncellemek için:
             if (typeof loadStudentPoints === "function") {
                 loadStudentPoints(); 
+            } else {
+                window.location.reload(); // Fonksiyon yoksa sayfayı yenile
             }
         } else {
-            alert("Hata: " + data.message);
+            alert("❌ Hata: " + (data.message || "Bir sorun oluştu"));
         }
     } catch (error) {
-        console.error("Checkout hatası:", error);
-        alert("İşlem tamamlanamadı.");
+        console.error("İstek hatası:", error);
+        alert("Sunucuya bağlanılamadı.");
     }
 }
