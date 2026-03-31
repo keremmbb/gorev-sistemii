@@ -71,21 +71,23 @@
             padding: 20px;
             box-shadow: 0 15px 30px rgba(0,0,0,0.2);
         }
-        
-        /* Saat Seçici İçin Ekstra Stil */
+
         .time-input-styled {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            font-family: inherit;
+            border-radius: 12px;
+            font-size: 16px;
+            background: #f8fafc;
             margin-top: 10px;
+            -webkit-appearance: none; /* iOS için varsayılan stili temizle */
         }
     </style>
 </head>
 <body onload="loadMyTasks(); loadStudentPoints(); loadRejectedPurchases(); loadMyBadges();">
 
 <script>
+    // Giriş Kontrolü
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
 
@@ -93,9 +95,22 @@
         window.location.href = "index.html";
     }
 
+    // iOS Saat Kapatma Fonksiyonu
+    function handleTimeChange(inputElement) {
+        inputElement.blur();
+        const selectedTime = inputElement.value;
+        inputElement.type = 'text';
+        setTimeout(() => {
+            inputElement.type = 'time';
+            inputElement.value = selectedTime;
+        }, 100);
+    }
+
+    // Modal Kontrolleri
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+    // Arşiv Paneli Aç/Kapat
     function toggleArchive() {
         const list = document.getElementById("completedTaskList");
         const chevron = document.getElementById("archive-chevron");
@@ -108,6 +123,7 @@
         }
     }
 
+    // Rütbe Tablosu Aç/Kapat
     function toggleLevelTable() {
         const table = document.getElementById("levelTable");
         if (table.style.display === "none" || table.style.display === "") {
@@ -118,6 +134,7 @@
         }
     }
 
+    // Bölüm Değiştirme
     function showSection(section) {
         const tasks = document.getElementById('section-tasks');
         const market = document.getElementById('section-market');
@@ -181,7 +198,7 @@
 
     <div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <label style="font-size: 0.85rem; color: #718096; font-weight: bold;">🕒 Görev Zamanlayıcı</label>
-        <input type="time" id="task-time" class="time-input-styled" onchange="this.blur()">
+        <input type="time" id="task-time" class="time-input-styled" oninput="handleTimeChange(this)">
     </div>
 
     <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">

@@ -1143,3 +1143,15 @@ async function checkout() {
         alert("Sunucuya bağlanılamadı.");
     }
 }
+function handleTimeChange(inputElement) {
+    inputElement.blur();
+    const currentVal = inputElement.value;
+    inputElement.type = 'text';
+    
+    setTimeout(() => {
+        inputElement.type = 'time';
+        inputElement.value = currentVal;
+    }, 50);
+
+    console.log("Saat Seçildi ve Kapatıldı:", currentVal);
+}
