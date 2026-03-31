@@ -977,14 +977,14 @@ function loadMarketItems() {
     updateCartUI();
 }
 function addToCart(rewardName, cost, icon) {
-    // Sepette bu ürün zaten var mı kontrol et
+    // Sepette bu ürün var mı bak
     const existingItem = cart.find(item => item.name === rewardName);
 
     if (existingItem) {
-        // Varsa miktarını artır
+        // Varsa miktarını 1 artır
         existingItem.quantity += 1;
     } else {
-        // Yoksa yeni bir adet olarak ekle
+        // Yoksa yeni bir obje olarak ekle ve miktarını 1 yap
         cart.push({ 
             name: rewardName, 
             cost: cost, 
@@ -993,26 +993,27 @@ function addToCart(rewardName, cost, icon) {
         });
     }
     
+    // Arayüzü ve sayıları güncelle
     updateCartUI();
 }
 // Sepet Arayüzünü Güncelle
 function updateCartUI() {
-    const cartCount = document.getElementById("cart-count"); // dashboard.html'deki ID
-    const cartBadge = document.getElementById("cart-badge"); // Eğer varsa badge ID
-    const totalDisplay = document.getElementById("cart-total-amount");
-    const checkoutBtn = document.getElementById("checkout-btn");
+    const cartCount = document.getElementById("cart-count"); // Sepet ikonundaki sayı
+    const totalDisplay = document.getElementById("cart-total-amount"); // Toplam GP
 
-    // Toplam ürün sayısını yazdır
-    if (cartCount) cartCount.innerText = cart.length;
-    if (cartBadge) cartBadge.innerText = cart.length;
+    // Sepetteki tüm ürünlerin quantity (miktar) değerlerini topla
+    // Örn: 2 Elma + 3 Armut = 5 Ürün
+    const totalQuantity = cart.reduce((toplam, urun) => toplam + urun.quantity, 0);
+    
+    if (cartCount) {
+        cartCount.innerText = totalQuantity;
+    }
 
-    // Toplam tutarı hesapla
-    const total = cart.reduce((sum, item) => sum + item.cost, 0);
-    if (totalDisplay) totalDisplay.innerText = `${total} GP`;
-
-    // Sepet boş değilse "Satın Al" butonunu göster
-    if (checkoutBtn) {
-        checkoutBtn.style.display = cart.length > 0 ? "block" : "none";
+    // Toplam tutarı da (Fiyat * Miktar) şeklinde hesapla
+    const totalCost = cart.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+    
+    if (totalDisplay) {
+        totalDisplay.innerText = `${totalCost} GP`;
     }
 }
 // Sepeti Aç ve İçini Göster
@@ -1020,26 +1021,12 @@ function showCart() {
     const cartItemsList = document.getElementById("cart-items-list");
     if (!cartItemsList) return;
 
-    if (cart.length === 0) {
-        cartItemsList.innerHTML = "<p style='text-align:center; color:#a0aec0; padding:20px;'>Sepetiniz boş.</p>";
-    } else {
-        cartItemsList.innerHTML = cart.map((item, index) => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.5rem;">${item.icon}</span>
-                    <div>
-                        <div style="font-weight: bold; color: #2d3748;">${item.name}</div>
-                        <div style="font-size: 0.8rem; color: #718096;">
-                            ${item.cost} GP x ${item.quantity} Adet
-                        </div>
-                    </div>
-                </div>
-                <button onclick="removeFromCart(${index})" style="background: #fff5f5; border: none; color: #f56565; cursor: pointer; padding: 5px 10px; border-radius: 8px;">
-                    🗑️
-                </button>
-            </div>
-        `).join("");
-    }
+    cartItemsList.innerHTML = cart.map((item, index) => `
+        <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
+            <span>${item.icon} ${item.name} <strong>(x${item.quantity})</strong></span>
+            <span>${item.cost * item.quantity} GP</span>
+        </div>
+    `).join("");
 
     document.getElementById("cart-modal").style.display = "flex";
 }
