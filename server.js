@@ -323,28 +323,27 @@ app.post("/archive-task-parent", auth, async (req, res) => {
         res.status(500).json({ message: "Hata oluştu." });
     }
 }); 
-// server.js - SEPETİ ONAYLA (Adet Mantığına Uygun Tam Kod)
-// server.js içindeki ilgili endpoint
 app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
 
     try {
-        // 1. Önce satın almaları kaydet
+        // 1. ÖNCE veritabanına ödülleri kaydetmeyi dene
+        // Hata mesajına göre sütun adı: student_id
         for (const item of items) {
             await db.query(
-                "INSERT INTO purchases (user_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+                "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
                 [userId, item.reward_name, item.cost]
             );
         }
 
-        // 2. Satın almalar başarılıysa puanı düş
+        // 2. Ödüller başarıyla kaydedildiyse ŞİMDİ puanı düş
         const userRes = await db.query(
             "UPDATE users SET points = points - $1 WHERE id = $2 RETURNING points",
             [totalCost, userId]
         );
 
         res.json({ 
-            message: "Siparişiniz alındı, veli onayına gönderildi! ✅", 
+            message: "Alışveriş başarıyla tamamlandı! ✅", 
             newPoints: userRes.rows[0].points 
         });
 

@@ -1100,7 +1100,7 @@ async function checkout() {
     const userId = localStorage.getItem("userId");
     const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
 
-    // Veritabanına uygun formatlama
+    // Veritabanının beklediği isim formatı
     const itemsToPost = cart.map(item => ({
         reward_name: item.name, 
         cost: item.cost,
@@ -1121,7 +1121,7 @@ async function checkout() {
         const data = await res.json();
 
         if (res.ok) {
-            alert(data.message);
+            alert("Harika! Siparişin veli onayına gönderildi. 🚀");
             cart = []; 
             updateCartUI(); 
             closeModal('cart-modal');
