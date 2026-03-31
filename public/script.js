@@ -1049,11 +1049,14 @@ async function checkout() {
     }
 
     const userId = localStorage.getItem("userId");
+    // Toplam maliyeti hesapla
     const totalCost = cart.reduce((sum, item) => sum + (item.cost * (item.quantity || 1)), 0);
 
-    // KRİTİK DÜZELTME: "name" alanını "reward_name" olarak değiştiriyoruz
+    // KRİTİK NOKTA: 
+    // Senin sepetindeki "name", veritabanında "reward_name" olarak bekleniyor.
+    // Veriyi sunucunun ve veritabanının istediği formata çeviriyoruz:
     const formattedItems = cart.map(item => ({
-        reward_name: item.name, // Sunucu ve DB bu ismi bekliyor
+        reward_name: item.name, // "name" değerini "reward_name" anahtarına atıyoruz
         cost: item.cost,
         quantity: item.quantity || 1
     }));
@@ -1064,21 +1067,21 @@ async function checkout() {
             headers: getAuthHeaders(),
             body: JSON.stringify({ 
                 userId, 
-                items: formattedItems, 
+                items: formattedItems, // Düzenlenmiş listeyi gönderiyoruz
                 totalCost 
             })
         });
 
         if (res.ok) {
             alert("Harika! Siparişin veli onayına gönderildi. 🚀");
-            cart = [];
-            updateCartUI();
-            closeModal('cart-modal');
-            if (typeof loadStudentPoints === 'function') loadStudentPoints();
+            cart = []; // Sepeti boşalt
+            updateCartUI(); // Arayüzü temizle
+            closeModal('cart-modal'); // Modalı kapat
+            if (typeof loadStudentPoints === 'function') loadStudentPoints(); // Puanı yenile
         } else {
             const err = await res.json();
             alert("Hata: " + (err.message || "Satın alma başarısız."));
-            // Hata olursa güncel puanı tekrar yükle (eksik görünmesin)
+            // Hata olduysa puanın güncel halini tekrar çek (düşmüş görünmesin)
             if (typeof loadStudentPoints === 'function') loadStudentPoints();
         }
     } catch (error) {
