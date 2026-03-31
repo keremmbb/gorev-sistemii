@@ -376,69 +376,48 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 });
+// script.js
 async function loadPendingPurchases() {
     try {
         const response = await fetch("/pending-purchases", {
             headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
-        
-        if (!response.ok) throw new Error("Market verileri alınamadı");
-        
         const data = await response.json();
         
-        // HTML Elementlerini bulalım
-        const listContainer = document.getElementById("pending-purchases-list");
         const badge = document.getElementById("market-badge");
+        const listContainer = document.getElementById("pending-purchases-list");
 
-        // 1. BİLDİRİM ROZETİ GÜNCELLEME (Butonun üzerindeki sayı)
+        // Sayıyı güncelle
         if (badge) {
             if (data.length > 0) {
                 badge.innerText = data.length;
-                badge.style.display = "flex"; // Sayı varsa göster
+                badge.style.display = "flex"; // Kırmızı yuvarlağı göster
             } else {
-                badge.style.display = "none"; // Sayı yoksa gizle
+                badge.style.display = "none"; // Onay yoksa gizle
             }
         }
 
-        // 2. MODAL İÇİNDEKİ LİSTEYİ GÜNCELLEME
-        if (!listContainer) return; // Element yoksa durdur
-
-        if (data.length === 0) {
-            listContainer.innerHTML = `
-                <div style="text-align: center; padding: 20px; color: #a0aec0;">
-                    <p style="font-size: 3rem; margin-bottom: 10px;">☕</p>
-                    <p>Şu an onay bekleyen bir satın alma isteği bulunmuyor.</p>
-                </div>`;
-            return;
-        }
-
-        // İstekleri şık kartlar halinde listele
-        listContainer.innerHTML = data.map(item => `
-            <div class="task-card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #edf2f7; margin-bottom: 10px; border-radius: 12px; background: #fff;">
-                <div style="flex: 1;">
-                    <strong style="color: #2d3748; display: block; font-size: 1rem;">${item.reward_name}</strong>
-                    <div style="font-size: 0.85rem; color: #718096; margin-top: 4px;">
-                        <span>👤 ID: ${item.student_id}</span> • 
-                        <span style="color: #48bb78; font-weight: bold;">💰 ${item.cost} GP</span>
+        // Listeyi doldur (Eğer modal içindeyse)
+        if (listContainer) {
+            if (data.length === 0) {
+                listContainer.innerHTML = "<p style='text-align:center; padding:20px; color:#999;'>Bekleyen onay yok.</p>";
+            } else {
+                listContainer.innerHTML = data.map(item => `
+                    <div class="task-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:15px; background:#fff; border-radius:12px; border:1px solid #eee;">
+                        <div>
+                            <strong>${item.reward_name}</strong>
+                            <div style="font-size:0.8rem; color:#666;">Maliyet: ${item.cost} GP</div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="approvePurchase(${item.id}, 'Onaylandı')" style="background:#48bb78; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">✅ Onayla</button>
+                            <button onclick="approvePurchase(${item.id}, 'Reddedildi')" style="background:#f56565; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">❌ Reddet</button>
+                        </div>
                     </div>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="approvePurchase(${item.id})" 
-                            style="background: #48bb78; color: white; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"
-                            title="Onayla">
-                        ✓
-                    </button>
-                    <button onclick="rejectPurchase(${item.id})" 
-                            style="background: #f56565; color: white; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"
-                            title="Reddet">
-                        ✕
-                    </button>
-                </div>
-            </div>
-        `).join("");
-
+                `).join('');
+            }
+        }
     } catch (error) {
-        console.error("Market onay listesi yüklenirken hata:", error);
+        console.error("Yükleme hatası:", error);
     }
 }
 async function approvePurchase(purchaseId, status) {

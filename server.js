@@ -504,4 +504,16 @@ app.get("/my-badges/:userId", auth, async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
+app.get("/pending-purchases", auth, async (req, res) => {
+    try {
+        // Sadece 'Bekliyor' durumundaki satın almaları getir
+        const result = await db.query(
+            "SELECT * FROM purchases WHERE status = 'Bekliyor' ORDER BY created_at DESC"
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Market listesi hatası:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
