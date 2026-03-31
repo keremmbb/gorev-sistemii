@@ -15,68 +15,215 @@
         /* Market Kartları */
         .market-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f4f8; transition: 0.3s; }
         .market-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        
+        /* Rozet (Başarım) Stilleri */
+        .badge-item {
+            text-align: center; 
+            background: #f0f7ff; 
+            padding: 10px; 
+            border-radius: 12px; 
+            border: 2px solid #4facfe; 
+            min-width: 80px; 
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 10px rgba(79, 172, 254, 0.1);
+            position: relative;
+        }
+        .badge-item:hover { transform: scale(1.1); }
+        .badge-icon { font-size: 2rem; display: block; margin-bottom: 5px; }
+        .badge-name { font-size: 0.7rem; font-weight: bold; color: #2d3748; }
+
+        /* Sepet Butonu Özel Stil */
+        #checkout-btn {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+            transition: 0.3s;
+            margin-top: 20px;
+            width: 100%;
+        }
+        #checkout-btn:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4); }
+
+        ul { padding: 0; list-style: none; }
+
+        /* Yeni Eklenen Modal Stili */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
-<body style="background: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px;">
+<body onload="loadMyTasks(); loadStudentPoints(); loadRejectedPurchases(); loadMyBadges();">
 
-    <div style="max-width: 1000px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-            <div>
-                <h2 style="margin: 0; color: #2d3748;">Hoş Geldin, <span id="student-name">...</span>! 👋</h2>
-                <p style="margin: 5px 0 0; color: #718096; font-size: 0.9rem;">Bugün harika şeyler başarmaya hazır mısın?</p>
-            </div>
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <div style="background: #ebf8ff; padding: 10px 20px; border-radius: 12px; display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.2rem;">💎</span>
-                    <span id="student-points" style="font-weight: bold; color: #2b6cb0; font-size: 1.1rem;">0 GP</span>
+<script>
+    // Giriş Kontrolü
+    const userId = localStorage.getItem("userId");
+    const role = localStorage.getItem("role");
+
+    if (!userId || (role && role.toLowerCase() !== "student")) {
+        window.location.href = "index.html";
+    }
+
+    // Arşiv Paneli Aç/Kapat
+    function toggleArchive() {
+        const list = document.getElementById("completedTaskList");
+        const chevron = document.getElementById("archive-chevron");
+        if (list.style.display === "none") {
+            list.style.display = "block";
+            chevron.innerText = "▲";
+        } else {
+            list.style.display = "none";
+            chevron.innerText = "▼";
+        }
+    }
+
+    // Rütbe Tablosu Aç/Kapat
+    function toggleLevelTable() {
+        const table = document.getElementById("levelTable");
+        if (table.style.display === "none" || table.style.display === "") {
+            table.style.display = "block";
+            table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            table.style.display = "none";
+        }
+    }
+
+    // Bölüm Değiştirme (Görevler / Market)
+    function showSection(section) {
+        const tasks = document.getElementById('section-tasks');
+        const market = document.getElementById('section-market');
+        const btnTasks = document.getElementById('btn-tasks');
+        const btnMarket = document.getElementById('btn-market');
+
+        if (section === 'tasks') {
+            tasks.style.display = 'block';
+            market.style.display = 'none';
+            btnTasks.style.background = '#4facfe';
+            btnTasks.style.color = 'white';
+            btnMarket.style.background = '#e2e8f0';
+            btnMarket.style.color = '#4a5568';
+        } else {
+            tasks.style.display = 'none';
+            market.style.display = 'block';
+            btnMarket.style.background = '#4facfe';
+            btnMarket.style.color = 'white';
+            btnTasks.style.background = '#e2e8f0';
+            btnTasks.style.color = '#4a5568';
+            if(typeof loadMarketItems === 'function') loadMarketItems();
+        }
+    }
+</script>
+
+<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', sans-serif;">
+    
+    <div style="text-align: center; margin-bottom: 25px;">
+        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; padding: 25px; border-radius: 25px; box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3); display: inline-block; width: 100%; box-sizing: border-box;">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.9;">Mevcut Seviye: <span id="user-level" style="font-weight: bold;">1</span></div>
+            <div id="user-rank" style="font-size: 1.6rem; font-weight: bold; margin-bottom: 10px;">Yükleniyor...</div>
+            
+            <div style="margin: 15px 0; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px; display: flex; justify-content: space-around;">
+                <div>
+                    <div style="font-size: 0.7rem; opacity: 0.8;">TOPLAM TECRÜBE</div>
+                    <div style="font-size: 1.2rem; font-weight: bold;">✨ <span id="total-xp-display">0</span> XP</div>
                 </div>
-                <button onclick="showCart()" style="position: relative; background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 12px; cursor: pointer; transition: 0.3s;">
-                    🛒
-                    <span id="cart-count" style="position: absolute; top: -5px; right: -5px; background: #f56565; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">0</span>
-                </button>
-                <button onclick="logout()" style="background: #fff5f5; color: #c53030; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s;">Çıkış Yap</button>
+                <div style="border-left: 1px solid rgba(255,255,255,0.3); height: 30px;"></div>
+                <div>
+                    <div style="font-size: 0.7rem; opacity: 0.8;">HARCANABİLİR</div>
+                    <div style="font-size: 1.2rem; font-weight: bold;">💰 <span id="total-points">0</span> GP</div>
+                </div>
+            </div>
+            <button onclick="toggleLevelTable()" style="background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; font-weight: bold; transition: 0.3s;">
+                📜 Rütbe Tablosunu Gör
+            </button>
+
+            <div id="levelTable" style="display: none; margin-top: 15px; background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; color: #333;">
+                <h4 style="margin-top: 0; color: #2d3748; border-bottom: 2px solid #f0f4f8; padding-bottom: 10px; text-align: center;">🏆 Rütbe Gereksinimleri</h4>
+                <table style="width: 100%; font-size: 0.95rem; text-align: left; border-collapse: collapse;">
+                    <thead>
+                        <tr style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">
+                            <th style="padding: 10px 5px;">Gereken XP</th>
+                            <th style="padding: 10px 5px; text-align: right;">Rütbe Adı</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">0 - 500 XP</td> <td style="text-align: right; font-weight: bold; color: #718096;">⚪ Çaylak</td> </tr>
+                        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">501 - 1500 XP</td> <td style="text-align: right; font-weight: bold; color: #3182ce;">🔵 Asistan</td> </tr>
+                        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">1501 - 3000 XP</td> <td style="text-align: right; font-weight: bold; color: #805ad5;">🟣 Usta</td> </tr>
+                        <tr style="border-bottom: 1px solid #f7fafc;"> <td style="padding: 12px 5px;">3001 - 6000 XP</td> <td style="text-align: right; font-weight: bold; color: #38a169;">🟢 Kahraman</td> </tr>
+                        <tr> <td style="padding: 12px 5px;">6000+ XP</td> <td style="text-align: right; font-weight: bold; color: #d69e2e;">👑 Efsane</td> </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #edf2f7;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">🏅 Kazandığım Rozetler</h3>
+        <div id="badge-container" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+            <p style="color: #a0aec0; font-size: 0.8rem;">Rozetleriniz yükleniyor...</p>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 25px; justify-content: center;">
+        <button onclick="showSection('tasks')" id="btn-tasks" style="flex: 1; padding: 15px; border-radius: 12px; border: none; background: #4facfe; color: white; cursor: pointer; font-weight: bold; transition: 0.3s;">📖 Görevlerim</button>
+        <button onclick="showSection('market')" id="btn-market" style="flex: 1; padding: 15px; border-radius: 12px; border: none; background: #e2e8f0; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.3s;">🛒 Ödül Marketi</button>
+    </div>
+
+    <div id="section-tasks">
+        <ul id="taskList"></ul>
+
+        <div id="section-archive" style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+            <div onclick="toggleArchive()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <span style="color: #64748b; font-size: 0.9rem; font-weight: 600;">🏆 Tamamlanan Görevler (<span id="completed-count">0</span>)</span>
+                <span id="archive-chevron">▼</span>
+            </div>
+            <ul id="completedTaskList" style="display: none; padding: 10px 0; margin-top: 10px;"></ul>
+        </div>
+    </div>
+
+    <div id="section-market" style="display: none;">
+        <div style="margin-bottom: 20px;">
+            <div onclick="showCart()" style="background: #f0f7ff; border: 1px solid #e0e7ff; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; transition: 0.3s; width: 100%;">
+                <span style="font-size: 0.9rem; color: #1e40af; font-weight: 600;">🛒 Sepetim: <span id="cart-count">0</span> Ürün</span>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px;">
-            <div>
-                <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 25px;">
-                    <h3 style="margin-top: 0; color: #2d3748; display: flex; align-items: center; gap: 10px;">🚀 Aktif Görevlerin</h3>
-                    <ul id="taskList" style="list-style: none; padding: 0;"></ul>
-                </div>
+        <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;"></div>
 
-                <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                    <h3 style="margin-top: 0; color: #2d3748; display: flex; align-items: center; gap: 10px;">✅ Tamamlanan Görevler</h3>
-                    <ul id="completedTaskList" style="list-style: none; padding: 0; opacity: 0.7;"></ul>
-                </div>
-            </div>
+        <button id="checkout-btn" onclick="checkout()" style="display: none;">
+            ✅ Sepeti Onayla ve Satın Al
+        </button>
 
-            <div>
-                <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 25px;">
-                    <h3 style="margin-top: 0; color: #2d3748; display: flex; align-items: center; gap: 10px;">🏪 Ödül Marketi</h3>
-                    <div id="market-items-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        </div>
-                </div>
-
-                <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                    <h3 style="margin-top: 0; color: #2d3748; display: flex; align-items: center; gap: 10px;">🏅 Rozetlerin</h3>
-                    <div id="badge-container" style="display: flex; flex-wrap: wrap; gap: 10px;">
-                        </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="cart-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-            <div style="background: white; width: 90%; max-width: 450px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
-                <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0; color: #2d3748;">🛒 Sepetim</h3>
+        <div id="cart-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #2d3748; font-size: 1.1rem;">🛒 Sepet Detayı</h3>
                     <button onclick="closeCart()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #a0aec0;">&times;</button>
                 </div>
                 
-                <div id="cart-items-list" style="max-height: 350px; overflow-y: auto; padding: 10px;">
-                    </div>
+                <div id="cart-items-list" style="max-height: 250px; overflow-y: auto;"></div>
 
-                <div style="padding: 20px; border-top: 1px solid #edf2f7;">
+                <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
                     <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; color: #2d3748; margin-bottom: 15px;">
                         <span>Toplam:</span>
                         <span id="cart-total-amount">0 GP</span>
@@ -88,19 +235,26 @@
                 </div>
             </div>
         </div>
-
-        <div id="confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
-            <div style="background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-                <div style="font-size: 3.5rem; margin-bottom: 15px;">🗑️</div>
-                <h3 id="confirm-title" style="margin: 0 0 10px 0; color: #2d3748; font-size: 1.4rem;">Emin misiniz?</h3>
-                <p id="confirm-text" style="color: #718096; margin-bottom: 25px; line-height: 1.5; font-size: 1rem;">Bu ürünü sepetten tamamen silmek istediğinize emin misiniz?</p>
-                <div style="display: flex; gap: 12px; justify-content: center;">
-                    <button id="confirm-cancel-btn" style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #4a5568; cursor: pointer; font-weight: bold; transition: 0.2s;">Vazgeç</button>
-                    <button id="confirm-yes-btn" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #f56565; color: white; cursor: pointer; font-weight: bold; transition: 0.2s;">Evet, Sil</button>
-                </div>
-            </div>
-        </div>
-
     </div>
+
+    <div style="text-align: center; margin-top: 60px; padding-bottom: 40px;">
+        <button onclick="logout()" style="background-color: #ff4d4d; color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(255, 77, 77, 0.2);">
+            🚪 Güvenli Çıkış
+        </button>
+    </div>
+</div>
+
+<div id="confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); font-family: 'Segoe UI', sans-serif;">
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🗑️</div>
+        <h3 id="confirm-title" style="margin: 0 0 10px 0; color: #2d3748; font-size: 1.4rem;">Emin misiniz?</h3>
+        <p id="confirm-text" style="color: #718096; margin-bottom: 25px; line-height: 1.5;">Bu ürünü sepetten tamamen silmek istediğinize emin misiniz?</p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="confirm-cancel-btn" style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #4a5568; cursor: pointer; font-weight: bold;">Vazgeç</button>
+            <button id="confirm-yes-btn" style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: #f56565; color: white; cursor: pointer; font-weight: bold;">Evet, Sil</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
