@@ -64,19 +64,21 @@ async function loadMyTasks() {
             li.style = baseStyle;
 
             li.innerHTML = `
-                <div>
-                    <strong style="color: #2d3748; display: block;">${task.title}</strong>
-                    <small style="color: #718096;">${task.reward_points} GP ${isBadgeTask ? `+ 🏆 ${task.badge_reward}` : ""}</small>
-                </div>
-                <div>
-                    ${task.status === 'Tamamlandı' 
-                        ? '<span style="color: #48bb78; font-weight: bold;">✅ Tamamlandı</span>' 
-                        : task.status === 'Onay Bekliyor'
-                        ? '<span style="color: #f6ad55; font-weight: bold;">⏳ Onayda</span>'
-                        : `<button onclick="completeTask(${task.id}, ${task.reward_points}, '${task.badge_reward || ""}')" class="complete-btn">Tamamla</button>`
-                    }
-                </div>
-            `;
+                           <div style="flex: 1;">
+                           <strong style="color: #2d3748; display: block;">${task.title}</strong>
+                           <small style="color: #718096;">${task.reward_points} GP ${isBadgeTask ? `+ 🏆 ${task.badge_reward}` : ""}</small>
+                           </div>
+                           <div style="display: flex; align-items: center; gap: 10px;">
+                           <select onchange="updateTaskStatus(${task.id}, this.value)" class="status-select" 
+                           style="padding: 5px; border-radius: 8px; border: 1px solid #cbd5e0; font-size: 0.8rem; cursor: pointer;
+                           ${task.status === 'Tamamlandı' ? 'background: #f0fff4; color: #2f855a;' : ''}">
+                           <option value="Baslamadi" ${task.status === 'Baslamadi' ? 'selected' : ''}>🔴 Başlamadı</option>
+                           <option value="Baslandi" ${task.status === 'Baslandi' ? 'selected' : ''}>🟡 Başlandı</option>
+                           <option value="DevamEdiyor" ${task.status === 'DevamEdiyor' ? 'selected' : ''}>🔵 Devam Ediyor</option>
+                           <option value="Tamamlandı" ${task.status === 'Tamamlandı' ? 'selected' : ''}>🟢 Tamamlandı</option>
+                           </select>
+                           </div>
+                           `;
 
             // Listelere dağıtma
             if (task.status === 'Tamamlandı') {
@@ -98,52 +100,23 @@ async function loadMyTasks() {
 
 async function updateTaskStatus(taskId, newStatus) {
     try {
-        const response = await fetch("/update-task-status", {
-            method: "POST",
+        const response = await fetch(`/update-task-status/${taskId}`, {
+            method: "PUT",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ taskId, status: newStatus })
+            body: JSON.stringify({ status: newStatus })
         });
 
         if (response.ok) {
-            // Eğer durum "Tamamlandı" ise özel kutlama akışını başlat
-            if (newStatus === "Tamamlandı") {
-                // Görev listesini yeniden yükle ki badge_reward bilgisini görebilelim
-                const res = await fetch(`/my-tasks/${localStorage.getItem("userId")}`, { headers: getAuthHeaders() });
-                const tasks = await res.json();
-                const completedTask = tasks.find(t => t.id === taskId);
-
-                // Eğer bu görevde bir rozet varsa tebrik mesajı göster
-                if (completedTask && completedTask.badge_reward) {
-                    const badgeName = completedTask.badge_reward;
-                    const badgeIcons = {
-                        "Kitap Kurdu": "📖",
-                        "Temizlik Ustası": "🧹",
-                        "Sabah Yıldızı": "☀️",
-                        "Matematik Dehası": "🔢",
-                        "Süper Evlat": "⭐"
-                    };
-                    const icon = badgeIcons[badgeName] || "🏅";
-
-                    // Tebrik Mesajı
-                    alert(`🎉 TEBRİKLER! 🎉\n\n"${completedTask.title}" görevini başarıyla tamamladın ve yeni bir rozet kazandın:\n\n✨ ${icon} ${badgeName} ✨\n\nTamam'a bastığında rozetin başarımlarına eklenecek!`);
-                    
-                    // Rozetleri sayfayı yenilemeden anında güncelle
-                    if (typeof loadMyBadges === "function") {
-                        await loadMyBadges();
-                    }
-                }
+            // Eğer 'Tamamlandı' seçildiyse bir onay mesajı verebiliriz
+            if (newStatus === 'Tamamlandı') {
+                alert("🎉 Harika! Görev tamamlandı olarak işaretlendi.");
             }
-
-            // Genel listeleri yenile
-            loadMyTasks();
-            if (typeof loadStudentPoints === "function") loadStudentPoints();
-            
+            loadMyTasks(); // Listeyi yenile
         } else {
-            const err = await response.json();
-            alert("Hata: " + err.message);
+            alert("Durum güncellenirken bir hata oluştu.");
         }
     } catch (error) {
-        console.error("Durum güncelleme hatası:", error);
+        console.error("Hata:", error);
     }
 }
 

@@ -149,44 +149,16 @@ app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
     res.json(result.rows);
 });
 
-app.post("/update-task-status", auth, async (req, res) => {
-    const { taskId, status } = req.body;
-    
+app.put("/update-task-status/:id", auth, async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
     try {
-        // 1. Görevi bul
-        const taskRes = await db.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
-        const task = taskRes.rows[0];
-
-        if (!task) return res.status(404).json({ message: "Görev bulunamadı" });
-
-        const oldStatus = task.status;
-        const studentId = task.assigned_to;
-        const taskPoints = parseInt(task.points) || 0;
-
-        // 2. Durumu ve Tarihi Güncelle (Hata Buradaydı)
-        await db.query(
-            "UPDATE tasks SET status = $1, updated_at = NOW() WHERE id = $2", 
-            [status, taskId]
-        );
-
-        // 3. Puan İşlemleri
-        if (status === "Tamamlandı" && oldStatus !== "Tamamlandı") {
-            if (studentId) {
-                await db.query(
-                    `UPDATE users 
-                     SET total_points = COALESCE(total_points, 0) + $1, 
-                         current_balance = COALESCE(current_balance, 0) + $1 
-                     WHERE id = $2`,
-                    [taskPoints, studentId]
-                );
-            }
-        }
-
-        res.json({ message: "Başarıyla güncellendi." });
-
+        await db.query("UPDATE tasks SET status = $1 WHERE id = $2", [status, id]);
+        res.json({ message: "Durum güncellendi" });
     } catch (error) {
-        console.error("🔴 KRİTİK HATA:", error.message);
-        res.status(500).json({ message: "Sunucu hatası: " + error.message });
+        console.error(error);
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.delete("/delete-task/:id", auth, async (req, res) => {
