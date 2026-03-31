@@ -327,8 +327,7 @@ app.post("/checkout", auth, async (req, res) => {
     const { userId, items, totalCost } = req.body;
 
     try {
-        // 1. ÖNCE veritabanına ödülleri kaydetmeyi dene
-        // Hata mesajına göre sütun adı: student_id
+        // 1. ÖNCE satın almaları kaydet (student_id ve reward_name kullanarak)
         for (const item of items) {
             await db.query(
                 "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
@@ -336,7 +335,8 @@ app.post("/checkout", auth, async (req, res) => {
             );
         }
 
-        // 2. Ödüller başarıyla kaydedildiyse ŞİMDİ puanı düş
+        // 2. ŞİMDİ PUAN GÜNCELLEME (Hata buradaydı: points sütunu yok diyor)
+        // Eğer sütun adın 'puan' ise aşağıyı 'SET puan = puan - $1' yapmalısın.
         const userRes = await db.query(
             "UPDATE users SET points = points - $1 WHERE id = $2 RETURNING points",
             [totalCost, userId]
@@ -348,8 +348,8 @@ app.post("/checkout", auth, async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Checkout Hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası: " + error.message });
+        console.error("Checkout Hatası Detayı:", error);
+        res.status(500).json({ message: "Sunucu hatası (Sütun bulunamadı): " + error.message });
     }
 });
 app.get("/rejected-purchases/:userId", auth, async (req, res) => {
