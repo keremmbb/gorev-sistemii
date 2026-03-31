@@ -216,10 +216,8 @@ app.get("/get-user-id", auth, async (req, res) => {
 app.get("/user-points/:userId", auth, async (req, res) => {
     try {
         const userId = parseInt(req.params.userId);
-        const result = await db.query(
-    "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
-    [userId, rewardName, cost]
-);
+        // Sütun isimlerinin current_balance ve total_points olduğundan emin ol
+        const result = await db.query("SELECT total_points, current_balance FROM users WHERE id = $1", [userId]);
         
         if (result.rows.length === 0) {
             return res.json({ total_points: 0, current_balance: 0 });
