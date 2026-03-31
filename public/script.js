@@ -893,19 +893,16 @@ async function buyReward(name, cost) {
 // Sepet Arayüzünü Güncelleme
 function updateCartUI() {
     const cartCount = document.getElementById("cart-count");
-    const checkoutBtn = document.getElementById("checkout-btn");
     
-    if (cartCount) cartCount.innerText = cart.length;
+    // Toplam parça sayısını hesapla (Örn: 2 Elma + 1 Armut = 3)
+    const totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
     
-    if (checkoutBtn) {
-        if (cart.length > 0) {
-            const total = cart.reduce((sum, item) => sum + item.cost, 0);
-            checkoutBtn.style.display = "block";
-            checkoutBtn.innerText = `✅ Sepeti Onayla (${total} GP)`;
-        } else {
-            checkoutBtn.style.display = "none";
-        }
-    }
+    if (cartCount) cartCount.innerText = totalQuantity;
+
+    // Toplam tutar hesaplaması (Fiyat * Miktar)
+    const totalCost = cart.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+    const totalDisplay = document.getElementById("cart-total-amount");
+    if (totalDisplay) totalDisplay.innerText = `${totalCost} GP`;
 }
 
 // Sepeti Açıp İçindekileri Gösterme
@@ -979,12 +976,23 @@ function loadMarketItems() {
     `).join("");
     updateCartUI();
 }
-// Sepete Ekle
 function addToCart(rewardName, cost, icon) {
-    // Ürünü sepete ekle
-    cart.push({ name: rewardName, cost: cost, icon: icon });
+    // Sepette bu ürün zaten var mı kontrol et
+    const existingItem = cart.find(item => item.name === rewardName);
+
+    if (existingItem) {
+        // Varsa miktarını artır
+        existingItem.quantity += 1;
+    } else {
+        // Yoksa yeni bir adet olarak ekle
+        cart.push({ 
+            name: rewardName, 
+            cost: cost, 
+            icon: icon, 
+            quantity: 1 
+        });
+    }
     
-    // Arayüzü güncelle
     updateCartUI();
 }
 // Sepet Arayüzünü Güncelle
@@ -1009,30 +1017,31 @@ function updateCartUI() {
 }
 // Sepeti Aç ve İçini Göster
 function showCart() {
-    const modal = document.getElementById("cart-modal");
-    const list = document.getElementById("cart-items-list");
-    const totalDisplay = document.getElementById("cart-total-amount");
-    
+    const cartItemsList = document.getElementById("cart-items-list");
+    if (!cartItemsList) return;
+
     if (cart.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:#a0aec0; padding:20px;">Sepetin bomboş... 😔</p>';
+        cartItemsList.innerHTML = "<p style='text-align:center; color:#a0aec0; padding:20px;'>Sepetiniz boş.</p>";
     } else {
-        list.innerHTML = cart.map((item, index) => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8fafc; border-radius: 12px; margin-bottom: 10px; border: 1px solid #edf2f7;">
-                <div style="display: flex; align-items: center; gap: 12px;">
+        cartItemsList.innerHTML = cart.map((item, index) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
+                <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 1.5rem;">${item.icon}</span>
-                    <div style="text-align: left;">
-                        <div style="font-weight: bold; font-size: 0.9rem;">${item.name}</div>
-                        <div style="font-size: 0.8rem; color: #4facfe;">${item.cost} GP</div>
+                    <div>
+                        <div style="font-weight: bold; color: #2d3748;">${item.name}</div>
+                        <div style="font-size: 0.8rem; color: #718096;">
+                            ${item.cost} GP x ${item.quantity} Adet
+                        </div>
                     </div>
                 </div>
-                <button onclick="removeFromCart(${index})" style="background: #fff5f5; border: none; color: #f56565; cursor: pointer; font-size: 1rem; padding: 5px; border-radius: 5px;">❌</button>
+                <button onclick="removeFromCart(${index})" style="background: #fff5f5; border: none; color: #f56565; cursor: pointer; padding: 5px 10px; border-radius: 8px;">
+                    🗑️
+                </button>
             </div>
         `).join("");
     }
-    
-    const total = cart.reduce((sum, item) => sum + item.cost, 0);
-    if (totalDisplay) totalDisplay.innerText = total + " GP";
-    modal.style.display = "flex";
+
+    document.getElementById("cart-modal").style.display = "flex";
 }
 
 function closeCart() {
