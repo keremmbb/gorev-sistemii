@@ -1,3 +1,13 @@
+window.addEventListener('DOMContentLoaded', (event) => {
+    // Sayfa yüklenince 0.5 saniye bekle ve o kutuyu bulup yok et
+    setTimeout(() => {
+        const picker = document.getElementById('time-picker-container');
+        if (picker) {
+            picker.remove();
+            console.log("Zamanlayıcı zorla kaldırıldı!");
+        }
+    }, 500);
+});
 // -------------------- GENEL AYARLAR & AUTH --------------------
 function logout() {
     localStorage.clear();
