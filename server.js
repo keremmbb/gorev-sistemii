@@ -232,23 +232,21 @@ app.get("/user-points/:userId", auth, async (req, res) => {
 });
 app.post("/buy-reward", auth, async (req, res) => {
     const { rewardName, cost } = req.body;
-    const studentId = req.user.id;
+    const userId = req.user.id;
 
     try {
-        const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [studentId]);
-        const balance = userRes.rows[0].current_balance || 0;
+        // Kullanıcı bakiyesini kontrol et ve düş
+        await db.query("UPDATE users SET points = points - $1 WHERE id = $2", [cost, userId]);
+        
+        // Satın alma geçmişine/onay listesine ekle
+        await db.query(
+            "INSERT INTO purchases (user_id, item_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+            [userId, rewardName, cost]
+        );
 
-        if (balance < cost) {
-            return res.status(400).json({ message: "Yetersiz GP (Puan)!" });
-        }
-
-        // Puanı düş ve satın almayı kaydet
-        await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [cost, studentId]);
-        await db.query("INSERT INTO purchases (student_id, reward_name, cost) VALUES ($1, $2, $3)", [studentId, rewardName, cost]);
-
-        res.json({ message: "Ödül satın alındı! Velinin onayı bekleniyor." });
+        res.json({ message: "Satın alma başarılı, onay bekleniyor." });
     } catch (error) {
-        res.status(500).json({ message: "Hata oluştu." });
+        res.status(500).json({ error: "İşlem başarısız." });
     }
 });
 app.get("/pending-purchases/:parentId", auth, async (req, res) => {

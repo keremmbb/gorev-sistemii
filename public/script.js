@@ -1038,31 +1038,60 @@ function removeFromCart(index) {
     showCart(); // Listeyi anlık güncelle
 }
 
+// Sepetteki ürünleri satın alma fonksiyonu
 async function checkout() {
+    // 1. Toplam tutarı hesapla
     const totalCost = cart.reduce((sum, item) => sum + item.cost, 0);
+    
+    // 2. Mevcut bakiyeyi HTML'den oku (GP cinsinden)
     const currentGP = parseInt(document.getElementById("total-points")?.innerText || "0");
 
+    // 3. Bakiye kontrolü
     if (totalCost > currentGP) {
-        alert("Bakiyen yetersiz! Biraz daha görev yapmalısın. 💪");
+        alert("Bakiyen yetersiz! Biraz daha görev yaparak GP kazanmalısın. 💪");
         return;
     }
 
-    if (!confirm("Bu alışverişi onaylıyor musun?")) return;
+    // 4. Kullanıcı onayı al
+    if (cart.length === 0) {
+        alert("Sepetin boş!");
+        return;
+    }
+
+    if (!confirm(`Toplam ${totalCost} GP tutarındaki ${cart.length} ürünü satın almak istiyor musun?`)) {
+        return;
+    }
 
     try {
+        // 5. Sepetteki her bir ürünü sunucuya gönder
         for (const item of cart) {
-            await fetch("/buy-reward", {
+            const response = await fetch("/buy-reward", {
                 method: "POST",
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ rewardName: item.name, cost: item.cost })
+                body: JSON.stringify({ 
+                    rewardName: item.name, 
+                    cost: item.cost 
+                })
             });
+
+            if (!response.ok) {
+                throw new Error(`${item.name} satın alınırken bir hata oluştu.`);
+            }
         }
-        alert("🎉 Tebrikler! Satın aldığın ürünler veli onayına düştü.");
-        cart = []; // Sepeti temizle
-        closeCart();
-        loadStudentPoints(); // Puanını güncelle
-        loadMarketItems();
+
+        // 6. Başarılı işlem sonrası temizlik
+        alert("🎉 Harika! Ödüller satın alındı ve veli onayına gönderildi.");
+        
+        cart = []; // Sepeti boşalt
+        closeCart(); // Modalı kapat
+        
+        // Verileri yenile
+        if (typeof loadStudentPoints === 'function') loadStudentPoints(); 
+        if (typeof loadMarketItems === 'function') loadMarketItems();
+        updateCartUI();
+
     } catch (error) {
-        console.error("Hata:", error);
+        console.error("Satın alma hatası:", error);
+        alert("İşlem sırasında bir hata oluştu. Lütfen tekrar dene.");
     }
 }
