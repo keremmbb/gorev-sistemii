@@ -1202,22 +1202,21 @@ function askDeleteTask(taskId) {
 }
 async function executeDeleteTask() {
     if (!taskToDelete) return;
-
+    
     try {
-        const res = await fetch(`/delete-task/${taskToDelete}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
+        const response = await fetch(`/delete-task/${taskToDelete}`, {
+            method: "DELETE",
+            headers: getAuthHeaders() // Token gönderimi için şart
         });
 
-        if (res.ok) {
-            closeModal('delete-confirm-modal');
-            // Listeyi yenile (Görevi ekrandan kaldır)
-            if (typeof loadAllTasks === 'function') loadAllTasks(); 
-            // Eğer fonksiyon isminiz farklıysa onu çağırın (örn: loadVeliDashboard)
+        if (response.ok) {
+            closeModal('delete-confirm-modal'); 
+            loadMyAssignedTasks(); // Listeyi güncelle
         } else {
-            alert("Silme işlemi başarısız oldu.");
+            const err = await response.json();
+            alert("Hata: " + err.message);
         }
-    } catch (error) {
-        console.error("Hata:", error);
+    } catch (err) {
+        console.error("Bağlantı hatası:", err);
     }
 }

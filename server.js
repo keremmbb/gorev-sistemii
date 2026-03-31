@@ -192,10 +192,13 @@ app.post("/update-task-status", auth, async (req, res) => {
 app.delete("/delete-task/:id", auth, async (req, res) => {
     const { id } = req.params;
     try {
+        // tasks tablosundan ilgili ID'ye sahip görevi sil
         const result = await db.query("DELETE FROM tasks WHERE id = $1", [id]);
+
         if (result.rowCount > 0) {
             res.json({ message: "Görev başarıyla silindi." });
         } else {
+            // Eğer veritabanında bu ID ile bir satır bulunamazsa 404 döner
             res.status(404).json({ message: "Görev bulunamadı." });
         }
     } catch (error) {
