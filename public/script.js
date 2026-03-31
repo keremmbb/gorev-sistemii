@@ -23,66 +23,58 @@ async function loadMyTasks() {
         
         const taskList = document.getElementById("taskList");
         const completedTaskList = document.getElementById("completedTaskList");
+        const doneCounterEl = document.getElementById("doneCounter"); // Sayaç elementi
         
         if (taskList) taskList.innerHTML = "";
         if (completedTaskList) completedTaskList.innerHTML = "";
         
-        let doneCounter = 0;
+        let doneCounter = 0; // Sayacı sıfırla
 
         tasks.forEach(task => {
             const li = document.createElement("li");
-            
-            // Rozet kontrolü ve genel kutu stilleri
             const isBadgeTask = task.badge_reward && task.badge_reward !== "";
-            const badgeStyle = isBadgeTask 
-                ? "border: 2px solid #f6ad55; background: #fffcf0;" 
-                : "border: 1px solid #edf2f7; background: white;";
-
-            // Temel stil tanımlaması
+            const badgeStyle = isBadgeTask ? "border: 2px solid #f6ad55; background: #fffcf0;" : "border: 1px solid #edf2f7; background: white;";
             let baseStyle = `padding: 15px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; ${badgeStyle}`;
 
-            // --- TAMAMLANAN GÖREVLER İÇİN ÖZEL STİL VE KISITLAMA ---
-            if (task.status === 'Tamamlandı' || task.status === 'Onay Bekliyor') {
-                baseStyle += " opacity: 0.6; pointer-events: none; filter: grayscale(40%); cursor: not-allowed;";
-                doneCounter++;
+            // EĞER GÖREV TAMAMLANDIYSA SAYAÇ ARTIR VE STİL UYGULA
+            if (task.status === 'Tamamlandı') {
+                doneCounter++; // Sayacı artır
+                baseStyle += " opacity: 0.6; pointer-events: none; filter: grayscale(40%);";
+            } else if (task.status === 'Onay Bekliyor') {
+                baseStyle += " opacity: 0.7; pointer-events: none;";
             }
 
             li.style = baseStyle;
-
             li.innerHTML = `
                 <div>
                     <strong style="color: #2d3748; display: block;">${task.title}</strong>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                        <span style="background: #ebf8ff; color: #3182ce; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;">
-                            ${task.reward_points} GP
-                        </span>
-                        ${isBadgeTask ? `<span style="background: #fffaf0; color: #dd6b20; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;">🏆 ${task.badge_reward}</span>` : ""}
-                    </div>
+                    <small style="color: #718096;">${task.reward_points} GP ${isBadgeTask ? `+ 🏆 ${task.badge_reward}` : ""}</small>
                 </div>
-                <div style="text-align: right;">
+                <div>
                     ${task.status === 'Tamamlandı' 
-                        ? '<span style="color: #48bb78; font-weight: bold; font-size: 0.85rem;">✅ Tamamlandı</span>' 
+                        ? '<span style="color: #48bb78; font-weight: bold;">✅ Tamamlandı</span>' 
                         : task.status === 'Onay Bekliyor'
-                        ? '<span style="color: #f6ad55; font-weight: bold; font-size: 0.85rem;">⏳ Onay Bekliyor</span>'
-                        : `<button onclick="completeTask(${task.id}, ${task.reward_points}, '${task.badge_reward || ""}')" class="complete-btn" style="background: #4facfe; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">Tamamla</button>`
+                        ? '<span style="color: #f6ad55; font-weight: bold;">⏳ Onayda</span>'
+                        : `<button onclick="completeTask(${task.id}, ${task.reward_points}, '${task.badge_reward || ""}')" class="complete-btn">Tamamla</button>`
                     }
                 </div>
             `;
 
-            // Listelere dağıtma
+            // Listelere dağıt
             if (task.status === 'Tamamlandı') {
-                if (completedTaskList) completedTaskList.appendChild(li);
+                completedTaskList.appendChild(li);
             } else {
-                if (taskList) taskList.appendChild(li);
+                taskList.appendChild(li);
             }
         });
 
-        // Sayaç güncelleme
-        const doneCounterEl = document.getElementById("doneCounter");
-        if (doneCounterEl) doneCounterEl.innerText = doneCounter;
+        // Ekranda sayıyı güncelle
+        if (doneCounterEl) {
+            doneCounterEl.innerText = doneCounter;
+        }
 
     } catch (error) {
-        console.error("Görevler yüklenirken hata:", error);
+        console.error("Görev sayacı hatası:", error);
     }
 }
 
