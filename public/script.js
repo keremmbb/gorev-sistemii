@@ -215,13 +215,20 @@ async function loadMyAssignedTasks() {
                 counts[task.status]++;
                 const card = document.createElement("div");
                 
-                // Senin tasarımına uygun stil
+                // Kart stili
                 card.style = "background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;";
                 
-                // SİLME BUTONU KALDIRILDI: Sadece başlık ve öğrenci ismi görünecek
+                // Tam halini istediğiniz silme butonu içeren iç içerik
                 card.innerHTML = `
-                    <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #2d3748;">${task.title}</div>
-                    <div style="font-size: 0.75rem; color: #64748b;">👤 ${task.assigned_to || 'Öğrenci'}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #2d3748;">${task.title}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">👤 ${task.assigned_to || 'Öğrenci'}</div>
+                        </div>
+                        <button onclick="askDeleteTask(${task.id})" style="background: #fee2e2; color: #ef4444; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; transition: 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                            Sil
+                        </button>
+                    </div>
                 `;
                 listEl.appendChild(card);
             }
@@ -1180,3 +1187,37 @@ document.getElementById('dueTime')?.addEventListener('change', function() {
         el.blur();
     }, 50);
 });
+let taskToDelete = null;
+
+// Silme onay penceresini açar
+function askDeleteTask(taskId) {
+    taskToDelete = taskId;
+    const modal = document.getElementById('delete-confirm-modal');
+    modal.style.display = 'flex';
+    
+    // Onay butonuna tıklama olayını bağla
+    document.getElementById('confirm-delete-btn').onclick = async function() {
+        await executeDeleteTask();
+    };
+}
+async function executeDeleteTask() {
+    if (!taskToDelete) return;
+
+    try {
+        const res = await fetch(`/delete-task/${taskToDelete}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        if (res.ok) {
+            closeModal('delete-confirm-modal');
+            // Listeyi yenile (Görevi ekrandan kaldır)
+            if (typeof loadAllTasks === 'function') loadAllTasks(); 
+            // Eğer fonksiyon isminiz farklıysa onu çağırın (örn: loadVeliDashboard)
+        } else {
+            alert("Silme işlemi başarısız oldu.");
+        }
+    } catch (error) {
+        console.error("Hata:", error);
+    }
+}

@@ -190,8 +190,18 @@ app.post("/update-task-status", auth, async (req, res) => {
     }
 });
 app.delete("/delete-task/:id", auth, async (req, res) => {
-    await db.query("DELETE FROM tasks WHERE id = $1 AND assigned_by = $2", [req.params.id, req.user.id]);
-    res.json({ message: "Silindi" });
+    const { id } = req.params;
+    try {
+        const result = await db.query("DELETE FROM tasks WHERE id = $1", [id]);
+        if (result.rowCount > 0) {
+            res.json({ message: "Görev başarıyla silindi." });
+        } else {
+            res.status(404).json({ message: "Görev bulunamadı." });
+        }
+    } catch (error) {
+        console.error("Silme hatası:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
 });
 
 app.post("/send-invite", auth, async (req, res) => {
