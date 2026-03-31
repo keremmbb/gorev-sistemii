@@ -215,8 +215,10 @@ app.get("/get-user-id", auth, async (req, res) => {
 app.get("/user-points/:userId", auth, async (req, res) => {
     try {
         const userId = parseInt(req.params.userId); // ID'nin sayı olduğundan emin ol
-        const result = await db.query("SELECT total_points, current_balance FROM users WHERE id = $1", [userId]);
-        
+        const result =await db.query(
+            "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+            [userId, rewardName, cost]
+        );    
         if (result.rows.length === 0) {
             return res.json({ total_points: 0, current_balance: 0 });
         }
@@ -235,27 +237,30 @@ app.post("/buy-reward", auth, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        // 1. Önce kullanıcının yeterli puanı var mı tekrar kontrol et (Güvenlik için)
-        const userRes = await db.query("SELECT points FROM users WHERE id = $1", [userId]);
-        const currentPoints = userRes.rows[0].points;
+        // 1. Bakiyeyi kontrol et (points yerine current_balance kullanıyoruz)
+        const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
+        
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+        }
+
+        const currentPoints = userRes.rows[0].current_balance;
 
         if (currentPoints < cost) {
             return res.status(400).json({ error: "Yetersiz bakiye." });
         }
 
-        // 2. Bakiyeyi düş
-        await db.query("UPDATE users SET points = points - $1 WHERE id = $2", [cost, userId]);
+        // 2. Bakiyeyi düş (current_balance sütununu güncelliyoruz)
+        await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [cost, userId]);
         
-        // 3. Satın alma kaydını oluştur
-        // Tablondaki sütun isimlerinin item_name ve cost olduğundan emin ol
+        // 3. Satın alma kaydını oluştur (Sütun isimlerini student_id ve reward_name yaptık)
         await db.query(
-            "INSERT INTO purchases (user_id, item_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
+            "INSERT INTO purchases (student_id, reward_name, cost, status) VALUES ($1, $2, $3, 'Bekliyor')",
             [userId, rewardName, cost]
         );
 
         res.json({ message: "Satın alma başarılı!" });
     } catch (error) {
-        // Terminalde hatanın ne olduğunu tam görmek için:
         console.error("❌ Satın alma hatası:", error.message);
         res.status(500).json({ error: "İşlem başarısız: " + error.message });
     }
