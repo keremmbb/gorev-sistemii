@@ -159,39 +159,43 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
 app.put("/update-task-status/:id", auth, async (req, res) => {
     const taskId = req.params.id;
     const { newStatus } = req.body;
-    const userId = req.user.id; // Görevin atandığı öğrenci
+    const userId = req.user.id; 
 
     try {
+        console.log(`Gelen Durum Güncelleme: ID ${taskId}, Yeni Durum: ${newStatus}`);
+
         let query;
         let params;
 
-        if (newStatus === 'Tamamlandı') {
-            // Eğer durum 'Tamamlandı' ise completed_at sütununa şu anki zamanı (NOW()) yaz
+        if (newStatus === 'Tamamlandı' || newStatus === 'Tamamlandi') {
+            // Tamamlandı ise hem durumu hem de zamanı güncelle
             query = `
                 UPDATE tasks 
                 SET status = $1, completed_at = NOW() 
                 WHERE id = $2 AND assigned_to = $3
-            `;
-            params = [newStatus, taskId, userId];
+                RETURNING *`;
+            params = ['Tamamlandı', taskId, userId];
         } else {
-            // Diğer durumlar için (Başlandı, Devam Ediyor) sadece durumu güncelle
+            // Diğer durumlar
             query = `
                 UPDATE tasks 
                 SET status = $1 
                 WHERE id = $2 AND assigned_to = $3
-            `;
+                RETURNING *`;
             params = [newStatus, taskId, userId];
         }
 
         const result = await db.query(query, params);
 
         if (result.rowCount === 0) {
-            return res.status(404).json({ message: "Görev bulunamadı veya yetkiniz yok." });
+            console.error("❌ Güncelleme başarısız: Görev bulunamadı veya yetki yok.");
+            return res.status(404).json({ message: "Görev güncellenemedi." });
         }
 
-        res.json({ message: `Görev durumu '${newStatus}' olarak güncellendi.` });
+        console.log("✅ Güncelleme başarılı:", result.rows[0]);
+        res.json({ message: "Başarıyla güncellendi", task: result.rows[0] });
     } catch (err) {
-        console.error("Durum güncelleme hatası:", err.message);
+        console.error("❌ SQL Hatası:", err.message);
         res.status(500).json({ message: "Sunucu hatası: " + err.message });
     }
 });

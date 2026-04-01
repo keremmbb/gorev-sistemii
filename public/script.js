@@ -86,28 +86,28 @@ async function loadMyTasks() {
     }
 }
 
-async function updateTaskStatus(taskId, newStatus) {
+async function updateTaskStatus(taskId, status) {
     try {
-        const response = await fetch(`/update-task-status/${taskId}`, {
+        const res = await fetch(`/update-task-status/${taskId}`, {
             method: "PUT",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ status: newStatus })
+            headers: {
+                ...getAuthHeaders(), // Token gönderdiğinden emin ol
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ newStatus: status }) // server.js 'newStatus' bekliyor
         });
 
-        if (response.ok) {
-            // Eğer 'Tamamlandı' seçildiyse bir onay mesajı verebiliriz
-            if (newStatus === 'Tamamlandı') {
-                alert("🎉 Harika! Görev tamamlandı olarak işaretlendi.");
-            }
-            loadMyTasks(); // Listeyi yenile
+        if (res.ok) {
+            alert("Görev durumu güncellendi!");
+            location.reload(); // Sayfayı yenileyerek veriyi doğrula
         } else {
-            alert("Durum güncellenirken bir hata oluştu.");
+            const err = await res.json();
+            alert("Hata: " + err.message);
         }
-    } catch (error) {
-        console.error("Hata:", error);
+    } catch (err) {
+        console.error("Güncelleme hatası:", err);
     }
 }
-
 async function loadStudentPoints() {
     try {
         const response = await fetch(`/user-points/${userId}`, {
