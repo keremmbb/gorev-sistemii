@@ -1157,3 +1157,38 @@ async function executeDeleteTask() {
         console.error("Bağlantı hatası:", err);
     }
 }
+async function checkOverdueTasks() {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    try {
+        const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
+        const overdueTasks = await res.json();
+
+        const alertContainer = document.getElementById("overdue-alert-container");
+        if (!alertContainer) return;
+
+        if (overdueTasks.length > 0) {
+            alertContainer.style.display = "block";
+            alertContainer.innerHTML = `
+                <div style="background: #fff5f5; border-left: 5px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h4 style="margin: 0 0 10px 0; color: #c53030; display: flex; align-items: center;">
+                        ⚠️ Zamanı Geçmiş Görevler (${overdueTasks.length})
+                    </h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #742a2a; font-size: 14px;">
+                        ${overdueTasks.map(task => `
+                            <li style="margin-bottom: 5px;">
+                                <strong>${task.student_name}:</strong> ${task.title} 
+                                <span style="font-size: 12px; color: #9b2c2c;">(Süre: ${new Date(task.due_date).toLocaleDateString()})</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        } else {
+            alertContainer.style.display = "none";
+        }
+    } catch (error) {
+        console.error("Gecikmiş görev kontrolü başarısız:", error);
+    }
+}
