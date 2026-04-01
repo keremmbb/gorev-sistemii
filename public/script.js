@@ -1165,9 +1165,6 @@ document.getElementById('dueTime')?.addEventListener('change', function() {
         el.blur();
     }, 50);
 });
-let taskToDelete = null;
-
-// Silme onay penceresini açar
 function askDeleteTask(taskId) {
     taskToDelete = taskId;
     const modal = document.getElementById('delete-confirm-modal');
@@ -1224,3 +1221,38 @@ async function checkOverdueTasks() {
         }
     } catch (err) { console.error(err); }
 }
+
+let taskToDelete = null;
+
+// 1. Silme onay modalını açar
+function confirmDeleteTask(taskId) {
+    taskToDelete = taskId;
+    const modal = document.getElementById("delete-confirm-modal");
+    if (modal) modal.style.display = "flex";
+}
+
+// 2. Modaldaki "Evet, Sil" butonuna basınca çalışır
+document.getElementById("confirm-delete-btn").onclick = async function() {
+    if (!taskToDelete) return;
+
+    try {
+        const res = await fetch(`/delete-task/${taskToDelete}`, {
+            method: "DELETE",
+            headers: getAuthHeaders()
+        });
+
+        if (res.ok) {
+            // Modalı kapat
+            document.getElementById("delete-confirm-modal").style.display = "none";
+            // Listeyi yenile
+            loadMyAssignedTasks(); 
+        } else {
+            const err = await res.json();
+            alert("Hata: " + err.message);
+        }
+    } catch (err) {
+        console.error("Silme işlemi başarısız:", err);
+    } finally {
+        taskToDelete = null;
+    }
+};

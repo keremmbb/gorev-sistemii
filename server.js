@@ -161,20 +161,23 @@ app.put("/update-task-status/:id", auth, async (req, res) => {
     }
 });
 app.delete("/delete-task/:id", auth, async (req, res) => {
-    const { id } = req.params;
-    try {
-        // tasks tablosundan ilgili ID'ye sahip görevi sil
-        const result = await db.query("DELETE FROM tasks WHERE id = $1", [id]);
+    const taskId = req.params.id;
+    const userId = req.user.id; // Sadece görevi veren kişi silebilir
 
-        if (result.rowCount > 0) {
-            res.json({ message: "Görev başarıyla silindi." });
-        } else {
-            // Eğer veritabanında bu ID ile bir satır bulunamazsa 404 döner
-            res.status(404).json({ message: "Görev bulunamadı." });
+    try {
+        const result = await db.query(
+            "DELETE FROM tasks WHERE id = $1 AND assigned_by = $2",
+            [taskId, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Görev bulunamadı veya silme yetkiniz yok." });
         }
-    } catch (error) {
-        console.error("Silme hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
+
+        res.json({ message: "Görev başarıyla silindi." });
+    } catch (err) {
+        console.error("Silme hatası:", err.message);
+        res.status(500).json({ message: "Sunucu hatası: " + err.message });
     }
 });
 
