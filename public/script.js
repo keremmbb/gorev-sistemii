@@ -163,14 +163,10 @@ async function loadMyAssignedTasks() {
 
     try {
         const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
+        if (!res.ok) throw new Error("Sunucu hatası: " + res.status);
         
-        // Eğer sunucu 500 hatası verirse dur
-        if (!res.ok) throw new Error("Sunucu veriyi gönderemedi.");
-
         const tasks = await res.json();
-        
-        // Gelen verinin dizi olduğundan emin olalım
-        if (!Array.isArray(tasks)) return;
+        if (!Array.isArray(tasks)) return; // Veri dizi değilse dur
 
         const taskList = document.getElementById("taskList");
         const inProgressList = document.getElementById("inProgressList");
@@ -186,7 +182,7 @@ async function loadMyAssignedTasks() {
             const dueDate = new Date(task.due_date);
             const isOverdue = dueDate < now && task.status !== 'Tamamlandı';
 
-            // Zamanı geçen ve tamamlanmayanları ana listede GÖSTERME (Üst kutuda olacaklar)
+            // Eğer zamanı geçmişse Başlamadı listesine ekleme (üstteki kutuda görünecek)
             if (isOverdue) return;
 
             const li = document.createElement("li");
@@ -1182,7 +1178,7 @@ async function checkOverdueTasks() {
                 <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
                     <h4 style="margin: 0 0 10px 0; color: #c53030;">⏰ Süresi Dolan Görevler</h4>
                     ${overdueTasks.map(t => `
-                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between;">
+                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between; align-items:center;">
                             <span><strong>${t.student_name}:</strong> ${t.title}</span>
                             <span style="color:#e53e3e; font-weight:bold;">${fixDate(t.due_date)}</span>
                         </div>
