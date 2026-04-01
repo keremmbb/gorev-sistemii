@@ -12,7 +12,7 @@
         input, textarea, select { transition: all 0.3s ease; box-sizing: border-box !important; }
         .form-input { width: 100%; height: 42px; padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; display: block; margin-bottom: 12px; background: #f8fafc; }
 
-        /* MODAL SİSTEMİ (Tüm pencereler için ortak) */
+        /* MODAL SİSTEMİ */
         .modal-overlay {
             display: none; 
             position: fixed;
@@ -45,7 +45,7 @@
         }
         .close-modal:hover { color: #2d3748; }
 
-        /* BİLDİRİM ROZETİ (BADGE) */
+        /* BİLDİRİM ROZETİ */
         .notification-badge {
             position: absolute;
             top: -10px;
@@ -57,7 +57,7 @@
             height: 26px;
             font-size: 13px;
             font-weight: bold;
-            display: none; /* JS ile kontrol edilir */
+            display: none;
             align-items: center;
             justify-content: center;
             border: 3px solid white;
@@ -76,7 +76,7 @@
         .badge-guide-item:hover { transform: translateY(-5px); }
 
         /* KANBAN BOARD */
-        .kanban-column-content { max-height: 400px; overflow-y: auto; min-height: 80px; padding: 5px; }
+        .kanban-column-content { max-height: 400px; overflow-y: auto; min-height: 80px; padding: 5px; list-style: none; }
         .task-card { 
             background: white; 
             padding: 15px; 
@@ -111,7 +111,9 @@
 
         <button onclick="openModal('badge-modal')" style="background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%); color: white; border: none; padding: 14px 28px; border-radius: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 10px 20px rgba(237, 137, 54, 0.2);">📜 Rozet Rehberi</button>
     </div>
+
     <div id="overdue-alert-container" style="display: none; max-width: 550px; margin: 0 auto 30px auto;"></div>
+
     <div class="section" style="background: white; padding: 30px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); max-width: 550px; margin: 0 auto 40px auto;">
         <h3 style="margin-top:0; color: #2d3748; text-align: center; margin-bottom: 20px;">📝 Yeni Görev Tanımla</h3>
         <input type="text" id="taskTitle" placeholder="Görev başlığı" class="form-input">
@@ -133,38 +135,34 @@
 
         <div style="display: flex; gap: 10px;">
             <input type="date" id="dueDate" class="form-input" style="flex: 1;">
-            <input type="time" id="dueTime" class="form-input" style="flex: 1;" oninput="this.blur()">
+            <input type="time" id="dueTime" class="form-input" style="flex: 1;">
         </div>
-        <div id="overdue-alert-container" style="display: none; max-width: 550px; margin: 20px auto;"></div>
 
-<div class="section" style="background: white; padding: 30px;">
-    </div>
         <button onclick="addTask()" style="width: 100%; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px;">🚀 Görevi Öğrenciye Gönder</button>
     </div>
 
     <div class="kanban-board" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 40px;">
-    
-    <div class="column" style="background: #fdf2f2; padding: 15px; border-radius: 20px; border: 1px solid #fee2e2;">
-        <h3 style="display: flex; justify-content: space-between; color: #b91c1c; font-size: 0.9rem; margin-top: 0;">🔴 BAŞLAMADI <span id="count-Baslamadi" style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
-        <div id="taskList" class="kanban-column-content"></div> 
-    </div>
+        
+        <div class="column" style="background: #fdf2f2; padding: 15px; border-radius: 20px; border: 1px solid #fee2e2;">
+            <h3 style="display: flex; justify-content: space-between; color: #b91c1c; font-size: 0.9rem; margin-top: 0;">🔴 BAŞLAMADI <span id="count-Baslamadi" style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
+            <div id="taskList" class="kanban-column-content"></div> 
+        </div>
 
-    <div class="column" style="background: #eff6ff; padding: 15px; border-radius: 20px; border: 1px solid #dbeafe;">
-        <h3 style="display: flex; justify-content: space-between; color: #1e40af; font-size: 0.9rem; margin-top: 0;">🔵 BAŞLANDI <span id="count-Baslandi" style="background:#3b82f6; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
-        <div id="startedList" class="kanban-column-content"></div>
-    </div>
+        <div class="column" style="background: #eff6ff; padding: 15px; border-radius: 20px; border: 1px solid #dbeafe;">
+            <h3 style="display: flex; justify-content: space-between; color: #1e40af; font-size: 0.9rem; margin-top: 0;">🔵 BAŞLANDI <span id="count-Baslandi" style="background:#3b82f6; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
+            <div id="startedList" class="kanban-column-content"></div>
+        </div>
 
-    <div class="column" style="background: #fffbeb; padding: 15px; border-radius: 20px; border: 1px solid #fef3c7;">
-        <h3 style="display: flex; justify-content: space-between; color: #92400e; font-size: 0.9rem; margin-top: 0;">🟡 DEVAM EDİYOR <span id="count-DevamEdiyor" style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
-        <div id="inProgressList" class="kanban-column-content"></div>
-    </div>
+        <div class="column" style="background: #fffbeb; padding: 15px; border-radius: 20px; border: 1px solid #fef3c7;">
+            <h3 style="display: flex; justify-content: space-between; color: #92400e; font-size: 0.9rem; margin-top: 0;">🟡 DEVAM EDİYOR <span id="count-DevamEdiyor" style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
+            <div id="inProgressList" class="kanban-column-content"></div>
+        </div>
 
-    <div class="column" style="background: #f0fdf4; padding: 15px; border-radius: 20px; border: 1px solid #dcfce7;">
-        <h3 style="display: flex; justify-content: space-between; color: #166534; font-size: 0.9rem; margin-top: 0;">🟢 TAMAMLANDI <span id="count-Tamamlandi" style="background:#10b981; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
-        <div id="completedList" class="kanban-column-content"></div>
+        <div class="column" style="background: #f0fdf4; padding: 15px; border-radius: 20px; border: 1px solid #dcfce7;">
+            <h3 style="display: flex; justify-content: space-between; color: #166534; font-size: 0.9rem; margin-top: 0;">🟢 TAMAMLANDI <span id="count-Tamamlandı" style="background:#10b981; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">0</span></h3>
+            <div id="completedList" class="kanban-column-content"></div>
+        </div>
     </div>
-
-</div>
 
     <div style="text-align: center; padding-bottom: 40px;">
         <button onclick="logout()" style="background-color: #ff4d4d; color: white; padding: 14px 40px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; transition: 0.3s;">🚪 Güvenli Çıkış</button>
@@ -178,7 +176,6 @@
             <h2 style="margin: 0; color: #2d3748; font-size: 1.8rem;">📜 Rozet Rehberi</h2>
             <p style="margin: 8px 0 0; color: #718096; font-size: 0.95rem;">Görevleri tamamlarken verilecek uzmanlık rozetlerinin anlamları</p>
         </div>
-        
         <div class="badge-grid">
             <div class="badge-guide-item" style="border-top: 4px solid #f6ad55; background: #fffaf0;">
                 <span style="font-size: 2.5rem;">📖</span><br>
@@ -228,9 +225,7 @@
             <input type="email" id="statsSearchEmail" placeholder="Öğrenci e-postası..." class="form-input" style="width: 280px; margin-bottom: 0;">
             <button onclick="loadStatsByEmail()" style="background: #4facfe; color: white; border: none; padding: 0 25px; border-radius: 10px; cursor: pointer; font-weight: bold;">Sorgula</button>
         </div>
-        
         <canvas id="myChart" style="width:100%; max-height:300px; background: #f8fafc; border-radius: 15px; padding: 10px;"></canvas>
-
         <div style="margin-top: 30px;">
             <h4 style="color: #4a5568; border-bottom: 1px solid #eee; padding-bottom: 10px;">🕒 Son Tamamlanan Görevler</h4>
             <div id="history-container" style="max-height: 200px; overflow-y: auto;">
@@ -240,20 +235,6 @@
     </div>
 </div>
 
-<script>
-    // Modal Açma/Kapama Yardımı
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    
-    // Siyah alana basınca modal kapatma
-    window.onclick = function(event) {
-        if (event.target.className === 'modal-overlay') {
-            event.target.style.display = 'none';
-        }
-    }
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <div id="delete-confirm-modal" class="modal-overlay" style="z-index: 9999;">
     <div class="modal-content" style="max-width: 350px; text-align: center; padding: 30px;">
         <div style="font-size: 3rem; color: #ef4444; margin-bottom: 15px;">⚠️</div>
@@ -265,5 +246,18 @@
         </div>
     </div>
 </div>
+
+<script>
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    
+    window.onclick = function(event) {
+        if (event.target.className === 'modal-overlay') {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>
