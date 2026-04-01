@@ -163,24 +163,29 @@ async function loadMyAssignedTasks() {
     if (!userId) return;
 
     try {
-        const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
+        // Doğru endpoint'e istek attığımızdan emin olalım
+        const res = await fetch(`/assigned-tasks/${userId}`, { 
+            headers: getAuthHeaders() 
+        });
         const tasks = await res.json();
 
-        // HTML'deki Liste Elementlerini Seç
         const taskList = document.getElementById("taskList");
         const inProgressList = document.getElementById("inProgressList");
         const completedList = document.getElementById("completedList");
 
-        // Listeleri temizle
         if (taskList) taskList.innerHTML = "";
         if (inProgressList) inProgressList.innerHTML = "";
         if (completedList) completedList.innerHTML = "";
+
+        if (!tasks || tasks.length === 0) {
+            console.log("Görüntülenecek görev bulunamadı.");
+            return;
+        }
 
         tasks.forEach(task => {
             const li = document.createElement("li");
             li.className = "task-card";
             
-            // Tarih Kontrolü (Gecikmiş görevleri gizlemiyoruz, sadece işaretliyoruz)
             const teslimTarihi = new Date(task.due_date);
             const simdi = new Date();
             const vaktiGecmis = teslimTarihi < simdi && task.status !== 'Tamamlandı';
@@ -188,33 +193,33 @@ async function loadMyAssignedTasks() {
             li.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:start;">
                     <div>
-                        <strong style="display:block; color:#2d3748; font-size: 14px;">${task.title}</strong>
-                        <small style="color:#718096;">Öğrenci: ${task.student_name}</small><br>
-                        <small style="color:${vaktiGecmis ? '#e53e3e' : '#718096'}; font-weight:${vaktiGecmis ? 'bold' : 'normal'}">
-                            📅 ${new Date(task.due_date).toLocaleDateString('tr-TR')} ${vaktiGecmis ? '(GECİKTİ)' : ''}
+                        <strong style="display:block; color:#2d3748;">${task.title}</strong>
+                        <small style="color:#718096;">Öğrenci: ${task.student_name || 'Bilinmiyor'}</small><br>
+                        <small style="color:${vaktiGecmis ? '#e53e3e' : '#718096'};">
+                            📅 ${new Date(task.due_date).toLocaleDateString('tr-TR')} 
+                            ${vaktiGecmis ? '<b>(Süresi Geçti)</b>' : ''}
                         </small>
                     </div>
-                    <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:#cbd5e0; cursor:pointer; font-size:1.2rem; transition:0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e0'">&times;</button>
+                    <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:#cbd5e0; cursor:pointer; font-size:1.2rem;">&times;</button>
                 </div>
             `;
 
-            // STATÜYE GÖRE SÜTUNLARA DAĞITIM (Senin yapına özel)
-            
-            // 1. TAMAMLANANLAR
-            if (task.status === "Tamamlandı" || task.status === "Tamamlandi") {
+            // STATÜ KONTROLÜ - En kritik kısım burası (Küçük harfe çevirip kontrol ediyoruz)
+            const status = (task.status || "").toLowerCase();
+
+            if (status === "tamamlandi" || status === "tamamlandı") {
                 if (completedList) completedList.appendChild(li);
             } 
-            // 2. DEVAM EDENLER (Başlandı veya Devam Ediyor)
-            else if (task.status === "Başlandı" || task.status === "Baslandi" || task.status === "Devam Ediyor") {
+            else if (status === "baslandi" || status === "başlandı" || status === "devam ediyor" || status === "devamediyor") {
                 if (inProgressList) inProgressList.appendChild(li);
             } 
-            // 3. YAPILACAKLAR (Başlamadı veya diğer her şey)
             else {
+                // 'baslamadi', 'başlamadı' veya herhangi bir hata durumunda buraya ekle (GÖREV KAYBOLMASIN)
                 if (taskList) taskList.appendChild(li);
             }
         });
     } catch (err) {
-        console.error("Görevler yüklenirken hata oluştu:", err);
+        console.error("Görev yükleme hatası:", err);
     }
 }
 
