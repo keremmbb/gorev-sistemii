@@ -165,46 +165,51 @@ async function loadMyAssignedTasks() {
         const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
         const tasks = await res.json();
         
-        const taskList = document.getElementById("taskList"); // Başlamadı
-        const inProgressList = document.getElementById("inProgressList"); // Devam Ediyor
-        const completedList = document.getElementById("completedList"); // Tamamlandı
+        const taskList = document.getElementById("taskList");
+        const inProgressList = document.getElementById("inProgressList");
+        const completedList = document.getElementById("completedList");
 
-        if(taskList) taskList.innerHTML = "";
-        if(inProgressList) inProgressList.innerHTML = "";
-        if(completedList) completedList.innerHTML = "";
+        if (taskList) taskList.innerHTML = "";
+        if (inProgressList) inProgressList.innerHTML = "";
+        if (completedList) completedList.innerHTML = "";
 
-        const now = new Date();
+        const now = new Date().getTime(); // Karşılaştırma için sayısal değer
 
         tasks.forEach(task => {
-            const dueDate = new Date(task.due_date);
-            // ÖNEMLİ: Sadece durumu 'Tamamlandı' OLMAYAN ve vakti geçenleri 'isOverdue' say
+            const dueDate = new Date(task.due_date).getTime();
             const isOverdue = dueDate < now && task.status !== 'Tamamlandı';
 
-            const li = document.createElement("li");
-            li.className = "task-item";
-            li.innerHTML = `
-                <div style="flex: 1;">
-                    <div style="font-weight: 600; color: #1e293b;">${task.student_name} - ${task.title}</div>
-                    <div style="font-size: 0.8rem; color: #64748b;">Teslim: ${fixDate(task.due_date)} | ${task.gp_reward} GP</div>
-                </div>
-                <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:5px;">🗑️</button>
-            `;
-
+            // GÖREVE KARAR VERME MANTIĞI:
             if (task.status === "Tamamlandı") {
-                // Tamamlananlar tarihi ne olursa olsun listeye girer
-                completedList.appendChild(li);
+                // Tamamlananlar her zaman gözüksün
+                renderTaskItem(task, completedList);
             } else if (isOverdue) {
-                // Vakti geçmiş ama tamamlanmamışsa ana listeye EKLEME (Çünkü yukarıdaki uyarı kutusunda)
+                // Zamanı geçmiş ve tamamlanmamışsa ana listeye EKLEME (Üstteki kutuda gözükecek)
                 return; 
             } else if (task.status === "Devam Ediyor") {
-                inProgressList.appendChild(li);
+                renderTaskItem(task, inProgressList);
             } else {
-                taskList.appendChild(li);
+                renderTaskName(task, taskList);
             }
         });
     } catch (err) {
         console.error("Görevler yüklenemedi:", err);
     }
+}
+
+// Yardımcı fonksiyon: Listeye eleman eklemek için
+function renderTaskItem(task, listElement) {
+    if (!listElement) return;
+    const li = document.createElement("li");
+    li.className = "task-item";
+    li.innerHTML = `
+        <div style="flex: 1;">
+            <div style="font-weight: 600; color: #1e293b;">${task.student_name} - ${task.title}</div>
+            <div style="font-size: 0.8rem; color: #64748b;">Teslim: ${fixDate(task.due_date)} | ${task.gp_reward} GP</div>
+        </div>
+        <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:#ef4444; cursor:pointer;">🗑️</button>
+    `;
+    listElement.appendChild(li);
 }
 
 async function addTask() {
@@ -1159,9 +1164,9 @@ async function checkOverdueTasks() {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
                 <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: #c53030; font-size: 14px;">⚠️ Süresi Dolan Görevler</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #c53030; font-size: 14px;">⏰ Süresi Dolan Görevler</h4>
                     ${overdueTasks.map(t => `
-                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between;">
+                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between; align-items:center;">
                             <span><strong>${t.student_name}:</strong> ${t.title}</span>
                             <span style="color:#e53e3e; font-weight:bold;">${fixDate(t.due_date)}</span>
                         </div>
@@ -1171,6 +1176,6 @@ async function checkOverdueTasks() {
             alertContainer.style.display = "none";
         }
     } catch (err) {
-        console.error("Uyarı kutusu hatası:", err);
+        console.error(err);
     }
 }
