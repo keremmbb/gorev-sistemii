@@ -127,21 +127,19 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
-        // Hata riskini sıfıra indirmek için u.username yerine u.email çekiyoruz
-        // Çünkü her kullanıcıda mutlaka bir email vardır.
+        // created_at hatasını çözmek için 'ORDER BY id DESC' (son eklenen üste) yapıyoruz
         const result = await db.query(
             `SELECT t.*, u.email as student_identifier 
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1
-             ORDER BY t.created_at DESC`,
+             ORDER BY t.id DESC`, 
             [userId]
         );
         
-        // Frontend'in (script.js) beklediği 'student_name' alanını oluşturuyoruz
         const tasks = result.rows.map(task => ({
             ...task,
-            student_name: task.student_identifier.split('@')[0] // email@test.com -> email
+            student_name: task.student_identifier ? task.student_identifier.split('@')[0] : 'Öğrenci'
         }));
 
         res.json(tasks);
