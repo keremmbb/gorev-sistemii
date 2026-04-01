@@ -164,14 +164,14 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
         const result = await db.query(
             `SELECT t.*, u.full_name as student_name 
              FROM tasks t
-             JOIN users u ON t.assigned_to = u.id
-             WHERE t.assigned_by = $1 
+             LEFT JOIN users u ON t.assigned_to = u.id
+             WHERE t.assigned_by = $1
              ORDER BY t.created_at DESC`, 
             [userId]
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("Görev listesi hatası:", error);
+        console.error("Görev getirme hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
