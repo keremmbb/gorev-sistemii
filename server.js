@@ -161,7 +161,7 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
         const result = await db.query(
-            `SELECT t.*, u.username as student_name 
+            `SELECT t.*, u."username" as student_name 
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1
@@ -536,7 +536,7 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
         const result = await db.query(
-            `SELECT t.*, u.username as student_name 
+            `SELECT t.*, u."username" as student_name 
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
