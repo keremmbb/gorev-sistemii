@@ -1160,23 +1160,33 @@ async function executeDeleteTask() {
 async function checkOverdueTasks() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
+
     try {
         const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
         const overdueTasks = await res.json();
         const alertContainer = document.getElementById("overdue-alert-container");
-        if (!alertContainer) return;
 
-        if (overdueTasks.length > 0) {
+        if (alertContainer && overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
                 <div style="background: #fff5f5; border-left: 5px solid #ff4d4d; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <h4 style="margin: 0 0 10px 0; color: #c53030;">⚠️ Geciken Görevler!</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #c53030; display: flex; align-items: center;">
+                        ⚠️ Geciken Görevler (${overdueTasks.length})
+                    </h4>
                     <ul style="margin: 0; padding-left: 20px; color: #742a2a; font-size: 14px;">
-                        ${overdueTasks.map(t => `<li><strong>${t.student_name}:</strong> ${t.title}</li>`).join('')}
+                        ${overdueTasks.map(t => `
+                            <li style="margin-bottom: 5px;">
+                                <strong>${t.student_name}:</strong> ${t.title} 
+                                <span style="font-size: 11px; opacity: 0.8;">(Teslim: ${fixDate(t.due_date)})</span>
+                            </li>
+                        `).join('')}
                     </ul>
-                </div>`;
-        } else {
+                </div>
+            `;
+        } else if (alertContainer) {
             alertContainer.style.display = "none";
         }
-    } catch (e) { console.error("Gecikme kontrolü hatası:", e); }
+    } catch (err) {
+        console.error("Geciken görevler kontrol edilirken hata:", err);
+    }
 }
