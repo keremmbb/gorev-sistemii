@@ -93,63 +93,30 @@ app.post("/login", async (req, res) => {
     res.status(401).json({ message: "Bilgiler hatalı" });
 });
 
-// server.js içindeki /add-task kısmını bulup bununla değiştirin
 app.post("/add-task", auth, async (req, res) => {
+    const { title, description, assignedToEmail, points, badge, dueDate } = req.body;
+    const assignedBy = req.user.id; // Görevi yazan velinin ID'si (75)
+
     try {
-        const { 
-            title, 
-            description, 
-            assignedToEmail, 
-            dueDate, 
-            dueTime, 
-            badge_reward, 
-            reward_points 
-        } = req.body;
-
-        if (!assignedToEmail) {
-            return res.status(400).json({ message: "Öğrenci e-postası boş olamaz!" });
+        // BAĞI KURAN SORGU: E-postadan öğrencinin ID'sini buluyoruz
+        const studentRes = await db.query("SELECT id FROM users WHERE email = $1", [assignedToEmail]);
+        
+        if (studentRes.rows.length === 0) {
+            return res.status(404).json({ message: "Bu e-posta adresiyle kayıtlı bir öğrenci bulunamadı!" });
         }
 
-        const parentId = req.user.id;
-        const emailSafe = assignedToEmail.trim();
+        const assignedTo = studentRes.rows[0].id; // Bağ kuruldu!
 
-        // Öğrenciyi bul
-        const student = await db.query("SELECT id FROM users WHERE email = $1", [emailSafe]);
-        if (student.rows.length === 0) {
-            return res.status(404).json({ message: "Öğrenci bulunamadı." });
-        }
-        const studentId = student.rows[0].id;
-
-        // --- HATA ÇÖZÜMÜ BURADA ---
-        // Tarih ve saati birleştiriyoruz (Örn: "2023-10-25" + " " + "14:08" = "2023-10-25 14:08")
-        let fullTimestamp = null;
-        if (dueDate && dueTime) {
-            fullTimestamp = `${dueDate} ${dueTime}`;
-        } else if (dueDate) {
-            fullTimestamp = `${dueDate} 23:59:59`; // Saat girilmezse gün sonu olsun
-        }
-
-        // Sorguda due_date ve due_time sütunlarına fullTimestamp gönderiyoruz
+        // Görevi görev tablosuna ekle
         await db.query(
-            `INSERT INTO tasks (title, description, assigned_to, assigned_by, due_date, due_time, badge_reward, reward_points, status, updated_at) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
-            [
-                title, 
-                description, 
-                studentId, 
-                parentId, 
-                fullTimestamp, // due_date için birleşik zaman
-                fullTimestamp, // due_time için birleşik zaman (veya sadece dueTime)
-                badge_reward || null, 
-                reward_points || 10, 
-                'Baslamadi'
-            ]
+            `INSERT INTO tasks (title, description, assigned_to, assigned_by, points, badge, due_date, status) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'Başlamadı')`,
+            [title, description, assignedTo, assignedBy, points, badge, dueDate]
         );
 
-        res.json({ message: "Görev başarıyla atandı!" });
-
+        res.json({ message: "Görev başarıyla oluşturuldu ve öğrenciye bağlandı!" });
     } catch (err) {
-        console.error("🔴 SQL HATASI:", err.message);
+        console.error("Görev ekleme hatası:", err.message);
         res.status(500).json({ message: "Sunucu hatası: " + err.message });
     }
 });
@@ -158,8 +125,9 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
     res.json(result.rows);
 });
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
-    const { userId } = req.params;
+    const { userId } = req.params; // Senin ID'n (75)
     try {
+        // Bu sorgu: "Görevi veren kişi 75 olanları getir ve o görevin atandığı öğrencinin adını 'users' tablosundan çek" der.
         const result = await db.query(
             `SELECT t.*, u."username" as student_name 
              FROM tasks t
@@ -168,9 +136,9 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
              ORDER BY t.created_at DESC`,
             [userId]
         );
-        res.json(result.rows || []);
+        res.json(result.rows || []); // Eğer görev yoksa boş liste [] döner, hata vermez.
     } catch (error) {
-        console.error("❌ Görev çekme hatası:", error.message);
+        console.error("❌ Görev listeleme hatası:", error.message);
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
