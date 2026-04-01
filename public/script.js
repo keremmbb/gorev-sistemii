@@ -1169,34 +1169,22 @@ async function checkOverdueTasks() {
         if (alertContainer && overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
-                <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(245, 101, 101, 0.15);">
-                    <h3 style="margin: 0 0 15px 0; color: #c53030; display: flex; align-items: center; font-size: 1.1rem;">
-                        <span style="font-size: 1.5rem; margin-right: 10px;">⏰</span> 
-                        Süresi Dolan Görevler!
-                    </h3>
-                    <div style="display: grid; gap: 10px;">
+                <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 25px;">
+                    <h4 style="margin: 0 0 10px 0; color: #c53030; font-size: 1rem;">⏰ Süresi Dolan Görevler</h4>
+                    <div style="display: grid; gap: 8px;">
                         ${overdueTasks.map(t => `
-                            <div style="background: white; padding: 12px; border-radius: 10px; border-left: 4px solid #f56565; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <strong style="color: #2d3748;">${t.student_name}</strong>: 
-                                    <span style="color: #4a5568;">${t.title}</span>
-                                    <div style="font-size: 0.75rem; color: #e53e3e; margin-top: 4px;">
-                                        Son Tarih: ${fixDate(t.due_date)}
-                                    </div>
-                                </div>
-                                <button onclick="deleteTask(${t.id})" style="background: none; border: none; color: #cbd5e0; cursor: pointer; font-size: 1.2rem;">&times;</button>
+                            <div style="background: white; padding: 10px; border-radius: 8px; border-left: 4px solid #f56565; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <span><strong>${t.student_name}:</strong> ${t.title}</span>
+                                <span style="color: #e53e3e; font-weight: bold;">${fixDate(t.due_date)}</span>
                             </div>
                         `).join('')}
                     </div>
-                    <p style="margin-top: 15px; font-size: 0.85rem; color: #742a2a; font-style: italic;">
-                        * Bu görevler süreleri geçtiği için aşağıdaki ana listeden kaldırılmıştır.
-                    </p>
                 </div>
             `;
         } else if (alertContainer) {
             alertContainer.style.display = "none";
         }
     } catch (err) {
-        console.error("Hata:", err);
+        console.error("Gecikenler yüklenemedi:", err);
     }
 }

@@ -166,7 +166,10 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
-             AND (t.due_date >= NOW() OR t.status = 'Tamamlandı') -- Sadece zamanı geçmemiş veya bitmiş olanlar
+             AND (
+                t.status = 'Tamamlandı' -- Tamamlananlar her zaman gözüksün
+                OR t.due_date >= NOW() -- Gelecek görevler gözüksün
+             )
              ORDER BY t.created_at DESC`, 
             [userId]
         );
@@ -175,7 +178,6 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
-
 app.put("/update-task-status/:id", auth, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
