@@ -163,49 +163,71 @@ async function loadMyAssignedTasks() {
         const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
         const tasks = await res.json();
 
-        // Sunucudan dizi (array) gelmezse (hata dönerse) işlemi durdur
         if (!Array.isArray(tasks)) {
             console.error("Veri liste formatında gelmedi:", tasks);
             return;
         }
 
+        // Elementleri Seç
         const taskList = document.getElementById("taskList");
-const startedList = document.getElementById("startedList"); // Yeni sütun
-const inProgressList = document.getElementById("inProgressList");
-const completedList = document.getElementById("completedList");
+        const startedList = document.getElementById("startedList");
+        const inProgressList = document.getElementById("inProgressList");
+        const completedList = document.getElementById("completedList");
 
-       if(taskList) taskList.innerHTML = "";
-if(startedList) startedList.innerHTML = "";
-if(inProgressList) inProgressList.innerHTML = "";
-if(completedList) completedList.innerHTML = "";
+        // Listeleri Temizle
+        if (taskList) taskList.innerHTML = "";
+        if (startedList) startedList.innerHTML = "";
+        if (inProgressList) inProgressList.innerHTML = "";
+        if (completedList) completedList.innerHTML = "";
+
+        // Sayaçları Sıfırla
+        let counts = { baslamadi: 0, baslandi: 0, devam: 0, tamam: 0 };
 
         tasks.forEach(task => {
             const li = document.createElement("li");
             li.className = "task-card";
             
-            // Statü kontrolü (Küçük harfe çevirerek daha esnek hale getirdik)
+            // Tarih ve Gecikme Kontrolü
+            const dateStr = task.due_date ? new Date(task.due_date).toLocaleDateString('tr-TR') : "Tarih Yok";
             const s = (task.status || "").toLowerCase().trim();
 
             li.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:start;">
                     <div>
-                        <strong style="display:block;">${task.title}</strong>
-                        <small>Öğrenci: ${task.student_name || 'Bilinmiyor'}</small>
+                        <strong style="display:block; color:#2d3748; margin-bottom:4px;">${task.title}</strong>
+                        <div style="font-size: 12px; color: #718096; margin-bottom:4px;">
+                            👤 Öğrenci: <b>${task.student_name || 'Atanmamış'}</b>
+                        </div>
+                        <div style="font-size: 12px; color: #4facfe;">
+                            📅 ${dateStr} | 💰 ${task.points || 0} GP
+                        </div>
                     </div>
+                    <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:#cbd5e0; cursor:pointer; font-size:18px; padding:0 5px;">&times;</button>
                 </div>
             `;
 
-            // Doğru sütuna yerleştir
+            // Doğru Sütuna Yerleştir ve Sayacı Artır
             if (s === "tamamlandı" || s === "tamamlandi") {
-        if (completedList) completedList.appendChild(li);
-    } else if (s === "devam ediyor" || s === "devamediyor") {
-        if (inProgressList) inProgressList.appendChild(li);
-    } else if (s === "başlandı" || s === "baslandi") {
-        if (startedList) startedList.appendChild(li); // Başlandı sütununa ekle
-    } else {
-        if (taskList) taskList.appendChild(li); // Başlamadı buraya düşer
-    }
-});
+                if (completedList) completedList.appendChild(li);
+                counts.tamam++;
+            } else if (s === "devam ediyor" || s === "devamediyor") {
+                if (inProgressList) inProgressList.appendChild(li);
+                counts.devam++;
+            } else if (s === "başlandı" || s === "baslandi") {
+                if (startedList) startedList.appendChild(li);
+                counts.baslandi++;
+            } else {
+                if (taskList) taskList.appendChild(li);
+                counts.baslamadi++;
+            }
+        });
+
+        // Sayaçları HTML'e Yaz (HTML'deki span id'lerinle uyumlu)
+        if (document.getElementById("count-Baslamadi")) document.getElementById("count-Baslamadi").innerText = counts.baslamadi;
+        if (document.getElementById("count-Baslandi")) document.getElementById("count-Baslandi").innerText = counts.baslandi;
+        if (document.getElementById("count-DevamEdiyor")) document.getElementById("count-DevamEdiyor").innerText = counts.devam;
+        if (document.getElementById("count-Tamamlandı")) document.getElementById("count-Tamamlandı").innerText = counts.tamam;
+
     } catch (err) {
         console.error("Veli dashboard yükleme hatası:", err);
     }
