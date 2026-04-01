@@ -95,75 +95,61 @@ app.post("/login", async (req, res) => {
 
 // server.js içindeki /add-task kısmını bulup bununla değiştirin
 app.post("/add-task", auth, async (req, res) => {
-    // script.js'den gelen verileri karşılıyoruz
-    const { 
-        title, 
-        description, 
-        assignedToEmail, 
-        dueDate, 
-        dueTime, 
-        badge_reward, 
-        reward_points 
-    } = req.body;
-
-    const parentId = req.user.id; // Token'dan gelen veli ID'si
-
     try {
-        console.log("🚀 Yeni Görev İsteği Geldi:", req.body);
+        const { 
+            title, 
+            description, 
+            assignedToEmail, 
+            dueDate, 
+            dueTime, 
+            badge_reward, 
+            reward_points 
+        } = req.body;
 
-        // 1. Öğrenciyi email adresinden bul
-        const student = await db.query("SELECT id FROM users WHERE email = $1", [assignedToEmail.trim()]);
-        
-        if (student.rows.length === 0) {
-            console.error("❌ Hata: Öğrenci bulunamadı ->", assignedToEmail);
-            return res.status(404).json({ message: "Bu e-posta adresine sahip bir öğrenci bulunamadı." });
+        // 1. Güvenlik: E-posta adresi gelmiş mi?
+        if (!assignedToEmail) {
+            return res.status(400).json({ message: "Hata: Öğrenci e-postası boş olamaz!" });
         }
 
-        const studentId = student.rows[0].id;
+        const parentId = req.user.id; // Giriş yapan velinin ID'si
+        const emailSafe = assignedToEmail.trim();
 
-        // 2. Görevi veritabanına ekle
-        // NOT: Veritabanındaki sütun isimlerinin 'points' mi yoksa 'reward_points' mi olduğunu kontrol et.
-        // Eğer hata alırsan SQL'deki 'reward_points' yazan yeri 'points' yapabilirsin.
-        const queryText = `
+        // 2. Öğrenciyi veritabanında bul
+        const studentResult = await db.query("SELECT id FROM users WHERE email = $1", [emailSafe]);
+        
+        if (studentResult.rows.length === 0) {
+            return res.status(404).json({ message: "Sistemde bu e-postaya sahip bir öğrenci bulunamadı." });
+        }
+
+        const studentId = studentResult.rows[0].id;
+
+        // 3. Görevi veritabanına kaydet
+        const insertQuery = `
             INSERT INTO tasks (
-                title, 
-                description, 
-                assigned_to, 
-                assigned_by, 
-                due_date, 
-                due_time, 
-                badge_reward, 
-                reward_points, 
-                status,
-                updated_at
+                title, description, assigned_to, assigned_by, 
+                due_date, due_time, badge_reward, reward_points, 
+                status, updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
         `;
 
-        const values = [
+        await db.query(insertQuery, [
             title, 
             description, 
             studentId, 
             parentId, 
-            dueDate, 
-            dueTime, 
-            badge_reward, 
+            dueDate || null, 
+            dueTime || null, 
+            badge_reward || null, 
             reward_points || 10, 
             'Baslamadi'
-        ];
+        ]);
 
-        await db.query(queryText, values);
-
-        console.log("✅ Görev başarıyla atandı!");
         res.json({ message: "Görev başarıyla atandı!" });
 
     } catch (err) {
-        // SUNUCU LOGLARINDA HATAYI GÖRMEK İÇİN:
-        console.error("🔴 SQL HATASI:", err.message);
-        console.error("Hata Detayı:", err.stack);
-        
-        // Kullanıcıya detaylı hata mesajı dön (Geliştirme aşamasında yardımcı olur)
+        console.error("🔴 SUNUCU HATASI:", err.message);
         res.status(500).json({ 
-            message: "Sunucu hatası oluştu.", 
+            message: "Sunucu tarafında bir hata oluştu.", 
             error: err.message 
         });
     }
