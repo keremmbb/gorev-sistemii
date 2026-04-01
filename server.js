@@ -535,7 +535,8 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
         );
         res.json(result.rows);
     } catch (error) {
-        res.status(500).json({ message: "Hata oluştu" });
+        console.error("Gecikmiş görev hatası:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

@@ -1160,32 +1160,23 @@ async function executeDeleteTask() {
 async function checkOverdueTasks() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
-
     try {
-        const res = await fetch(`/overdue-tasks/${userId}`, { 
-            headers: getAuthHeaders() 
-        });
+        const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
         const overdueTasks = await res.json();
         const alertContainer = document.getElementById("overdue-alert-container");
-        
         if (!alertContainer) return;
 
-        if (overdueTasks && overdueTasks.length > 0) {
+        if (overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
-                <div style="background: #fff5f5; border-left: 5px solid #ff4d4d; padding: 15px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                    <h4 style="margin: 0 0 10px 0; color: #e53e3e;">⚠️ Zamanı Geçmiş Görevler (${overdueTasks.length})</h4>
+                <div style="background: #fff5f5; border-left: 5px solid #ff4d4d; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h4 style="margin: 0 0 10px 0; color: #c53030;">⚠️ Geciken Görevler!</h4>
                     <ul style="margin: 0; padding-left: 20px; color: #742a2a; font-size: 14px;">
-                        ${overdueTasks.map(task => `
-                            <li><strong>${task.student_name || 'Öğrenci'}:</strong> ${task.title}</li>
-                        `).join('')}
+                        ${overdueTasks.map(t => `<li><strong>${t.student_name}:</strong> ${t.title}</li>`).join('')}
                     </ul>
-                </div>
-            `;
+                </div>`;
         } else {
             alertContainer.style.display = "none";
         }
-    } catch (error) {
-        console.error("Gecikmiş görev kontrol hatası:", error);
-    }
+    } catch (e) { console.error("Gecikme kontrolü hatası:", e); }
 }
