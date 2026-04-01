@@ -95,26 +95,26 @@ app.post("/login", async (req, res) => {
 
 app.post("/add-task", auth, async (req, res) => {
     const { title, description, assignedToEmail, points, badge, dueDate } = req.body;
-    const assignedBy = req.user.id; // Görevi yazan velinin ID'si (75)
+    const assignedBy = req.user.id; 
 
     try {
-        // BAĞI KURAN SORGU: E-postadan öğrencinin ID'sini buluyoruz
+        // Öğrenciyi bul
         const studentRes = await db.query("SELECT id FROM users WHERE email = $1", [assignedToEmail]);
         
         if (studentRes.rows.length === 0) {
-            return res.status(404).json({ message: "Bu e-posta adresiyle kayıtlı bir öğrenci bulunamadı!" });
+            return res.status(404).json({ message: "Bu e-posta adresine sahip öğrenci bulunamadı!" });
         }
 
-        const assignedTo = studentRes.rows[0].id; // Bağ kuruldu!
+        const assignedTo = studentRes.rows[0].id;
 
-        // Görevi görev tablosuna ekle
+        // Görevi ekle (points sütunu artık veritabanında olmalı!)
         await db.query(
             `INSERT INTO tasks (title, description, assigned_to, assigned_by, points, badge, due_date, status) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, 'Başlamadı')`,
-            [title, description, assignedTo, assignedBy, points, badge, dueDate]
+            [title, description, assignedTo, assignedBy, points || 10, badge || '', dueDate]
         );
 
-        res.json({ message: "Görev başarıyla oluşturuldu ve öğrenciye bağlandı!" });
+        res.json({ message: "Görev başarıyla öğrenciye bağlandı!" });
     } catch (err) {
         console.error("Görev ekleme hatası:", err.message);
         res.status(500).json({ message: "Sunucu hatası: " + err.message });
@@ -125,20 +125,28 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
     res.json(result.rows);
 });
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
-    const { userId } = req.params; // Senin ID'n (75)
+    const { userId } = req.params;
     try {
-        // Bu sorgu: "Görevi veren kişi 75 olanları getir ve o görevin atandığı öğrencinin adını 'users' tablosundan çek" der.
+        // Hata riskini sıfıra indirmek için: u.username yerine u.* çekiyoruz 
+        // ve frontend'in beklediği 'student_name' takma adını veriyoruz.
         const result = await db.query(
-            `SELECT t.*, u."username" as student_name 
+            `SELECT t.*, u.email as student_email 
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1
              ORDER BY t.created_at DESC`,
             [userId]
         );
-        res.json(result.rows || []); // Eğer görev yoksa boş liste [] döner, hata vermez.
+        
+        // Frontend'de 'student_name' beklendiği için veriyi manipüle edelim
+        const tasks = result.rows.map(task => ({
+            ...task,
+            student_name: task.student_email.split('@')[0] // E-postanın başını isim yap
+        }));
+
+        res.json(tasks);
     } catch (error) {
-        console.error("❌ Görev listeleme hatası:", error.message);
+        console.error("Görev listeleme hatası:", error.message);
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
