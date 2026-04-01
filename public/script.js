@@ -157,24 +157,22 @@ async function loadStudentPoints() {
 }
 async function loadMyAssignedTasks() {
     const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
-    if (!userId || !token) return;
+    if (!userId) return;
 
     try {
-        const res = await fetch(`/assigned-tasks/${userId}`, { 
-            headers: {
-                "Authorization": "Bearer " + token,
-                "Content-Type": "application/json"
-            }
-        });
+        const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
         const tasks = await res.json();
 
-        // Elementleri Seç
+        // Gelen veri liste değilse fonksiyondan çık (Çökmeyi önler)
+        if (!Array.isArray(tasks)) {
+            console.error("Gelen veri liste formatında değil:", tasks);
+            return;
+        }
+
         const taskList = document.getElementById("taskList");
         const inProgressList = document.getElementById("inProgressList");
         const completedList = document.getElementById("completedList");
 
-        // Temizle
         if (taskList) taskList.innerHTML = "";
         if (inProgressList) inProgressList.innerHTML = "";
         if (completedList) completedList.innerHTML = "";
@@ -183,36 +181,26 @@ async function loadMyAssignedTasks() {
             const li = document.createElement("li");
             li.className = "task-card";
             
-            // Teslim tarihi formatlama
-            const dateStr = task.due_date ? new Date(task.due_date).toLocaleDateString('tr-TR') : "Tarih yok";
+            // Statü kontrolünü güvenli yapalım
+            const s = (task.status || "").toLowerCase();
 
             li.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <div>
-                        <strong style="display:block; color:#2d3748;">${task.title}</strong>
-                        <small style="color:#718096;">Öğrenci: ${task.student_name || 'Atanmamış'}</small><br>
-                        <small style="color:#718096;">📅 ${dateStr}</small>
-                    </div>
-                    <button onclick="deleteTask(${task.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold;">✕</button>
+                <div>
+                    <strong>${task.title}</strong><br>
+                    <small>Öğrenci: ${task.student_name || 'Bilinmiyor'}</small>
                 </div>
             `;
 
-            // STATÜ KONTROLÜ (Garantili Yöntem)
-            const s = (task.status || "").toLowerCase().trim();
-
             if (s === "tamamlandi" || s === "tamamlandı") {
                 if (completedList) completedList.appendChild(li);
-            } 
-            else if (s === "baslandi" || s === "başlandı" || s === "devam ediyor" || s === "devamediyor") {
+            } else if (s === "baslandi" || s === "başlandı" || s === "devam ediyor") {
                 if (inProgressList) inProgressList.appendChild(li);
-            } 
-            else {
-                // Başlamadı veya başka ne yazarsa yazsın buraya düşer, böylece görev kaybolmaz
+            } else {
                 if (taskList) taskList.appendChild(li);
             }
         });
     } catch (err) {
-        console.error("Veli görev yükleme hatası:", err);
+        console.error("Veli panelinde JS hatası:", err);
     }
 }
 

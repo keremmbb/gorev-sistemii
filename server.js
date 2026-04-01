@@ -169,10 +169,11 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
              ORDER BY t.created_at DESC`, 
             [userId]
         );
-        res.json(result.rows || []);
+        // Eğer sonuç boşsa boş dizi gönder, hata mesajı gönderme!
+        res.json(result.rows || []); 
     } catch (error) {
         console.error("Görev getirme hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
+        res.status(500).json([]); // Hata olsa bile boş dizi gönder ki JS çökmesin
     }
 });
 app.put("/update-task-status/:id", auth, async (req, res) => {
@@ -540,7 +541,7 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
         const result = await db.query(
             `SELECT t.*, u.full_name as student_name 
              FROM tasks t
-             JOIN users u ON t.assigned_to = u.id
+             LEFT JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
              AND t.status != 'Tamamlandı' 
              AND t.due_date < NOW()`, 
@@ -549,7 +550,7 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
         res.json(result.rows || []);
     } catch (error) {
         console.error("Geciken görev hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
+        res.status(500).json([]);
     }
 });
 
