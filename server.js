@@ -127,12 +127,20 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
-        // created_at hatasını çözmek için 'ORDER BY id DESC' (son eklenen üste) yapıyoruz
+        // OTOMATİK ARŞİVLEME: 24 saati geçmiş tamamlanan görevleri işaretle
+        await db.query(`
+            UPDATE tasks 
+            SET is_archived = TRUE 
+            WHERE status = 'Tamamlandı' 
+            AND completed_at < NOW() - INTERVAL '1 minute'
+        `);
+
+        // Sadece arşivlenmemiş görevleri getir (Ana ekran için)
         const result = await db.query(
             `SELECT t.*, u.email as student_identifier 
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
-             WHERE t.assigned_by = $1
+             WHERE t.assigned_by = $1 AND t.is_archived = FALSE
              ORDER BY t.id DESC`, 
             [userId]
         );
@@ -145,19 +153,46 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
         res.json(tasks);
     } catch (error) {
         console.error("❌ Görev listeleme hatası:", error.message);
-        res.status(500).json({ message: "Sunucu hatası: " + error.message });
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.put("/update-task-status/:id", auth, async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
+    const taskId = req.params.id;
+    const { newStatus } = req.body;
+    const userId = req.user.id; // Görevin atandığı öğrenci
 
     try {
-        await db.query("UPDATE tasks SET status = $1 WHERE id = $2", [status, id]);
-        res.json({ message: "Durum güncellendi" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Sunucu hatası" });
+        let query;
+        let params;
+
+        if (newStatus === 'Tamamlandı') {
+            // Eğer durum 'Tamamlandı' ise completed_at sütununa şu anki zamanı (NOW()) yaz
+            query = `
+                UPDATE tasks 
+                SET status = $1, completed_at = NOW() 
+                WHERE id = $2 AND assigned_to = $3
+            `;
+            params = [newStatus, taskId, userId];
+        } else {
+            // Diğer durumlar için (Başlandı, Devam Ediyor) sadece durumu güncelle
+            query = `
+                UPDATE tasks 
+                SET status = $1 
+                WHERE id = $2 AND assigned_to = $3
+            `;
+            params = [newStatus, taskId, userId];
+        }
+
+        const result = await db.query(query, params);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Görev bulunamadı veya yetkiniz yok." });
+        }
+
+        res.json({ message: `Görev durumu '${newStatus}' olarak güncellendi.` });
+    } catch (err) {
+        console.error("Durum güncelleme hatası:", err.message);
+        res.status(500).json({ message: "Sunucu hatası: " + err.message });
     }
 });
 app.delete("/delete-task/:id", auth, async (req, res) => {
@@ -525,6 +560,22 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
     } catch (error) {
         console.error("❌ Geciken görev hatası:", error.message);
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
+    }
+});
+app.get("/archived-tasks/:userId", auth, async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const result = await db.query(
+            `SELECT t.*, u.email as student_identifier 
+             FROM tasks t
+             JOIN users u ON t.assigned_to = u.id
+             WHERE t.assigned_by = $1 AND t.is_archived = TRUE
+             ORDER BY t.completed_at DESC`, 
+            [userId]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: "Arşiv çekme hatası" });
     }
 });
 const PORT = process.env.PORT || 3000;
