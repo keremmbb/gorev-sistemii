@@ -160,6 +160,7 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
+        // NOT: Eğer hata devam ederse u.username yerine u.name veya u.full_name dene
         const result = await db.query(
             `SELECT t.*, u.username as student_name 
              FROM tasks t
@@ -170,7 +171,7 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("❌ Görev listesi çekilirken SQL Hatası:", error.message);
+        console.error("❌ Görev çekme hatası:", error.message);
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
@@ -536,20 +537,18 @@ app.get("/pending-purchases", auth, async (req, res) => {
 app.get("/overdue-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
-        // userId'nin sayı olduğundan emin olalım (SQL enjeksiyonuna karşı ekstra önlem)
         const result = await db.query(
             `SELECT t.*, u.username as student_name 
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
-             AND t.status NOT IN ('Tamamlandı', 'Tamamlandi', 'tamamlandı', 'tamamlandi') 
+             AND t.status NOT IN ('Tamamlandı', 'Tamamlandi') 
              AND t.due_date < NOW()`, 
             [userId]
         );
         res.json(result.rows || []);
     } catch (error) {
-        // Hatanın ne olduğunu terminale yazdırıyoruz
-        console.error("❌ Geciken görev çekilirken SQL Hatası:", error.message);
+        console.error("❌ Geciken görev hatası:", error.message);
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
