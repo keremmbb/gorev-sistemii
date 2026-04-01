@@ -169,10 +169,10 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
              ORDER BY t.created_at DESC`, 
             [userId]
         );
-        res.json(result.rows || []); 
+        res.json(result.rows || []);
     } catch (error) {
-        console.error("Assigned Tasks SQL Hatası:", error);
-        res.status(500).json({ message: "Veritabanı hatası" });
+        console.error("Hata:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.put("/update-task-status/:id", auth, async (req, res) => {
@@ -547,8 +547,8 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("Overdue Tasks SQL Hatası:", error);
-        res.status(500).json({ message: "Veritabanı hatası" });
+        console.error("Hata:", error);
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

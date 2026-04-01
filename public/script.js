@@ -163,10 +163,10 @@ async function loadMyAssignedTasks() {
 
     try {
         const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
-        if (!res.ok) throw new Error("Sunucu hatası: " + res.status);
+        if (!res.ok) throw new Error("Sunucu hatası");
         
         const tasks = await res.json();
-        if (!Array.isArray(tasks)) return; // Veri dizi değilse dur
+        if (!Array.isArray(tasks)) return; // Dizi değilse işlem yapma
 
         const taskList = document.getElementById("taskList");
         const inProgressList = document.getElementById("inProgressList");
@@ -176,14 +176,14 @@ async function loadMyAssignedTasks() {
         if (inProgressList) inProgressList.innerHTML = "";
         if (completedList) completedList.innerHTML = "";
 
-        const now = new Date();
+        const simdi = new Date();
 
         tasks.forEach(task => {
-            const dueDate = new Date(task.due_date);
-            const isOverdue = dueDate < now && task.status !== 'Tamamlandı';
+            const teslimTarihi = new Date(task.due_date);
+            const gecikmisMi = teslimTarihi < simdi && task.status !== 'Tamamlandı';
 
-            // Eğer zamanı geçmişse Başlamadı listesine ekleme (üstteki kutuda görünecek)
-            if (isOverdue) return;
+            // EĞER gecikmişse "Başlamadı" listesine yazma (Yukarıdaki uyarı kutusuna gidecek)
+            if (gecikmisMi) return;
 
             const li = document.createElement("li");
             li.className = "task-item";
@@ -204,7 +204,7 @@ async function loadMyAssignedTasks() {
             }
         });
     } catch (err) {
-        console.error("Görevler yüklenemedi:", err);
+        console.error("Yükleme hatası:", err);
     }
 }
 
