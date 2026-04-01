@@ -530,13 +530,12 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
              AND t.status != 'Tamamlandı' 
-             AND (t.due_date + t.due_time) < NOW()`,
+             AND t.due_date < NOW()`, 
             [userId]
         );
         res.json(result.rows);
     } catch (error) {
-        console.error("Gecikmiş görev hatası:", error);
-        res.status(500).json({ message: "Hata" });
+        res.status(500).json({ message: "Sunucu hatası" });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

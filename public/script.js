@@ -1162,22 +1162,26 @@ async function checkOverdueTasks() {
     if (!userId) return;
 
     try {
-        const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
+        const res = await fetch(`/overdue-tasks/${userId}`, { 
+            headers: getAuthHeaders() 
+        });
         const overdueTasks = await res.json();
         const alertContainer = document.getElementById("overdue-alert-container");
 
         if (alertContainer && overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
-                <div style="background: #fff5f5; border-left: 5px solid #ff4d4d; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <h4 style="margin: 0 0 10px 0; color: #c53030; display: flex; align-items: center;">
-                        ⚠️ Geciken Görevler (${overdueTasks.length})
+                <div style="background: #fff5f5; border-left: 5px solid #ff4d4d; padding: 20px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+                    <h4 style="margin: 0 0 12px 0; color: #c53030; display: flex; align-items: center; font-size: 1.1rem;">
+                        <span style="margin-right: 10px;">⚠️</span> Geciken Görevler (${overdueTasks.length})
                     </h4>
-                    <ul style="margin: 0; padding-left: 20px; color: #742a2a; font-size: 14px;">
+                    <ul style="margin: 0; padding-left: 25px; color: #742a2a; font-size: 14px; line-height: 1.6;">
                         ${overdueTasks.map(t => `
-                            <li style="margin-bottom: 5px;">
-                                <strong>${t.student_name}:</strong> ${t.title} 
-                                <span style="font-size: 11px; opacity: 0.8;">(Teslim: ${fixDate(t.due_date)})</span>
+                            <li style="margin-bottom: 8px;">
+                                <strong>${t.student_name || 'Öğrenci'}:</strong> ${t.title} 
+                                <span style="display: block; font-size: 12px; opacity: 0.8;">
+                                    Son Tarih: ${fixDate(t.due_date)}
+                                </span>
                             </li>
                         `).join('')}
                     </ul>
