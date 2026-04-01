@@ -158,22 +158,22 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
     res.json(result.rows);
 });
 
+// server.js içindeki hatalı kısmı bununla değiştir
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
         const result = await db.query(
-            `SELECT t.*, u.full_name as student_name 
+            `SELECT t.*, u.username as student_name 
              FROM tasks t
              LEFT JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1
              ORDER BY t.created_at DESC`, 
             [userId]
         );
-        // Eğer sonuç boşsa boş dizi gönder, hata mesajı gönderme!
-        res.json(result.rows || []); 
+        res.json(result.rows || []);
     } catch (error) {
         console.error("Görev getirme hatası:", error);
-        res.status(500).json([]); // Hata olsa bile boş dizi gönder ki JS çökmesin
+        res.status(500).json([]); // Hata olsa bile boş dizi gönder ki frontend çökmesin
     }
 });
 app.put("/update-task-status/:id", auth, async (req, res) => {
