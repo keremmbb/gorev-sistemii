@@ -1162,35 +1162,41 @@ async function checkOverdueTasks() {
     if (!userId) return;
 
     try {
-        const res = await fetch(`/overdue-tasks/${userId}`, { 
-            headers: getAuthHeaders() 
-        });
+        const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
         const overdueTasks = await res.json();
         const alertContainer = document.getElementById("overdue-alert-container");
 
         if (alertContainer && overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
-                <div style="background: #fff5f5; border-left: 5px solid #ff4d4d; padding: 20px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-                    <h4 style="margin: 0 0 12px 0; color: #c53030; display: flex; align-items: center; font-size: 1.1rem;">
-                        <span style="margin-right: 10px;">⚠️</span> Geciken Görevler (${overdueTasks.length})
-                    </h4>
-                    <ul style="margin: 0; padding-left: 25px; color: #742a2a; font-size: 14px; line-height: 1.6;">
+                <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(245, 101, 101, 0.15);">
+                    <h3 style="margin: 0 0 15px 0; color: #c53030; display: flex; align-items: center; font-size: 1.1rem;">
+                        <span style="font-size: 1.5rem; margin-right: 10px;">⏰</span> 
+                        Süresi Dolan Görevler!
+                    </h3>
+                    <div style="display: grid; gap: 10px;">
                         ${overdueTasks.map(t => `
-                            <li style="margin-bottom: 8px;">
-                                <strong>${t.student_name || 'Öğrenci'}:</strong> ${t.title} 
-                                <span style="display: block; font-size: 12px; opacity: 0.8;">
-                                    Son Tarih: ${fixDate(t.due_date)}
-                                </span>
-                            </li>
+                            <div style="background: white; padding: 12px; border-radius: 10px; border-left: 4px solid #f56565; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong style="color: #2d3748;">${t.student_name}</strong>: 
+                                    <span style="color: #4a5568;">${t.title}</span>
+                                    <div style="font-size: 0.75rem; color: #e53e3e; margin-top: 4px;">
+                                        Son Tarih: ${fixDate(t.due_date)}
+                                    </div>
+                                </div>
+                                <button onclick="deleteTask(${t.id})" style="background: none; border: none; color: #cbd5e0; cursor: pointer; font-size: 1.2rem;">&times;</button>
+                            </div>
                         `).join('')}
-                    </ul>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 0.85rem; color: #742a2a; font-style: italic;">
+                        * Bu görevler süreleri geçtiği için aşağıdaki ana listeden kaldırılmıştır.
+                    </p>
                 </div>
             `;
         } else if (alertContainer) {
             alertContainer.style.display = "none";
         }
     } catch (err) {
-        console.error("Geciken görevler kontrol edilirken hata:", err);
+        console.error("Hata:", err);
     }
 }

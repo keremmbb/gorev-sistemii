@@ -158,9 +158,22 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
     res.json(result.rows);
 });
 
-app.get("/my-assigned-tasks/:userId", auth, async (req, res) => {
-    const result = await db.query("SELECT t.*, u.email as assigned_to FROM tasks t JOIN users u ON t.assigned_to = u.id WHERE t.assigned_by = $1", [req.params.userId]);
-    res.json(result.rows);
+app.get("/assigned-tasks/:userId", auth, async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const result = await db.query(
+            `SELECT t.*, u.full_name as student_name 
+             FROM tasks t
+             JOIN users u ON t.assigned_to = u.id
+             WHERE t.assigned_by = $1 
+             AND (t.due_date >= NOW() OR t.status = 'Tamamlandı') -- Sadece zamanı geçmemiş veya bitmiş olanlar
+             ORDER BY t.created_at DESC`, 
+            [userId]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: "Sunucu hatası" });
+    }
 });
 
 app.put("/update-task-status/:id", auth, async (req, res) => {
