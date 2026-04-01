@@ -170,8 +170,8 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("Görev çekme hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
+        console.error("❌ Görev listesi çekilirken SQL Hatası:", error.message);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.put("/update-task-status/:id", auth, async (req, res) => {
@@ -536,39 +536,21 @@ app.get("/pending-purchases", auth, async (req, res) => {
 app.get("/overdue-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
+        // userId'nin sayı olduğundan emin olalım (SQL enjeksiyonuna karşı ekstra önlem)
         const result = await db.query(
             `SELECT t.*, u.username as student_name 
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
-             AND t.status != 'Tamamlandı' 
+             AND t.status NOT IN ('Tamamlandı', 'Tamamlandi', 'tamamlandı', 'tamamlandi') 
              AND t.due_date < NOW()`, 
             [userId]
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("Geciken görev hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
-    }
-});
-
-// Veliye atanan tüm görevleri getiren API (Hatasız hali)
-app.get("/overdue-tasks/:userId", auth, async (req, res) => {
-    const { userId } = req.params;
-    try {
-        const result = await db.query(
-            `SELECT t.*, u.full_name as student_name 
-             FROM tasks t
-             JOIN users u ON t.assigned_to = u.id
-             WHERE t.assigned_by = $1 
-             AND t.status != 'Tamamlandı' 
-             AND t.due_date < NOW()`, 
-            [userId]
-        );
-        res.json(result.rows || []);
-    } catch (error) {
-        console.error("Geciken görev hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
+        // Hatanın ne olduğunu terminale yazdırıyoruz
+        console.error("❌ Geciken görev çekilirken SQL Hatası:", error.message);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 const PORT = process.env.PORT || 3000;
