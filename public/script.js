@@ -160,21 +160,26 @@ async function loadMyAssignedTasks() {
     if (!userId) return;
 
     try {
-        const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
+        // Sunucuya istek atıyoruz
+        const res = await fetch(`/assigned-tasks/${userId}`, { 
+            headers: getAuthHeaders() 
+        });
+        
         const tasks = await res.json();
 
+        // Eğer hata mesajı geldiyse veya veri liste değilse yakala
         if (!Array.isArray(tasks)) {
-            console.error("Veri liste formatında gelmedi:", tasks);
+            console.error("Veri liste formatında gelmedi (Sunucu hatası olabilir):", tasks);
             return;
         }
 
-        // Elementleri Seç
+        // HTML'deki Kanban Sütunlarını Seç
         const taskList = document.getElementById("taskList");
         const startedList = document.getElementById("startedList");
         const inProgressList = document.getElementById("inProgressList");
         const completedList = document.getElementById("completedList");
 
-        // Listeleri Temizle
+        // Listeleri her yüklemede temizle (üst üste binmemesi için)
         if (taskList) taskList.innerHTML = "";
         if (startedList) startedList.innerHTML = "";
         if (inProgressList) inProgressList.innerHTML = "";
@@ -187,52 +192,58 @@ async function loadMyAssignedTasks() {
             const li = document.createElement("li");
             li.className = "task-card";
             
-            // Tarih ve Gecikme Kontrolü
-            const dateStr = task.due_date ? new Date(task.due_date).toLocaleDateString('tr-TR') : "Tarih Yok";
+            // Tarih formatlama
+            const dateStr = task.due_date ? new Date(task.due_date).toLocaleDateString('tr-TR') : "Süre Yok";
+            
+            // Durumu küçük harfe çevirip boşlukları temizleyerek kontrol et (Daha güvenli)
             const s = (task.status || "").toLowerCase().trim();
 
             li.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <div>
-                        <strong style="display:block; color:#2d3748; margin-bottom:4px;">${task.title}</strong>
+                    <div style="flex: 1;">
+                        <strong style="display:block; color:#2d3748; margin-bottom:4px; font-size:15px;">${task.title}</strong>
+                        <p style="font-size: 13px; color: #4a5568; margin: 0 0 8px 0; line-height: 1.4;">${task.description || ''}</p>
                         <div style="font-size: 12px; color: #718096; margin-bottom:4px;">
-                            👤 Öğrenci: <b>${task.student_name || 'Atanmamış'}</b>
+                            👤 Öğrenci: <b style="color:#4a5568;">${task.student_name || 'Bilinmiyor'}</b>
                         </div>
-                        <div style="font-size: 12px; color: #4facfe;">
+                        <div style="font-size: 12px; color: #4facfe; font-weight: bold;">
                             📅 ${dateStr} | 💰 ${task.points || 0} GP
                         </div>
+                        ${task.badge ? `<div style="margin-top:5px; font-size:11px; background:#fffcf0; border:1px solid #fbd38d; padding:2px 6px; border-radius:5px; display:inline-block; color:#975a16;">🎁 ${task.badge}</div>` : ''}
                     </div>
-                    <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:#cbd5e0; cursor:pointer; font-size:18px; padding:0 5px;">&times;</button>
+                    <button onclick="confirmDeleteTask(${task.id})" 
+                            style="background:none; border:none; color:#fc8181; cursor:pointer; font-size:22px; padding:0 5px; line-height:1;" 
+                            title="Görevi Sil">&times;</button>
                 </div>
             `;
 
-            // Doğru Sütuna Yerleştir ve Sayacı Artır
-            if (s === "tamamlandı" || s === "tamamlandi") {
+            // Mantıksal Sütun Eşleştirme
+            if (s === "tamamlandı" || s === "tamamlandi" || s === "completed") {
                 if (completedList) completedList.appendChild(li);
                 counts.tamam++;
-            } else if (s === "devam ediyor" || s === "devamediyor") {
+            } else if (s === "devam ediyor" || s === "devamediyor" || s === "in progress") {
                 if (inProgressList) inProgressList.appendChild(li);
                 counts.devam++;
-            } else if (s === "başlandı" || s === "baslandi") {
+            } else if (s === "başlandı" || s === "baslandi" || s === "started") {
                 if (startedList) startedList.appendChild(li);
                 counts.baslandi++;
             } else {
+                // Varsayılan: Başlamadı
                 if (taskList) taskList.appendChild(li);
                 counts.baslamadi++;
             }
         });
 
-        // Sayaçları HTML'e Yaz (HTML'deki span id'lerinle uyumlu)
+        // Veli Panelindeki Sayıları Güncelle
         if (document.getElementById("count-Baslamadi")) document.getElementById("count-Baslamadi").innerText = counts.baslamadi;
         if (document.getElementById("count-Baslandi")) document.getElementById("count-Baslandi").innerText = counts.baslandi;
         if (document.getElementById("count-DevamEdiyor")) document.getElementById("count-DevamEdiyor").innerText = counts.devam;
         if (document.getElementById("count-Tamamlandı")) document.getElementById("count-Tamamlandı").innerText = counts.tamam;
 
     } catch (err) {
-        console.error("Veli dashboard yükleme hatası:", err);
+        console.error("Veli dashboard görevleri yüklenirken hata oluştu:", err);
     }
 }
-
 // Yardımcı fonksiyon: Listeye eleman eklemek için
 function renderTaskItem(task, listElement) {
     if (!listElement) return;

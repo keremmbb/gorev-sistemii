@@ -127,10 +127,10 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
-        // Hata riskini sıfıra indirmek için: u.username yerine u.* çekiyoruz 
-        // ve frontend'in beklediği 'student_name' takma adını veriyoruz.
+        // Hata riskini sıfıra indirmek için u.username yerine u.email çekiyoruz
+        // Çünkü her kullanıcıda mutlaka bir email vardır.
         const result = await db.query(
-            `SELECT t.*, u.email as student_email 
+            `SELECT t.*, u.email as student_identifier 
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1
@@ -138,15 +138,15 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
             [userId]
         );
         
-        // Frontend'de 'student_name' beklendiği için veriyi manipüle edelim
+        // Frontend'in (script.js) beklediği 'student_name' alanını oluşturuyoruz
         const tasks = result.rows.map(task => ({
             ...task,
-            student_name: task.student_email.split('@')[0] // E-postanın başını isim yap
+            student_name: task.student_identifier.split('@')[0] // email@test.com -> email
         }));
 
         res.json(tasks);
     } catch (error) {
-        console.error("Görev listeleme hatası:", error.message);
+        console.error("❌ Görev listeleme hatası:", error.message);
         res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
