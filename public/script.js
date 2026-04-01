@@ -1256,3 +1256,40 @@ document.getElementById("confirm-delete-btn").onclick = async function() {
         taskToDelete = null;
     }
 };
+async function openArchive() {
+    const userId = localStorage.getItem("userId");
+    const archiveList = document.getElementById("archivedTaskList");
+    const modal = document.getElementById("archive-modal");
+
+    if (!userId || !archiveList) return;
+
+    try {
+        const res = await fetch(`/archived-tasks/${userId}`, { headers: getAuthHeaders() });
+        const tasks = await res.json();
+
+        archiveList.innerHTML = ""; // Listeyi temizle
+
+        if (tasks.length === 0) {
+            archiveList.innerHTML = "<p style='text-align:center; color:#a0aec0; padding:20px;'>Arşivde henüz görev bulunmuyor.</p>";
+        } else {
+            tasks.forEach(task => {
+                const dateStr = new Date(task.completed_at).toLocaleString('tr-TR');
+                const li = document.createElement("li");
+                li.style = "background:#f7fafc; padding:15px; border-radius:8px; margin-bottom:10px; border-left:4px solid #4a5568;";
+                li.innerHTML = `
+                    <div style="font-weight:bold; color:#2d3748;">${task.title}</div>
+                    <div style="font-size:12px; color:#718096; margin-top:5px;">
+                        👤 Öğrenci: ${task.student_name} | ✅ Tamamlanma: ${dateStr}
+                    </div>
+                    <div style="font-size:12px; color:#48bb78; font-weight:bold; margin-top:5px;">💰 ${task.points} GP Kazanıldı</div>
+                `;
+                archiveList.appendChild(li);
+            });
+        }
+
+        modal.style.display = "flex"; // Modalı göster
+    } catch (err) {
+        console.error("Arşiv yükleme hatası:", err);
+        alert("Arşiv yüklenemedi.");
+    }
+}

@@ -577,9 +577,16 @@ app.get("/archived-tasks/:userId", auth, async (req, res) => {
              ORDER BY t.completed_at DESC`, 
             [userId]
         );
-        res.json(result.rows);
+        
+        const tasks = result.rows.map(task => ({
+            ...task,
+            student_name: task.student_identifier ? task.student_identifier.split('@')[0] : 'Öğrenci'
+        }));
+
+        res.json(tasks);
     } catch (error) {
-        res.status(500).json({ message: "Arşiv çekme hatası" });
+        console.error("Arşiv çekme hatası:", error.message);
+        res.status(500).json({ message: "Arşiv yüklenirken hata oluştu." });
     }
 });
 const PORT = process.env.PORT || 3000;

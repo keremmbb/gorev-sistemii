@@ -246,6 +246,21 @@
         </div>
     </div>
 </div>
+<div id="archive-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0; color:#2d3748;">📁 Görev Arşivi</h2>
+            <button onclick="document.getElementById('archive-modal').style.display='none'" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <p style="font-size:13px; color:#718096; margin-bottom:15px;">24 saati dolan ve arşivlenen görevler burada saklanır.</p>
+        <ul id="archivedTaskList" style="list-style:none; padding:0;">
+            </ul>
+    </div>
+</div>
+
+<button onclick="openArchive()" style="background:#4a5568; color:white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer; margin-bottom:20px;">
+    📁 Arşivi Gör
+</button>
 <script>
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
