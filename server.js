@@ -169,7 +169,7 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
              ORDER BY t.created_at DESC`, 
             [userId]
         );
-        res.json(result.rows);
+        res.json(result.rows || []);
     } catch (error) {
         console.error("Görev listesi hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
@@ -546,7 +546,7 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
              AND t.due_date < NOW()`, 
             [userId]
         );
-        res.json(result.rows);
+        res.json(result.rows || []);
     } catch (error) {
         console.error("Geciken görev hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
@@ -554,7 +554,7 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
 });
 
 // Veliye atanan tüm görevleri getiren API (Hatasız hali)
-app.get("/assigned-tasks/:userId", auth, async (req, res) => {
+app.get("/overdue-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
         const result = await db.query(
@@ -562,16 +562,16 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
-             ORDER BY t.created_at DESC`, 
+             AND t.status != 'Tamamlandı' 
+             AND t.due_date < NOW()`, 
             [userId]
         );
-        res.json(result.rows);
+        res.json(result.rows || []);
     } catch (error) {
-        console.error("Görev listesi hatası:", error);
+        console.error("Geciken görev hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor...`));
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));

@@ -177,19 +177,19 @@ async function loadMyAssignedTasks() {
 
         tasks.forEach(task => {
             const teslimTarihi = new Date(task.due_date);
-            // KURAL: Eğer görev tamamlanmamışsa VE vakti geçmişse ana listelere EKLEME.
+            // KURAL: Eğer görev tamamlanmamışsa VE vakti geçmişse ana listeye ekleme.
             const vaktiGecmis = teslimTarihi < simdi && task.status !== 'Tamamlandı';
 
-            if (vaktiGecmis) return; // Bu görev üstteki kırmızı kutuda görünecek.
+            if (vaktiGecmis) return; // Bu görev üstteki uyarı kutusunda çıkacak.
 
             const li = document.createElement("li");
             li.className = "task-item";
             li.innerHTML = `
                 <div style="flex: 1;">
-                    <div style="font-weight: 600;">${task.student_name} - ${task.title}</div>
-                    <div style="font-size: 0.8rem; color: #666;">Teslim: ${fixDate(task.due_date)}</div>
+                    <div style="font-weight: 600; color: #1e293b;">${task.student_name} - ${task.title}</div>
+                    <div style="font-size: 0.8rem; color: #64748b;">Teslim: ${fixDate(task.due_date)}</div>
                 </div>
-                <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:red; cursor:pointer;">🗑️</button>
+                <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:#ef4444; cursor:pointer;">🗑️</button>
             `;
 
             if (task.status === "Tamamlandı") {
@@ -1172,11 +1172,11 @@ async function checkOverdueTasks() {
             alertBox.style.display = "block";
             alertBox.innerHTML = `
                 <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                    <h4 style="margin:0 0 10px 0; color:#c53030;">⏰ Süresi Dolan Görevler</h4>
+                    <h4 style="margin:0 0 10px 0; color:#c53030; font-size: 1rem;">⚠️ Süresi Dolan Görevler</h4>
                     ${data.map(t => `
-                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:13px; border-left:4px solid #f56565; display:flex; justify-content:space-between;">
+                        <div style="background:white; margin-bottom:5px; padding:10px; border-radius:8px; font-size:13px; border-left:4px solid #f56565; display:flex; justify-content:space-between; align-items:center;">
                             <span><strong>${t.student_name}:</strong> ${t.title}</span>
-                            <span style="color:#e53e3e;">${fixDate(t.due_date)}</span>
+                            <span style="color:#e53e3e; font-weight:bold;">${fixDate(t.due_date)}</span>
                         </div>
                     `).join('')}
                 </div>`;
