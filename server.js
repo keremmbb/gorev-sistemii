@@ -113,29 +113,46 @@ app.post("/add-task", auth, async (req, res) => {
         const parentId = req.user.id;
         const emailSafe = assignedToEmail.trim();
 
-        // 1. Öğrenciyi Bul
+        // Öğrenciyi bul
         const student = await db.query("SELECT id FROM users WHERE email = $1", [emailSafe]);
-        
         if (student.rows.length === 0) {
-            return res.status(404).json({ message: "Bu e-postaya kayıtlı öğrenci bulunamadı." });
+            return res.status(404).json({ message: "Öğrenci bulunamadı." });
         }
-
         const studentId = student.rows[0].id;
 
-        // 2. Görevi Kaydet
+        // --- HATA ÇÖZÜMÜ BURADA ---
+        // Tarih ve saati birleştiriyoruz (Örn: "2023-10-25" + " " + "14:08" = "2023-10-25 14:08")
+        let fullTimestamp = null;
+        if (dueDate && dueTime) {
+            fullTimestamp = `${dueDate} ${dueTime}`;
+        } else if (dueDate) {
+            fullTimestamp = `${dueDate} 23:59:59`; // Saat girilmezse gün sonu olsun
+        }
+
+        // Sorguda due_date ve due_time sütunlarına fullTimestamp gönderiyoruz
         await db.query(
             `INSERT INTO tasks (title, description, assigned_to, assigned_by, due_date, due_time, badge_reward, reward_points, status, updated_at) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
-            [title, description, studentId, parentId, dueDate || null, dueTime || null, badge_reward || null, reward_points || 10, 'Baslamadi']
+            [
+                title, 
+                description, 
+                studentId, 
+                parentId, 
+                fullTimestamp, // due_date için birleşik zaman
+                fullTimestamp, // due_time için birleşik zaman (veya sadece dueTime)
+                badge_reward || null, 
+                reward_points || 10, 
+                'Baslamadi'
+            ]
         );
 
         res.json({ message: "Görev başarıyla atandı!" });
 
     } catch (err) {
-        console.error("🔴 SUNUCU HATASI:", err.message);
+        console.error("🔴 SQL HATASI:", err.message);
         res.status(500).json({ message: "Sunucu hatası: " + err.message });
     }
-}); // <-- Bu satırın sonunda kırmızı çizgi olmamalı.
+});
 app.get("/my-tasks/:userId", auth, async (req, res) => {
     const result = await db.query("SELECT t.*, u.email as assigned_by FROM tasks t JOIN users u ON t.assigned_by = u.id WHERE t.assigned_to = $1", [req.params.userId]);
     res.json(result.rows);
