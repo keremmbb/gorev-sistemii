@@ -170,8 +170,8 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("Görev getirme hatası:", error);
-        res.status(500).json([]); // Hata olsa bile boş dizi gönder ki frontend çökmesin
+        console.error("Veli görev listesi hatası:", error);
+        res.status(500).json([]); // Hata olsa bile boş dizi döndür ki frontend çökmesin
     }
 });
 app.put("/update-task-status/:id", auth, async (req, res) => {
@@ -547,7 +547,7 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("Geciken görev hatası:", error);
+        console.error("Veli geciken görev hatası:", error);
         res.status(500).json([]);
     }
 });
