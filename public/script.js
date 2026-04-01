@@ -169,20 +169,17 @@ async function loadMyAssignedTasks() {
         const inProgressList = document.getElementById("inProgressList"); // Devam Ediyor
         const completedList = document.getElementById("completedList"); // Tamamlandı
 
-        taskList.innerHTML = "";
-        inProgressList.innerHTML = "";
-        completedList.innerHTML = "";
+        if(taskList) taskList.innerHTML = "";
+        if(inProgressList) inProgressList.innerHTML = "";
+        if(completedList) completedList.innerHTML = "";
 
         const now = new Date();
 
         tasks.forEach(task => {
             const dueDate = new Date(task.due_date);
+            // ÖNEMLİ: Sadece durumu 'Tamamlandı' OLMAYAN ve vakti geçenleri 'isOverdue' say
             const isOverdue = dueDate < now && task.status !== 'Tamamlandı';
 
-            // EĞER görev zamanı geçmişse ve tamamlanmamışsa, ana listelere EKLEME (atla)
-            if (isOverdue) return;
-
-            // Diğer tüm görevler (Tamamlananlar ve zamanı gelmemiş olanlar) normal yerlerine:
             const li = document.createElement("li");
             li.className = "task-item";
             li.innerHTML = `
@@ -194,7 +191,11 @@ async function loadMyAssignedTasks() {
             `;
 
             if (task.status === "Tamamlandı") {
+                // Tamamlananlar tarihi ne olursa olsun listeye girer
                 completedList.appendChild(li);
+            } else if (isOverdue) {
+                // Vakti geçmiş ama tamamlanmamışsa ana listeye EKLEME (Çünkü yukarıdaki uyarı kutusunda)
+                return; 
             } else if (task.status === "Devam Ediyor") {
                 inProgressList.appendChild(li);
             } else {
@@ -1147,27 +1148,29 @@ async function executeDeleteTask() {
 }
 async function checkOverdueTasks() {
     const userId = localStorage.getItem("userId");
-    if (!userId) return;
+    const alertContainer = document.getElementById("overdue-alert-container");
+    if (!userId || !alertContainer) return;
 
     try {
         const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
         const overdueTasks = await res.json();
-        const alertContainer = document.getElementById("overdue-alert-container");
 
-        if (alertContainer && overdueTasks.length > 0) {
+        if (overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
                 <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: #c53030;">⚠️ Süresi Dolan ve Yapılmayanlar</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #c53030; font-size: 14px;">⚠️ Süresi Dolan Görevler</h4>
                     ${overdueTasks.map(t => `
-                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:13px; border-left:4px solid #f56565; display:flex; justify-content:space-between;">
+                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between;">
                             <span><strong>${t.student_name}:</strong> ${t.title}</span>
-                            <span style="color:#e53e3e;">${fixDate(t.due_date)}</span>
+                            <span style="color:#e53e3e; font-weight:bold;">${fixDate(t.due_date)}</span>
                         </div>
                     `).join('')}
                 </div>`;
         } else {
             alertContainer.style.display = "none";
         }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error("Uyarı kutusu hatası:", err);
+    }
 }
