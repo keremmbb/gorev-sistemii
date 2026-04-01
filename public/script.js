@@ -1293,3 +1293,87 @@ async function openArchive() {
         alert("Arşiv yüklenemedi.");
     }
 }
+let myChart = null; // Grafiği güncellemek için global tutuyoru
+
+async function loadStudentStats() {
+    const email = document.getElementById("stats-email-input").value;
+    const noDataMsg = document.getElementById("no-data-msg");
+    
+    if (!email) {
+        alert("Lütfen bir mail adresi girin!");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/student-weekly-stats/${email}`, { 
+            headers: getAuthHeaders() 
+        });
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+            if (myChartInstance) myChartInstance.destroy();
+            noDataMsg.style.display = "block";
+            return;
+        }
+
+        noDataMsg.style.display = "none";
+
+        // Verileri Hazırla
+        const labels = data.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('tr-TR', { weekday: 'long' }); // Gün isimlerini gösterir
+        });
+        const counts = data.map(item => item.count);
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+
+        // Eğer önceden bir grafik çizilmişse onu sil (üst üste binmemesi için)
+        if (myChartInstance) {
+            myChartInstance.destroy();
+        }
+
+        // Yeni Grafiği Oluştur
+        myChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Günlük Tamamlanan Görev Sayısı',
+                    data: counts,
+                    borderColor: '#4facfe',
+                    backgroundColor: 'rgba(79, 172, 254, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#00f2fe'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, color: '#64748b' },
+                        grid: { color: '#e2e8f0' }
+                    },
+                    x: {
+                        ticks: { color: '#64748b' },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { font: { weight: 'bold' } }
+                    }
+                }
+            }
+        });
+    } catch (err) {
+        console.error("Grafik yükleme hatası:", err);
+        alert("Veriler çekilirken bir hata oluştu.");
+    }
+}

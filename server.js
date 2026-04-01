@@ -589,6 +589,29 @@ app.get("/archived-tasks/:userId", auth, async (req, res) => {
         res.status(500).json({ message: "Arşiv yüklenirken hata oluştu." });
     }
 });
+// Çocuğun haftalık gelişim verilerini getiren API
+app.get("/student-weekly-stats/:email", auth, async (req, res) => {
+    const { email } = req.params;
+    try {
+        const result = await db.query(
+            `SELECT 
+                TO_CHAR(completed_at, 'YYYY-MM-DD') as date, 
+                COUNT(*) as count 
+             FROM tasks t
+             JOIN users u ON t.assigned_to = u.id
+             WHERE u.email = $1 
+             AND t.status = 'Tamamlandı'
+             AND t.completed_at >= NOW() - INTERVAL '7 days'
+             GROUP BY TO_CHAR(completed_at, 'YYYY-MM-DD')
+             ORDER BY date ASC`,
+            [email]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Grafik verisi çekme hatası:", error);
+        res.status(500).json({ message: "İstatistikler yüklenemedi." });
+    }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor...`));
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
