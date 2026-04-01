@@ -170,12 +170,14 @@ async function loadMyAssignedTasks() {
         }
 
         const taskList = document.getElementById("taskList");
-        const inProgressList = document.getElementById("inProgressList");
-        const completedList = document.getElementById("completedList");
+const startedList = document.getElementById("startedList"); // Yeni sütun
+const inProgressList = document.getElementById("inProgressList");
+const completedList = document.getElementById("completedList");
 
-        if (taskList) taskList.innerHTML = "";
-        if (inProgressList) inProgressList.innerHTML = "";
-        if (completedList) completedList.innerHTML = "";
+       if(taskList) taskList.innerHTML = "";
+if(startedList) startedList.innerHTML = "";
+if(inProgressList) inProgressList.innerHTML = "";
+if(completedList) completedList.innerHTML = "";
 
         tasks.forEach(task => {
             const li = document.createElement("li");
@@ -195,13 +197,15 @@ async function loadMyAssignedTasks() {
 
             // Doğru sütuna yerleştir
             if (s === "tamamlandı" || s === "tamamlandi") {
-                if (completedList) completedList.appendChild(li);
-            } else if (s === "başlandı" || s === "baslandi" || s === "devam ediyor") {
-                if (inProgressList) inProgressList.appendChild(li);
-            } else {
-                if (taskList) taskList.appendChild(li);
-            }
-        });
+        if (completedList) completedList.appendChild(li);
+    } else if (s === "devam ediyor" || s === "devamediyor") {
+        if (inProgressList) inProgressList.appendChild(li);
+    } else if (s === "başlandı" || s === "baslandi") {
+        if (startedList) startedList.appendChild(li); // Başlandı sütununa ekle
+    } else {
+        if (taskList) taskList.appendChild(li); // Başlamadı buraya düşer
+    }
+});
     } catch (err) {
         console.error("Veli dashboard yükleme hatası:", err);
     }
