@@ -1157,38 +1157,50 @@ async function executeDeleteTask() {
         console.error("Bağlantı hatası:", err);
     }
 }
+// Zamanı geçmiş görevleri kontrol eder ve ekranda uyarı basar
 async function checkOverdueTasks() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
     try {
-        const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
+        const res = await fetch(`/overdue-tasks/${userId}`, { 
+            headers: getAuthHeaders() 
+        });
+        
+        if (!res.ok) throw new Error("Veri alınamadı");
+        
         const overdueTasks = await res.json();
-
         const alertContainer = document.getElementById("overdue-alert-container");
+        
         if (!alertContainer) return;
 
-        if (overdueTasks.length > 0) {
+        if (overdueTasks && overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
-                <div style="background: #fff5f5; border-left: 5px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <h4 style="margin: 0 0 10px 0; color: #c53030; display: flex; align-items: center;">
+                <div style="background: #fff5f5; border: 2px solid #feb2b2; border-left: 8px solid #f56565; padding: 20px; border-radius: 15px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin-bottom: 25px;">
+                    <h4 style="margin: 0 0 12px 0; color: #c53030; display: flex; align-items: center; font-size: 1.1rem;">
                         ⚠️ Zamanı Geçmiş Görevler (${overdueTasks.length})
                     </h4>
-                    <ul style="margin: 0; padding-left: 20px; color: #742a2a; font-size: 14px;">
-                        ${overdueTasks.map(task => `
-                            <li style="margin-bottom: 5px;">
-                                <strong>${task.student_name}:</strong> ${task.title} 
-                                <span style="font-size: 12px; color: #9b2c2c;">(Süre: ${new Date(task.due_date).toLocaleDateString()})</span>
-                            </li>
-                        `).join('')}
-                    </ul>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        ${overdueTasks.map(task => {
+                            const date = new Date(task.due_date).toLocaleDateString('tr-TR');
+                            return `
+                                <div style="background: white; padding: 10px 15px; border-radius: 10px; border: 1px solid #fed7d7;">
+                                    <strong style="color: #2d3748;">${task.student_name}:</strong> 
+                                    <span style="color: #4a5568;">${task.title}</span>
+                                    <div style="font-size: 11px; color: #e53e3e; font-weight: bold; margin-top: 4px;">
+                                        Süre Doldu: ${date} ${task.due_time || ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
                 </div>
             `;
         } else {
             alertContainer.style.display = "none";
         }
     } catch (error) {
-        console.error("Gecikmiş görev kontrolü başarısız:", error);
+        console.error("Gecikmiş görev kontrol hatası:", error);
     }
 }

@@ -521,6 +521,7 @@ app.get("/pending-purchases", auth, async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
+// Zamanı geçmiş görevleri getiren endpoint
 app.get("/overdue-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
@@ -530,13 +531,14 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
              AND t.status != 'Tamamlandı' 
-             AND (t.due_date + t.due_time) < NOW()`,
+             AND (t.due_date + t.due_time) < NOW()
+             ORDER BY t.due_date ASC`,
             [userId]
         );
         res.json(result.rows);
     } catch (error) {
-        console.error("Zamanı geçmiş görevler hatası:", error);
-        res.status(500).json({ message: "Sunucu hatası" });
+        console.error("🔴 Zamanı geçmiş görevler sorgu hatası:", error.message);
+        res.status(500).json({ message: "Sunucu hatası: " + error.message });
     }
 });
 app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
