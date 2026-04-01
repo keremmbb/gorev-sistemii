@@ -219,57 +219,43 @@ async function loadMyAssignedTasks() {
 }
 
 async function addTask() {
-    const titleInput = document.getElementById("taskTitle");
-    const descInput = document.getElementById("taskDescription");
-    const emailInput = document.getElementById("assignedToEmail");
-    const pointsInput = document.getElementById("taskPoints");
-    const dateInput = document.getElementById("dueDate");
-    const timeInput = document.getElementById("dueTime");
-    const badgeInput = document.getElementById("taskBadge");
+    const title = document.getElementById("taskTitle").value;
+    const description = document.getElementById("taskDescription").value;
+    const assignedToEmail = document.getElementById("assignedToEmail").value;
+    const dueDate = document.getElementById("dueDate").value;
+    const dueTime = document.getElementById("dueTime").value;
+    const badgeReward = document.getElementById("taskBadge").value;
+    const rewardPoints = document.getElementById("taskPoints").value; 
 
-    // Değerleri alırken trim() yaparak boşlukları temizleyelim
-    const title = titleInput.value.trim();
-    const assignedToEmail = emailInput.value.trim();
-    const rewardPoints = pointsInput.value;
-
-    if (!title || !assignedToEmail || !rewardPoints) {
-        alert("Lütfen en azından Başlık, Öğrenci E-postası ve Puan alanlarını doldurun!");
+    if (!title || !assignedToEmail) {
+        alert("Lütfen başlık ve öğrenci e-postasını doldurun!");
         return;
     }
-
-    const taskData = {
-        title: title,
-        description: descInput.value.trim(),
-        assignedToEmail: assignedToEmail, // Server'ın beklediği isim
-        dueDate: dateInput.value,
-        dueTime: timeInput.value,
-        badge_reward: badgeInput.value,
-        reward_points: parseInt(rewardPoints),
-        status: 'Baslamadi'
-    };
 
     try {
         const res = await fetch("/add-task", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify(taskData)
+            body: JSON.stringify({
+                title,
+                description,
+                assignedToEmail: assignedToEmail.trim(),
+                dueDate,
+                dueTime,
+                badge_reward: badgeReward,
+                reward_points: parseInt(rewardPoints) || 10
+            })
         });
 
         const result = await res.json();
-
         if (res.ok) {
             alert("🚀 Görev başarıyla gönderildi!");
-            // Formu temizle
-            titleInput.value = "";
-            descInput.value = "";
-            emailInput.value = "";
-            pointsInput.value = "10";
-            loadMyAssignedTasks(); 
+            location.reload(); // Sayfayı yenile ki liste güncellensin
         } else {
             alert("❌ Hata: " + result.message);
         }
     } catch (error) {
-        console.error("Görev ekleme hatası:", error);
+        console.error("İstek hatası:", error);
         alert("Sunucuya bağlanılamadı.");
     }
 }

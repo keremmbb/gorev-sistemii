@@ -106,54 +106,36 @@ app.post("/add-task", auth, async (req, res) => {
             reward_points 
         } = req.body;
 
-        // 1. Güvenlik: E-posta adresi gelmiş mi?
         if (!assignedToEmail) {
-            return res.status(400).json({ message: "Hata: Öğrenci e-postası boş olamaz!" });
+            return res.status(400).json({ message: "Öğrenci e-postası boş olamaz!" });
         }
 
-        const parentId = req.user.id; // Giriş yapan velinin ID'si
+        const parentId = req.user.id;
         const emailSafe = assignedToEmail.trim();
 
-        // 2. Öğrenciyi veritabanında bul
-        const studentResult = await db.query("SELECT id FROM users WHERE email = $1", [emailSafe]);
+        // 1. Öğrenciyi Bul
+        const student = await db.query("SELECT id FROM users WHERE email = $1", [emailSafe]);
         
-        if (studentResult.rows.length === 0) {
-            return res.status(404).json({ message: "Sistemde bu e-postaya sahip bir öğrenci bulunamadı." });
+        if (student.rows.length === 0) {
+            return res.status(404).json({ message: "Bu e-postaya kayıtlı öğrenci bulunamadı." });
         }
 
-        const studentId = studentResult.rows[0].id;
+        const studentId = student.rows[0].id;
 
-        // 3. Görevi veritabanına kaydet
-        const insertQuery = `
-            INSERT INTO tasks (
-                title, description, assigned_to, assigned_by, 
-                due_date, due_time, badge_reward, reward_points, 
-                status, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-        `;
-
-        await db.query(insertQuery, [
-            title, 
-            description, 
-            studentId, 
-            parentId, 
-            dueDate || null, 
-            dueTime || null, 
-            badge_reward || null, 
-            reward_points || 10, 
-            'Baslamadi'
-        ]);
+        // 2. Görevi Kaydet
+        await db.query(
+            `INSERT INTO tasks (title, description, assigned_to, assigned_by, due_date, due_time, badge_reward, reward_points, status, updated_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+            [title, description, studentId, parentId, dueDate || null, dueTime || null, badge_reward || null, reward_points || 10, 'Baslamadi']
+        );
 
         res.json({ message: "Görev başarıyla atandı!" });
 
     } catch (err) {
         console.error("🔴 SUNUCU HATASI:", err.message);
-        res.status(500).json({ 
-            message: "Sunucu tarafında bir hata oluştu.", 
-            error: err.message 
-        });
+        res.status(500).json({ message: "Sunucu hatası: " + err.message });
     }
-});
+}); // <-- Bu satırın sonunda kırmızı çizgi olmamalı.
 app.get("/my-tasks/:userId", auth, async (req, res) => {
     const result = await db.query("SELECT t.*, u.email as assigned_by FROM tasks t JOIN users u ON t.assigned_by = u.id WHERE t.assigned_to = $1", [req.params.userId]);
     res.json(result.rows);
