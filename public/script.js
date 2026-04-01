@@ -1377,3 +1377,47 @@ async function loadStudentStats() {
         alert("Veriler çekilirken bir hata oluştu.");
     }
 }
+async function sendInvite() {
+    const email = document.getElementById("invite-email").value;
+    const statusMsg = document.getElementById("invite-status");
+    const btn = document.getElementById("invite-btn");
+
+    if (!email) {
+        alert("Lütfen geçerli bir e-posta adresi girin.");
+        return;
+    }
+
+    // Butonu yükleniyor moduna sok
+    btn.disabled = true;
+    btn.innerText = "Gönderiliyor...";
+    btn.style.opacity = "0.7";
+
+    try {
+        const res = await fetch("/send-invite", {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ email: email })
+        });
+
+        const data = await res.json();
+
+        statusMsg.style.display = "block";
+        if (res.ok) {
+            statusMsg.style.color = "#16a34a";
+            statusMsg.innerText = "✅ Davetiye başarıyla gönderildi!";
+            document.getElementById("invite-email").value = "";
+            setTimeout(() => closeModal('invite-modal'), 2000);
+        } else {
+            statusMsg.style.color = "#dc2626";
+            statusMsg.innerText = "❌ Hata: " + (data.message || "Gönderilemedi.");
+        }
+    } catch (err) {
+        console.error("Davet hatası:", err);
+        statusMsg.style.color = "#dc2626";
+        statusMsg.innerText = "❌ Sunucuya bağlanılamadı.";
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "🚀 Davetiye Gönder";
+        btn.style.opacity = "1";
+    }
+}

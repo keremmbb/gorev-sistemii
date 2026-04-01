@@ -222,13 +222,30 @@ app.delete("/delete-task/:id", auth, async (req, res) => {
 
 app.post("/send-invite", auth, async (req, res) => {
     const { email } = req.body;
-    const token = crypto.randomBytes(32).toString("hex");
-    await db.query("INSERT INTO invite (email, token, used) VALUES ($1, $2, false)", [email, token]);
-    const inviteLink = `${FRONTEND_URL}/kayit.html?invite=${token}`;
-    await sendMail(email, "Davet", `<a href="${inviteLink}">Kayıt Ol</a>`);
-    res.json({ message: "Gönderildi" });
-});
+    const parentEmail = req.user.email; // Giriş yapan velinin maili
 
+    try {
+        // Burada istersen mail gönderme kodunu çalıştırabilirsin
+        const { data, error } = await resend.emails.send({
+            from: 'Sistem <onboarding@resend.dev>',
+            to: email,
+            subject: 'Öğrenci Paneline Davet Edildin!',
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                    <h2>Harika bir haber!</h2>
+                    <p>Veliniz (<b>${parentEmail}</b>) sizi gelişim takip sistemine davet etti.</p>
+                    <p>Görevlerini tamamlayarak rozetler ve puanlar kazanmaya başlamak için hemen giriş yap!</p>
+                    <a href="${FRONTEND_URL}" style="display: inline-block; padding: 10px 20px; background: #3b82f6; color: white; text-decoration: none; border-radius: 5px;">Paneli Aç</a>
+                </div>
+            `
+        });
+
+        if (error) throw error;
+        res.json({ message: "Davet gönderildi" });
+    } catch (error) {
+        res.status(500).json({ message: "Mail gönderilemedi: " + error.message });
+    }
+});
 app.get("/check-invite", async (req, res) => {
     const result = await db.query("SELECT email FROM invite WHERE token=$1 AND used=false", [req.query.invite]);
     res.json(result.rows.length ? { valid: true, email: result.rows[0].email } : { valid: false });
