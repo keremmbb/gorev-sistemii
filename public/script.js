@@ -158,63 +158,51 @@ async function loadStudentPoints() {
 
 // -------------------- VELİ FONKSİYONLARI (KANBAN & YÖNETİM) --------------------
 async function loadMyAssignedTasks() {
-    const parentId = localStorage.getItem("userId");
-    if (!parentId) return;
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
 
     try {
-        const response = await fetch(`/my-assigned-tasks/${parentId}`, { 
-            headers: getAuthHeaders() 
-        });
-        const tasks = await response.json();
+        const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
+        const tasks = await res.json();
+        
+        const taskList = document.getElementById("taskList"); // Başlamadı
+        const inProgressList = document.getElementById("inProgressList"); // Devam Ediyor
+        const completedList = document.getElementById("completedList"); // Tamamlandı
 
-        // Durum listesi (HTML'deki ID'ler ile birebir aynı olmalı)
-        const statuses = ["Baslamadi", "Baslandi", "DevamEdiyor", "Tamamlandı"];
-        const counts = { "Baslamadi": 0, "Baslandi": 0, "DevamEdiyor": 0, "Tamamlandı": 0 };
+        taskList.innerHTML = "";
+        inProgressList.innerHTML = "";
+        completedList.innerHTML = "";
 
-        // Önce tüm sütunları temizle ve sayaçları sıfırla
-        statuses.forEach(s => {
-            const listEl = document.getElementById(`parent-list-${s}`);
-            const countEl = document.getElementById(`count-${s}`);
-            if (listEl) listEl.innerHTML = "";
-            if (countEl) countEl.innerText = "0";
-        });
+        const now = new Date();
 
         tasks.forEach(task => {
-            // Backend'den gelen status ile HTML ID'sini eşleştir
-            const listId = `parent-list-${task.status}`;
-            const listEl = document.getElementById(listId);
-            
-            if (listEl) {
-                counts[task.status]++;
-                const card = document.createElement("div");
-                
-                // Kart stili
-                card.style = "background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;";
-                
-                // Tam halini istediğiniz silme butonu içeren iç içerik
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #2d3748;">${task.title}</div>
-                            <div style="font-size: 0.75rem; color: #64748b;">👤 ${task.assigned_to || 'Öğrenci'}</div>
-                        </div>
-                        <button onclick="askDeleteTask(${task.id})" style="background: #fee2e2; color: #ef4444; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; transition: 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
-                            Sil
-                        </button>
-                    </div>
-                `;
-                listEl.appendChild(card);
+            const dueDate = new Date(task.due_date);
+            const isOverdue = dueDate < now && task.status !== 'Tamamlandı';
+
+            // EĞER görev zamanı geçmişse ve tamamlanmamışsa, ana listelere EKLEME (atla)
+            if (isOverdue) return;
+
+            // Diğer tüm görevler (Tamamlananlar ve zamanı gelmemiş olanlar) normal yerlerine:
+            const li = document.createElement("li");
+            li.className = "task-item";
+            li.innerHTML = `
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; color: #1e293b;">${task.student_name} - ${task.title}</div>
+                    <div style="font-size: 0.8rem; color: #64748b;">Teslim: ${fixDate(task.due_date)} | ${task.gp_reward} GP</div>
+                </div>
+                <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:5px;">🗑️</button>
+            `;
+
+            if (task.status === "Tamamlandı") {
+                completedList.appendChild(li);
+            } else if (task.status === "Devam Ediyor") {
+                inProgressList.appendChild(li);
+            } else {
+                taskList.appendChild(li);
             }
         });
-
-        // Sayaçları güncelle
-        statuses.forEach(s => {
-            const countEl = document.getElementById(`count-${s}`);
-            if (countEl) countEl.innerText = counts[s];
-        });
-
-    } catch (error) {
-        console.error("Veli görevleri yüklenirken hata:", error);
+    } catch (err) {
+        console.error("Görevler yüklenemedi:", err);
     }
 }
 
@@ -1169,22 +1157,17 @@ async function checkOverdueTasks() {
         if (alertContainer && overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
-                <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 25px;">
-                    <h4 style="margin: 0 0 10px 0; color: #c53030; font-size: 1rem;">⏰ Süresi Dolan Görevler</h4>
-                    <div style="display: grid; gap: 8px;">
-                        ${overdueTasks.map(t => `
-                            <div style="background: white; padding: 10px; border-radius: 8px; border-left: 4px solid #f56565; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-                                <span><strong>${t.student_name}:</strong> ${t.title}</span>
-                                <span style="color: #e53e3e; font-weight: bold;">${fixDate(t.due_date)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        } else if (alertContainer) {
+                <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #c53030;">⚠️ Süresi Dolan ve Yapılmayanlar</h4>
+                    ${overdueTasks.map(t => `
+                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:13px; border-left:4px solid #f56565; display:flex; justify-content:space-between;">
+                            <span><strong>${t.student_name}:</strong> ${t.title}</span>
+                            <span style="color:#e53e3e;">${fixDate(t.due_date)}</span>
+                        </div>
+                    `).join('')}
+                </div>`;
+        } else {
             alertContainer.style.display = "none";
         }
-    } catch (err) {
-        console.error("Gecikenler yüklenemedi:", err);
-    }
+    } catch (err) { console.error(err); }
 }

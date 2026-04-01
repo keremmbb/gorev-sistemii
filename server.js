@@ -166,10 +166,6 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
              FROM tasks t
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
-             AND (
-                t.status = 'Tamamlandı' -- Tamamlananlar her zaman gözüksün
-                OR t.due_date >= NOW() -- Gelecek görevler gözüksün
-             )
              ORDER BY t.created_at DESC`, 
             [userId]
         );
