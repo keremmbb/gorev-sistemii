@@ -160,7 +160,6 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
-        // NOT: Eğer hata devam ederse u.username yerine u.name veya u.full_name dene
         const result = await db.query(
             `SELECT t.*, u.username as student_name 
              FROM tasks t
@@ -533,7 +532,6 @@ app.get("/pending-purchases", auth, async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
-// Geciken görevleri getiren API
 app.get("/overdue-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
