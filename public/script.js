@@ -235,15 +235,15 @@ async function addTask() {
     }
 
     const taskData = {
-        title,
-        description,
-        assignedToEmail,
-        dueDate,
-        dueTime,
-        badge_reward: badgeReward,
-        reward_points: parseInt(rewardPoints), // Sayıya çeviriyoruz
-        status: 'Baslamadi'
-    };
+    title,
+    description,
+    assigned_to: assignedToEmail, // 'assignedToEmail' yerine 'assigned_to' kullanmayı dene
+    due_date: dueDate,            // Alt tireli standartları kontrol et
+    due_time: dueTime,
+    badge_reward: badgeReward,
+    points: parseInt(rewardPoints), // 'reward_points' yerine sadece 'points' dene
+    status: 'Baslamadi'
+};
 
     try {
         const res = await fetch("/add-task", {
