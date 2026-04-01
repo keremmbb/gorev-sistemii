@@ -169,8 +169,9 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
              ORDER BY t.created_at DESC`, 
             [userId]
         );
-        res.json(result.rows);
+        res.json(result.rows || []); // Eğer boşsa boş dizi dön
     } catch (error) {
+        console.error("Assigned tasks error:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
@@ -541,11 +542,12 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
              JOIN users u ON t.assigned_to = u.id
              WHERE t.assigned_by = $1 
              AND t.status != 'Tamamlandı' 
-             AND t.due_date < NOW()`, 
+             AND t.due_date < CURRENT_TIMESTAMP`, 
             [userId]
         );
-        res.json(result.rows);
+        res.json(result.rows || []);
     } catch (error) {
+        console.error("Overdue tasks error:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });

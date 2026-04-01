@@ -163,8 +163,15 @@ async function loadMyAssignedTasks() {
 
     try {
         const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
+        
+        // Eğer sunucu 500 hatası verirse dur
+        if (!res.ok) throw new Error("Sunucu veriyi gönderemedi.");
+
         const tasks = await res.json();
         
+        // Gelen verinin dizi olduğundan emin olalım
+        if (!Array.isArray(tasks)) return;
+
         const taskList = document.getElementById("taskList");
         const inProgressList = document.getElementById("inProgressList");
         const completedList = document.getElementById("completedList");
@@ -173,23 +180,31 @@ async function loadMyAssignedTasks() {
         if (inProgressList) inProgressList.innerHTML = "";
         if (completedList) completedList.innerHTML = "";
 
-        const now = new Date().getTime(); // Karşılaştırma için sayısal değer
+        const now = new Date();
 
         tasks.forEach(task => {
-            const dueDate = new Date(task.due_date).getTime();
+            const dueDate = new Date(task.due_date);
             const isOverdue = dueDate < now && task.status !== 'Tamamlandı';
 
-            // GÖREVE KARAR VERME MANTIĞI:
+            // Zamanı geçen ve tamamlanmayanları ana listede GÖSTERME (Üst kutuda olacaklar)
+            if (isOverdue) return;
+
+            const li = document.createElement("li");
+            li.className = "task-item";
+            li.innerHTML = `
+                <div style="flex: 1;">
+                    <div style="font-weight: 600;">${task.student_name} - ${task.title}</div>
+                    <div style="font-size: 0.8rem; color: #666;">Teslim: ${fixDate(task.due_date)}</div>
+                </div>
+                <button onclick="confirmDeleteTask(${task.id})" style="background:none; border:none; color:red; cursor:pointer;">🗑️</button>
+            `;
+
             if (task.status === "Tamamlandı") {
-                // Tamamlananlar her zaman gözüksün
-                renderTaskItem(task, completedList);
-            } else if (isOverdue) {
-                // Zamanı geçmiş ve tamamlanmamışsa ana listeye EKLEME (Üstteki kutuda gözükecek)
-                return; 
+                completedList.appendChild(li);
             } else if (task.status === "Devam Ediyor") {
-                renderTaskItem(task, inProgressList);
+                inProgressList.appendChild(li);
             } else {
-                renderTaskName(task, taskList);
+                taskList.appendChild(li);
             }
         });
     } catch (err) {
@@ -1158,15 +1173,16 @@ async function checkOverdueTasks() {
 
     try {
         const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
+        if (!res.ok) return;
         const overdueTasks = await res.json();
 
         if (overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
                 <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: #c53030; font-size: 14px;">⏰ Süresi Dolan Görevler</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #c53030;">⏰ Süresi Dolan Görevler</h4>
                     ${overdueTasks.map(t => `
-                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between;">
                             <span><strong>${t.student_name}:</strong> ${t.title}</span>
                             <span style="color:#e53e3e; font-weight:bold;">${fixDate(t.due_date)}</span>
                         </div>
@@ -1175,7 +1191,5 @@ async function checkOverdueTasks() {
         } else {
             alertContainer.style.display = "none";
         }
-    } catch (err) {
-        console.error(err);
-    }
+    } catch (err) { console.error(err); }
 }
