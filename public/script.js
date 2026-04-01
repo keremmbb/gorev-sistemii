@@ -163,9 +163,9 @@ async function loadMyAssignedTasks() {
         const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
         const tasks = await res.json();
 
-        // Gelen veri liste değilse fonksiyondan çık (Çökmeyi önler)
+        // Sunucudan dizi (array) gelmezse (hata dönerse) işlemi durdur
         if (!Array.isArray(tasks)) {
-            console.error("Gelen veri liste formatında değil:", tasks);
+            console.error("Veri liste formatında gelmedi:", tasks);
             return;
         }
 
@@ -181,26 +181,29 @@ async function loadMyAssignedTasks() {
             const li = document.createElement("li");
             li.className = "task-card";
             
-            // Statü kontrolünü güvenli yapalım
-            const s = (task.status || "").toLowerCase();
+            // Statü kontrolü (Küçük harfe çevirerek daha esnek hale getirdik)
+            const s = (task.status || "").toLowerCase().trim();
 
             li.innerHTML = `
-                <div>
-                    <strong>${task.title}</strong><br>
-                    <small>Öğrenci: ${task.student_name || 'Bilinmiyor'}</small>
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <div>
+                        <strong style="display:block;">${task.title}</strong>
+                        <small>Öğrenci: ${task.student_name || 'Bilinmiyor'}</small>
+                    </div>
                 </div>
             `;
 
-            if (s === "tamamlandi" || s === "tamamlandı") {
+            // Doğru sütuna yerleştir
+            if (s === "tamamlandı" || s === "tamamlandi") {
                 if (completedList) completedList.appendChild(li);
-            } else if (s === "baslandi" || s === "başlandı" || s === "devam ediyor") {
+            } else if (s === "başlandı" || s === "baslandi" || s === "devam ediyor") {
                 if (inProgressList) inProgressList.appendChild(li);
             } else {
                 if (taskList) taskList.appendChild(li);
             }
         });
     } catch (err) {
-        console.error("Veli panelinde JS hatası:", err);
+        console.error("Veli dashboard yükleme hatası:", err);
     }
 }
 

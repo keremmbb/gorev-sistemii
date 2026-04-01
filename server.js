@@ -157,8 +157,6 @@ app.get("/my-tasks/:userId", auth, async (req, res) => {
     const result = await db.query("SELECT t.*, u.email as assigned_by FROM tasks t JOIN users u ON t.assigned_by = u.id WHERE t.assigned_to = $1", [req.params.userId]);
     res.json(result.rows);
 });
-
-// server.js içindeki hatalı kısmı bununla değiştir
 app.get("/assigned-tasks/:userId", auth, async (req, res) => {
     const { userId } = req.params;
     try {
