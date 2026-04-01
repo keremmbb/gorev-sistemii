@@ -171,7 +171,7 @@ app.get("/assigned-tasks/:userId", auth, async (req, res) => {
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("Hata:", error);
+        console.error("SQL Hatası:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });
@@ -547,7 +547,6 @@ app.get("/overdue-tasks/:userId", auth, async (req, res) => {
         );
         res.json(result.rows || []);
     } catch (error) {
-        console.error("Hata:", error);
         res.status(500).json({ message: "Sunucu hatası" });
     }
 });

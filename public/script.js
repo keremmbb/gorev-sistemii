@@ -163,11 +163,8 @@ async function loadMyAssignedTasks() {
 
     try {
         const res = await fetch(`/assigned-tasks/${userId}`, { headers: getAuthHeaders() });
-        if (!res.ok) throw new Error("Sunucu hatası");
-        
         const tasks = await res.json();
-        if (!Array.isArray(tasks)) return; // Dizi değilse işlem yapma
-
+        
         const taskList = document.getElementById("taskList");
         const inProgressList = document.getElementById("inProgressList");
         const completedList = document.getElementById("completedList");
@@ -180,10 +177,10 @@ async function loadMyAssignedTasks() {
 
         tasks.forEach(task => {
             const teslimTarihi = new Date(task.due_date);
-            const gecikmisMi = teslimTarihi < simdi && task.status !== 'Tamamlandı';
+            // Kural: Tamamlanmamış VE tarihi geçmişse bu listede gösterme
+            const gecikmis = teslimTarihi < simdi && task.status !== 'Tamamlandı';
 
-            // EĞER gecikmişse "Başlamadı" listesine yazma (Yukarıdaki uyarı kutusuna gidecek)
-            if (gecikmisMi) return;
+            if (gecikmis) return; // Bu görev üstteki uyarı kutusunda çıkacak, burada atla.
 
             const li = document.createElement("li");
             li.className = "task-item";
@@ -204,7 +201,7 @@ async function loadMyAssignedTasks() {
             }
         });
     } catch (err) {
-        console.error("Yükleme hatası:", err);
+        console.error("Görevler yüklenemedi:", err);
     }
 }
 
@@ -1169,16 +1166,15 @@ async function checkOverdueTasks() {
 
     try {
         const res = await fetch(`/overdue-tasks/${userId}`, { headers: getAuthHeaders() });
-        if (!res.ok) return;
         const overdueTasks = await res.json();
 
         if (overdueTasks.length > 0) {
             alertContainer.style.display = "block";
             alertContainer.innerHTML = `
                 <div style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: #c53030;">⏰ Süresi Dolan Görevler</h4>
+                    <h4 style="margin:0 0 10px 0; color:#c53030;">⚠️ Süresi Dolan Görevler</h4>
                     ${overdueTasks.map(t => `
-                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="background:white; margin-bottom:5px; padding:8px; border-radius:8px; font-size:12px; border-left:4px solid #f56565; display:flex; justify-content:space-between;">
                             <span><strong>${t.student_name}:</strong> ${t.title}</span>
                             <span style="color:#e53e3e; font-weight:bold;">${fixDate(t.due_date)}</span>
                         </div>
