@@ -1377,20 +1377,22 @@ async function loadStudentStats() {
         alert("Veriler çekilirken bir hata oluştu.");
     }
 }
+// script.js dosyasının en altına ekle
 async function sendInvite() {
-    const email = document.getElementById("invite-email").value;
-    const statusMsg = document.getElementById("invite-status");
-    const btn = document.getElementById("invite-btn");
+    const emailInput = document.getElementById("invite-email");
+    const resultMsg = document.getElementById("invite-result-msg");
+    const submitBtn = document.getElementById("invite-submit-btn");
+    const email = emailInput.value.trim();
 
     if (!email) {
-        alert("Lütfen geçerli bir e-posta adresi girin.");
+        alert("Lütfen bir e-posta adresi girin.");
         return;
     }
 
-    // Butonu yükleniyor moduna sok
-    btn.disabled = true;
-    btn.innerText = "Gönderiliyor...";
-    btn.style.opacity = "0.7";
+    // Buton Durumu: Yükleniyor
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "⌛ Gönderiliyor...";
+    resultMsg.style.display = "none";
 
     try {
         const res = await fetch("/send-invite", {
@@ -1401,23 +1403,26 @@ async function sendInvite() {
 
         const data = await res.json();
 
-        statusMsg.style.display = "block";
+        resultMsg.style.display = "block";
         if (res.ok) {
-            statusMsg.style.color = "#16a34a";
-            statusMsg.innerText = "✅ Davetiye başarıyla gönderildi!";
-            document.getElementById("invite-email").value = "";
-            setTimeout(() => closeModal('invite-modal'), 2000);
+            resultMsg.style.color = "#16a34a";
+            resultMsg.innerText = "✅ Davet başarıyla gönderildi!";
+            emailInput.value = ""; // Inputu temizle
+            setTimeout(() => {
+                closeModal('invite-modal');
+                resultMsg.style.display = "none";
+            }, 2500);
         } else {
-            statusMsg.style.color = "#dc2626";
-            statusMsg.innerText = "❌ Hata: " + (data.message || "Gönderilemedi.");
+            resultMsg.style.color = "#ef4444";
+            resultMsg.innerText = "❌ Hata: " + (data.message || "Gönderilemedi.");
         }
     } catch (err) {
         console.error("Davet hatası:", err);
-        statusMsg.style.color = "#dc2626";
-        statusMsg.innerText = "❌ Sunucuya bağlanılamadı.";
+        resultMsg.style.display = "block";
+        resultMsg.style.color = "#ef4444";
+        resultMsg.innerText = "❌ Sunucu bağlantı hatası.";
     } finally {
-        btn.disabled = false;
-        btn.innerText = "🚀 Davetiye Gönder";
-        btn.style.opacity = "1";
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "🚀 Davet Gönder";
     }
 }

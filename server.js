@@ -220,30 +220,50 @@ app.delete("/delete-task/:id", auth, async (req, res) => {
     }
 });
 
+// server.js içine eklenecek veya güncellenecek
 app.post("/send-invite", auth, async (req, res) => {
     const { email } = req.body;
-    const parentEmail = req.user.email; // Giriş yapan velinin maili
+    const senderEmail = req.user.email; // Daveti gönderen velinin maili
+
+    if (!email || !email.includes("@")) {
+        return res.status(400).json({ message: "Geçerli bir e-posta adresi giriniz." });
+    }
 
     try {
-        // Burada istersen mail gönderme kodunu çalıştırabilirsin
         const { data, error } = await resend.emails.send({
-            from: 'Sistem <onboarding@resend.dev>',
+            from: 'Sistem <onboarding@resend.dev>', // Resend panelindeki onaylı gönderici adresi
             to: email,
-            subject: 'Öğrenci Paneline Davet Edildin!',
+            subject: 'Gelişim Takip Sistemine Davet Edildiniz!',
             html: `
-                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                    <h2>Harika bir haber!</h2>
-                    <p>Veliniz (<b>${parentEmail}</b>) sizi gelişim takip sistemine davet etti.</p>
-                    <p>Görevlerini tamamlayarak rozetler ve puanlar kazanmaya başlamak için hemen giriş yap!</p>
-                    <a href="${FRONTEND_URL}" style="display: inline-block; padding: 10px 20px; background: #3b82f6; color: white; text-decoration: none; border-radius: 5px;">Paneli Aç</a>
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; border: 1px solid #e2e8f0; border-radius: 20px; max-width: 600px; margin: auto; background-color: #ffffff;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span style="font-size: 50px;">🚀</span>
+                    </div>
+                    <h2 style="color: #1e293b; text-align: center;">Merhaba!</h2>
+                    <p style="color: #475569; font-size: 16px; line-height: 1.6;">
+                        <b>${senderEmail}</b> sizi çocuk gelişimini takip eden ve görevleri oyunlaştıran platformumuza davet etti.
+                    </p>
+                    <p style="color: #475569; font-size: 16px; line-height: 1.6;">
+                        Bu platformda görevlerinizi tamamlayarak <b>GP (Güç Puanı)</b> kazanabilir, özel <b>Rozetler</b> toplayabilir ve marketten ödüller alabilirsiniz.
+                    </p>
+                    <div style="text-align: center; margin-top: 30px;">
+                        <a href="${FRONTEND_URL}" style="display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);">Hemen Katıl ve Başla</a>
+                    </div>
+                    <hr style="margin-top: 30px; border: 0; border-top: 1px solid #f1f5f9;">
+                    <p style="font-size: 12px; color: #94a3b8; text-align: center;">Bu mail otomatik olarak gönderilmiştir. Eğer bir yanlışlık olduğunu düşünüyorsanız lütfen görmezden gelin.</p>
                 </div>
             `
         });
 
-        if (error) throw error;
-        res.json({ message: "Davet gönderildi" });
+        if (error) {
+            console.error("Resend Hatası:", error);
+            throw error;
+        }
+
+        res.json({ success: true, message: "Davetiye başarıyla gönderildi!" });
     } catch (error) {
-        res.status(500).json({ message: "Mail gönderilemedi: " + error.message });
+        console.error("Davet gönderim hatası:", error);
+        res.status(500).json({ message: "Mail gönderilirken bir sorun oluştu." });
     }
 });
 app.get("/check-invite", async (req, res) => {

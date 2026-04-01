@@ -302,25 +302,27 @@
     </div>
 </div>
 <div id="invite-modal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 450px; padding: 40px; text-align: center;">
+    <div class="modal-content" style="max-width: 450px; padding: 35px; border-radius: 30px;">
         <span class="close-modal" onclick="closeModal('invite-modal')">&times;</span>
         
-        <div style="background: #eff6ff; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-            <span style="font-size: 35px;">✉️</span>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="background: #f0f7ff; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                <span style="font-size: 40px;">✉️</span>
+            </div>
         </div>
+
+        <h3 style="text-align: center; color: #1e293b; margin-top: 0;">Sisteme Davet Et</h3>
+        <p style="text-align: center; color: #64748b; font-size: 14px; margin-bottom: 25px;">
+            Çocuğunuzun veya davet etmek istediğiniz kişinin e-posta adresini girin.
+        </p>
+
+        <input type="email" id="invite-email" placeholder="ornek@mail.com" class="form-input" style="height: 50px; text-align: center; font-size: 16px; border-radius: 15px;">
         
-        <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 22px;">Çocuğunu Davet Et</h3>
-        <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">Çocuğunuzun e-posta adresini girerek ona bir davet bağlantısı gönderebilirsiniz.</p>
+        <button onclick="sendInvite()" id="invite-submit-btn" style="width: 100%; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 15px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; transition: 0.3s;">
+            🚀 Davet Gönder
+        </button>
         
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-            <input type="email" id="invite-email" placeholder="E-posta adresi girin" class="form-input" style="margin-bottom: 0; text-align: center; height: 50px; font-size: 16px;">
-            
-            <button onclick="sendInvite()" id="invite-btn" style="width: 100%; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 15px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);">
-                🚀 Davetiye Gönder
-            </button>
-        </div>
-        
-        <p id="invite-status" style="margin-top: 15px; font-size: 13px; display: none;"></p>
+        <p id="invite-result-msg" style="text-align: center; margin-top: 15px; font-size: 13px; font-weight: 500; display: none;"></p>
     </div>
 </div>
 <script>
