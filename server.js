@@ -33,7 +33,7 @@ async function sendMail(to, subject, htmlContent) {
         console.log("📧 Mail gönderimi başlatılıyor...");
         const response = await resend.emails.send({
             from: 'Sistem <onboarding@resend.dev>',
-            to: to, // Kodlar her zaman senin mailine gidecek
+            to: to, // Burada 'to' parametresi kullanılıyor, bu doğru.
             subject: subject,
             html: htmlContent
         });
@@ -298,9 +298,9 @@ app.get("/user-points/:userId", auth, async (req, res) => {
 app.post("/buy-reward", auth, async (req, res) => {
     const { rewardName, cost } = req.body;
     const userId = req.user.id;
-    const userEmail = req.user.email; // Token'dan gelen kullanıcı maili
 
     try {
+        // 1. Kullanıcı bakiye kontrolü
         const userRes = await db.query("SELECT current_balance FROM users WHERE id = $1", [userId]);
         const balance = userRes.rows[0]?.current_balance || 0;
 
@@ -308,6 +308,7 @@ app.post("/buy-reward", auth, async (req, res) => {
             return res.status(400).json({ error: "Yetersiz bakiye." });
         }
 
+        // 2. Bakiyeyi düş ve satın almayı 'Bekliyor' olarak kaydet
         await db.query("UPDATE users SET current_balance = current_balance - $1 WHERE id = $2", [cost, userId]);
         
         await db.query(
@@ -315,21 +316,10 @@ app.post("/buy-reward", auth, async (req, res) => {
             [userId, rewardName, cost]
         );
 
-        // VELİYE MAİL GÖNDER (Kendi mailine bildirim)
-        await sendMail(
-            '', 
-            "🛒 Yeni Market Onay İsteği", 
-            `<h3>Öğrenciniz Marketten Bir Ürün Aldı!</h3>
-             <p><b>Öğrenci:</b> ${userEmail}</p>
-             <p><b>Ürün:</b> ${rewardName}</p>
-             <p><b>Maliyet:</b> ${cost} GP</p>
-             <p>Lütfen onaylamak için veli paneline giriş yapın.</p>`
-        );
-
-        res.json({ message: "Satın alma başarılı ve veliye bildirildi!" });
+        res.json({ message: "Satın alma talebi oluşturuldu, veli onayı bekleniyor." });
     } catch (error) {
-        console.error("❌ Satın alma hatası:", error.message);
-        res.status(500).json({ error: "İşlem başarısız." });
+        console.error("Satın alma hatası:", error);
+        res.status(500).json({ error: "İşlem sırasında bir hata oluştu." });
     }
 });
 app.get("/pending-purchases/:parentId", auth, async (req, res) => {
@@ -651,4 +641,3 @@ app.get("/student-weekly-stats/:email", auth, async (req, res) => {
 });
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor...`));
-app.listen(process.env.PORT || 3000, () => console.log("Sistem Aktif"));
