@@ -33,7 +33,7 @@ async function sendMail(to, subject, htmlContent) {
         console.log("📧 Mail gönderimi başlatılıyor...");
         const response = await resend.emails.send({
             from: 'Sistem <onboarding@resend.dev>',
-            to: 'keremacar3754is@gmail.com', // Kodlar her zaman senin mailine gidecek
+            to: to, // Kodlar her zaman senin mailine gidecek
             subject: subject,
             html: htmlContent
         });
@@ -317,7 +317,7 @@ app.post("/buy-reward", auth, async (req, res) => {
 
         // VELİYE MAİL GÖNDER (Kendi mailine bildirim)
         await sendMail(
-            'keremacar3754is@gmail.com', 
+            '', 
             "🛒 Yeni Market Onay İsteği", 
             `<h3>Öğrenciniz Marketten Bir Ürün Aldı!</h3>
              <p><b>Öğrenci:</b> ${userEmail}</p>

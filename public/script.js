@@ -896,7 +896,7 @@ async function buyReward(name, cost) {
         const response = await fetch("/buy-reward", {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify({ rewardName: name, cost: cost })
+            body: JSON.stringify({ rewardName: name, cost: cost, to: to })
         });
 
         const data = await response.json();
